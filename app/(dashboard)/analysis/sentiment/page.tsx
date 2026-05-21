@@ -629,57 +629,99 @@ export default function SentimentPage() {
     // Format mentions securely and expand generic category tags into rich keywords
     let parsedMentions: any[] = [];
 
-    // The granular keyword mapping dictionary
+    const isTr = typeof window !== 'undefined' && (localStorage.getItem('language') === 'tr' || document.documentElement.lang === 'tr');
+    
+    // We provide 8 phrases per sentiment to ensure rich keyword distribution
     const KEYWORD_MAP: Record<string, { positive: string[]; negative: string[]; neutral: string[] }> = {
       "Cleanliness": {
-        positive: ["Spotless Rooms", "Fresh Linens", "Sparkling Bathrooms", "Impeccable Housekeeping"],
-        negative: ["Dirty Carpets", "Stained Sheets", "Dusty Surfaces", "Smelly Rooms"],
-        neutral: ["Acceptable Cleanliness", "Adequate Housekeeping"]
+        positive: isTr 
+          ? ["Tertemiz Odalar", "Temiz Çarşaflar", "Pırıl Pırıl Banyo", "Kusursuz Temizlik", "Mis Kokulu Oda", "Hijyenik Ortam", "Lekesiz", "Özenli Kat Hizmetleri"]
+          : ["Spotless Rooms", "Fresh Linens", "Sparkling Bathrooms", "Impeccable Housekeeping", "Fresh Smelling Room", "Hygienic Environment", "Stain-free", "Careful Housekeeping"],
+        negative: isTr
+          ? ["Kirli Halılar", "Lekeli Çarşaflar", "Tozlu Yüzeyler", "Kötü Kokulu Oda", "Pis Banyo", "Temizlenmemiş Oda", "Bakımsız", "Yetersiz Temizlik"]
+          : ["Dirty Carpets", "Stained Sheets", "Dusty Surfaces", "Smelly Rooms", "Filthy Bathroom", "Uncleaned Room", "Neglected", "Poor Housekeeping"],
+        neutral: isTr ? ["Kabul Edilebilir Temizlik", "Yeterli Temizlik", "Standart Oda", "Ortalama Hijyen"] : ["Acceptable Cleanliness", "Adequate Housekeeping", "Standard Room", "Average Hygiene"]
       },
       "Service": {
-        positive: ["Attentive Staff", "Warm Hospitality", "Professional Reception", "Quick Check-in"],
-        negative: ["Slow Service", "Unhelpful Staff", "Rude Reception", "Long Check-in Lines"],
-        neutral: ["Standard Service", "Basic Reception"]
+        positive: isTr
+          ? ["İlgili Personel", "Sıcak Karşılama", "Profesyonel Resepsiyon", "Hızlı Giriş", "Güleryüzlü Ekip", "Yardımsever Çalışanlar", "Mükemmel Hizmet", "Misafirperverlik"]
+          : ["Attentive Staff", "Warm Hospitality", "Professional Reception", "Quick Check-in", "Smiling Team", "Helpful Employees", "Excellent Service", "Great Hospitality"],
+        negative: isTr
+          ? ["Yavaş Hizmet", "İlgisiz Personel", "Kaba Resepsiyon", "Uzun Bekleme", "Kötü Servis", "Yardımcı Olmayan Ekip", "Saygısız Çalışan", "Sorunlu Karşılama"]
+          : ["Slow Service", "Unhelpful Staff", "Rude Reception", "Long Check-in Lines", "Bad Service", "Uncooperative Team", "Disrespectful Staff", "Problematic Welcome"],
+        neutral: isTr ? ["Standart Hizmet", "Sıradan Karşılama", "Ortalama Servis", "Normal Personel"] : ["Standard Service", "Basic Reception", "Average Service", "Normal Staff"]
       },
       "Location": {
-        positive: ["Prime Location", "Close to Transit", "Easy Parking", "Safe Neighborhood"],
-        negative: ["Noisy Surroundings", "Hard to Find", "Unsafe Area", "Isolated Location"],
-        neutral: ["Decent Location", "Accessible Area"]
+        positive: isTr
+          ? ["Harika Konum", "Ulaşıma Yakın", "Kolay Otopark", "Güvenli Bölge", "Merkezi Konum", "Yürüme Mesafesinde", "Manzaralı", "Mükemmel Çevre"]
+          : ["Prime Location", "Close to Transit", "Easy Parking", "Safe Neighborhood", "Central Location", "Walking Distance", "Scenic View", "Excellent Area"],
+        negative: isTr
+          ? ["Gürültülü Çevre", "Zor Bulunan Yer", "Güvensiz Bölge", "İzole Konum", "Kötü Ulaşım", "Otopark Sorunu", "Uzak Mesafe", "Kötü Mahalle"]
+          : ["Noisy Surroundings", "Hard to Find", "Unsafe Area", "Isolated Location", "Poor Transit", "Parking Issue", "Far Distance", "Bad Neighborhood"],
+        neutral: isTr ? ["İyi Konum", "Erişilebilir Bölge", "Ortalama Yer", "Standart Çevre"] : ["Decent Location", "Accessible Area", "Average Place", "Standard Surroundings"]
       },
       "Value": {
-        positive: ["Great Value", "Affordable Rates", "Fair Pricing", "Cost-Effective"],
-        negative: ["Overpriced", "Hidden Fees", "Poor Value", "Too Expensive"],
-        neutral: ["Average Pricing", "Fair Price"]
+        positive: isTr
+          ? ["Harika Fiyat", "Uygun Fiyatlar", "Adil Fiyatlandırma", "Fiyat/Performans", "Bütçe Dostu", "Paranın Karşılığı", "Ekonomik Seçenek", "Çok İyi Değer"]
+          : ["Great Value", "Affordable Rates", "Fair Pricing", "Cost-Effective", "Budget Friendly", "Money's Worth", "Economic Choice", "Excellent Value"],
+        negative: isTr
+          ? ["Gereksiz Pahalı", "Gizli Ücretler", "Kötü Değer", "Çok Pahalı", "Aşırı Fiyat", "Değmez", "Fiyatına Göre Kötü", "Kazık"]
+          : ["Overpriced", "Hidden Fees", "Poor Value", "Too Expensive", "Exorbitant Price", "Not Worth It", "Bad for Price", "Rip-off"],
+        neutral: isTr ? ["Ortalama Fiyat", "Adil Ücret", "Standart Değer", "Normal Fiyatlandırma"] : ["Average Pricing", "Fair Price", "Standard Value", "Normal Pricing"]
       },
       "Sleep": {
-        positive: ["Comfortable Mattress", "Quiet Night", "Fluffy Pillows", "Deep Sleep"],
-        negative: ["Uncomfortable Bed", "Hard Mattress", "Street Noise", "Thin Walls"],
-        neutral: ["Standard Bed", "Average Sleep"]
+        positive: isTr
+          ? ["Rahat Yatak", "Sessiz Gece", "Yumuşak Yastıklar", "Derin Uyku", "Harika Yatak", "Huzurlu Ortam", "Konforlu Uyku", "Kaliteli Çarşaf"]
+          : ["Comfortable Mattress", "Quiet Night", "Fluffy Pillows", "Deep Sleep", "Great Bed", "Peaceful Vibe", "Comfortable Sleep", "Quality Sheets"],
+        negative: isTr
+          ? ["Rahatsız Yatak", "Sert Yatak", "Sokak Gürültüsü", "İnce Duvarlar", "Kötü Yastık", "Uykusuz Gece", "Gürültülü Oda", "Eski Yatak"]
+          : ["Uncomfortable Bed", "Hard Mattress", "Street Noise", "Thin Walls", "Bad Pillow", "Sleepless Night", "Noisy Room", "Old Bed"],
+        neutral: isTr ? ["Standart Yatak", "Ortalama Uyku", "Normal Yastık", "Kabul Edilebilir"] : ["Standard Bed", "Average Sleep", "Normal Pillow", "Acceptable"]
       },
       "Room": {
-        positive: ["Spacious Layout", "Modern Decor", "Cozy Ambience", "Excellent A/C"],
-        negative: ["Cramped Space", "Dated Furnishings", "Broken A/C", "Tiny Bathroom"],
-        neutral: ["Standard Room Size", "Basic Amenities"]
+        positive: isTr
+          ? ["Geniş Oda", "Modern Dekor", "Sıcak Ortam", "Mükemmel Klima", "Ferah Alan", "Güzel Tasarım", "Konforlu Oda", "İyi Işıklandırma"]
+          : ["Spacious Layout", "Modern Decor", "Cozy Ambience", "Excellent A/C", "Airy Space", "Nice Design", "Comfortable Room", "Good Lighting"],
+        negative: isTr
+          ? ["Dar Alan", "Eski Eşyalar", "Bozuk Klima", "Küçük Banyo", "Karanlık Oda", "Kötü Tasarım", "Rahatsız Oda", "Eski Mobilya"]
+          : ["Cramped Space", "Dated Furnishings", "Broken A/C", "Tiny Bathroom", "Dark Room", "Bad Design", "Uncomfortable Room", "Old Furniture"],
+        neutral: isTr ? ["Standart Oda Boyutu", "Temel Olanaklar", "Ortalama Oda", "Normal Alan"] : ["Standard Room Size", "Basic Amenities", "Average Room", "Normal Space"]
       },
       "Breakfast": {
-        positive: ["Rich Buffet", "Fresh Pastries", "Delicious Coffee", "Tasty Meals"],
-        negative: ["Cold Food", "Limited Options", "Bad Coffee", "Bland Food"],
-        neutral: ["Standard Continental", "Basic Breakfast"]
+        positive: isTr
+          ? ["Zengin Büfe", "Taze Hamur İşleri", "Lezzetli Kahve", "Harika Yemekler", "Çeşitli Kahvaltı", "Taze Meyveler", "Mükemmel Omlet", "Doyurucu"]
+          : ["Rich Buffet", "Fresh Pastries", "Delicious Coffee", "Tasty Meals", "Varied Breakfast", "Fresh Fruits", "Excellent Omelette", "Satisfying"],
+        negative: isTr
+          ? ["Soğuk Yemek", "Sınırlı Seçenek", "Kötü Kahve", "Lezzetsiz Yemek", "Bayat Ekmek", "Kötü Büfe", "Yetersiz Kahvaltı", "Kalitesiz Ürünler"]
+          : ["Cold Food", "Limited Options", "Bad Coffee", "Bland Food", "Stale Bread", "Bad Buffet", "Insufficient Breakfast", "Low Quality"],
+        neutral: isTr ? ["Standart Kontinental", "Temel Kahvaltı", "Ortalama Yemek", "Normal Büfe"] : ["Standard Continental", "Basic Breakfast", "Average Food", "Normal Buffet"]
       },
       "Property": {
-        positive: ["Beautiful Architecture", "Well-Maintained Pool", "Strong Wi-Fi", "Modern Gym"],
-        negative: ["Run-Down Building", "Broken Elevator", "Weak Wi-Fi", "Dirty Pool"],
-        neutral: ["Functional Building", "Standard Facilities"]
+        positive: isTr
+          ? ["Güzel Mimari", "Bakımlı Havuz", "Güçlü Wi-Fi", "Modern Spor Salonu", "Şık Tesis", "Harika Teras", "Güzel Lobi", "İyi Bakım"]
+          : ["Beautiful Architecture", "Well-Maintained Pool", "Strong Wi-Fi", "Modern Gym", "Stylish Property", "Great Terrace", "Nice Lobby", "Good Maintenance"],
+        negative: isTr
+          ? ["Bakımsız Bina", "Bozuk Asansör", "Zayıf Wi-Fi", "Kirli Havuz", "Eski Tesis", "Kötü İnternet", "Sorunlu Lobi", "Kötü Bakım"]
+          : ["Run-Down Building", "Broken Elevator", "Weak Wi-Fi", "Dirty Pool", "Old Property", "Bad Internet", "Problematic Lobby", "Poor Maintenance"],
+        neutral: isTr ? ["İşlevsel Bina", "Standart Tesisler", "Ortalama Havuz", "Normal Wi-Fi"] : ["Functional Building", "Standard Facilities", "Average Pool", "Normal Wi-Fi"]
       },
       "Spa": {
-        positive: ["Relaxing Massage", "Excellent Spa", "Clean Sauna", "Professional Therapist"],
-        negative: ["Overcrowded Spa", "Cold Hammam", "Dirty Sauna", "Poor Massage"],
-        neutral: ["Standard Spa", "Basic Wellness"]
+        positive: isTr
+          ? ["Rahatlatıcı Masaj", "Mükemmel Spa", "Temiz Sauna", "Profesyonel Terapist", "Harika Hamam", "Huzurlu Ortam", "İyi Hizmet", "Yenileyici"]
+          : ["Relaxing Massage", "Excellent Spa", "Clean Sauna", "Professional Therapist", "Great Hammam", "Peaceful Ambience", "Good Service", "Refreshing"],
+        negative: isTr
+          ? ["Kalabalık Spa", "Soğuk Hamam", "Kirli Sauna", "Kötü Masaj", "Gürültülü Ortam", "Amatör Terapist", "Bakımsız Spa", "Kötü Hizmet"]
+          : ["Overcrowded Spa", "Cold Hammam", "Dirty Sauna", "Poor Massage", "Noisy Environment", "Amateur Therapist", "Neglected Spa", "Bad Service"],
+        neutral: isTr ? ["Standart Spa", "Temel Wellness", "Ortalama Masaj", "Normal Sauna"] : ["Standard Spa", "Basic Wellness", "Average Massage", "Normal Sauna"]
       },
       "Family": {
-        positive: ["Family-Friendly", "Great Kids Pool", "Quiet Rooms", "Spacious Suites"],
-        negative: ["Not Kid-Friendly", "Loud Environment", "Cramped Rooms", "No Kids Club"],
-        neutral: ["Suitable for Families", "Basic Family Setup"]
+        positive: isTr
+          ? ["Aile Dostu", "Harika Çocuk Havuzu", "Sessiz Odalar", "Geniş Süitler", "Çocuk Kulübü", "İyi Etkinlikler", "Güvenli Ortam", "Çocuk Menüsü"]
+          : ["Family-Friendly", "Great Kids Pool", "Quiet Rooms", "Spacious Suites", "Kids Club", "Good Activities", "Safe Environment", "Kids Menu"],
+        negative: isTr
+          ? ["Çocuklara Uygun Değil", "Gürültülü Ortam", "Dar Odalar", "Çocuk Kulübü Yok", "Tehlikeli Havuz", "Aktivite Yok", "Çocuk Menüsü Yok", "Kötü Hizmet"]
+          : ["Not Kid-Friendly", "Loud Environment", "Cramped Rooms", "No Kids Club", "Dangerous Pool", "No Activities", "No Kids Menu", "Bad Service"],
+        neutral: isTr ? ["Aileler İçin Uygun", "Temel Aile Kurulumu", "Ortalama Etkinlik", "Normal Odalar"] : ["Suitable for Families", "Basic Family Setup", "Average Activities", "Normal Rooms"]
       }
     };
 
@@ -740,35 +782,26 @@ export default function SentimentPage() {
       if (isGeneric && KEYWORD_MAP[normalizedCat]) {
         const catData = KEYWORD_MAP[normalizedCat];
         
-        // Positive keywords
-        if (pos > 0) {
-          const phrases = catData.positive;
-          const cnt1 = Math.ceil(pos / 2);
-          const cnt2 = pos - cnt1;
+        // Helper to distribute counts across multiple keywords based on volume
+        const distributeCount = (count: number, phrases: string[], sentiment: string) => {
+          if (count <= 0) return;
+          // Dynamically map counts to up to 5 phrases
+          const numPhrases = Math.min(Math.max(1, Math.ceil(count / 3)), Math.min(5, phrases.length));
           
-          parsedMentions.push({ keyword: phrases[0], count: cnt1, sentiment: "positive", category: normalizedCat });
-          if (phrases[1] && cnt2 > 0) {
-            parsedMentions.push({ keyword: phrases[1], count: cnt2, sentiment: "positive", category: normalizedCat });
+          let remainingCount = count;
+          for (let i = 0; i < numPhrases; i++) {
+            const isLast = i === numPhrases - 1;
+            const portion = isLast ? remainingCount : Math.ceil(count / (numPhrases + 1));
+            if (portion > 0) {
+              parsedMentions.push({ keyword: phrases[i], count: portion, sentiment, category: normalizedCat });
+            }
+            remainingCount -= portion;
           }
-        }
-        
-        // Negative keywords
-        if (neg > 0) {
-          const phrases = catData.negative;
-          const cnt1 = Math.ceil(neg / 2);
-          const cnt2 = neg - cnt1;
-          
-          parsedMentions.push({ keyword: phrases[0], count: cnt1, sentiment: "negative", category: normalizedCat });
-          if (phrases[1] && cnt2 > 0) {
-            parsedMentions.push({ keyword: phrases[1], count: cnt2, sentiment: "negative", category: normalizedCat });
-          }
-        }
+        };
 
-        // Neutral keywords
-        if (neu > 0) {
-          const phrases = catData.neutral;
-          parsedMentions.push({ keyword: phrases[0], count: neu, sentiment: "neutral", category: normalizedCat });
-        }
+        distributeCount(pos, catData.positive, "positive");
+        distributeCount(neg, catData.negative, "negative");
+        distributeCount(neu, catData.neutral, "neutral");
       } else {
         // Not generic, preserve as is
         let sentiment = "neutral";
@@ -801,30 +834,24 @@ export default function SentimentPage() {
         if (KEYWORD_MAP[normalizedCat]) {
           const catData = KEYWORD_MAP[normalizedCat];
           
-          if (pos > 0) {
-            const phrases = catData.positive;
-            const cnt1 = Math.ceil(pos / 2);
-            const cnt2 = pos - cnt1;
-            parsedMentions.push({ keyword: phrases[0], count: cnt1, sentiment: "positive", category: normalizedCat });
-            if (phrases[1] && cnt2 > 0) {
-              parsedMentions.push({ keyword: phrases[1], count: cnt2, sentiment: "positive", category: normalizedCat });
+          // Helper to distribute counts across multiple keywords based on volume
+          const distributeCount = (count: number, phrases: string[], sentiment: string) => {
+            if (count <= 0) return;
+            const numPhrases = Math.min(Math.max(1, Math.ceil(count / 3)), Math.min(5, phrases.length));
+            let remainingCount = count;
+            for (let i = 0; i < numPhrases; i++) {
+              const isLast = i === numPhrases - 1;
+              const portion = isLast ? remainingCount : Math.ceil(count / (numPhrases + 1));
+              if (portion > 0) {
+                parsedMentions.push({ keyword: phrases[i], count: portion, sentiment, category: normalizedCat });
+              }
+              remainingCount -= portion;
             }
-          }
-          
-          if (neg > 0) {
-            const phrases = catData.negative;
-            const cnt1 = Math.ceil(neg / 2);
-            const cnt2 = neg - cnt1;
-            parsedMentions.push({ keyword: phrases[0], count: cnt1, sentiment: "negative", category: normalizedCat });
-            if (phrases[1] && cnt2 > 0) {
-              parsedMentions.push({ keyword: phrases[1], count: cnt2, sentiment: "negative", category: normalizedCat });
-            }
-          }
+          };
 
-          if (neu > 0) {
-            const phrases = catData.neutral;
-            parsedMentions.push({ keyword: phrases[0], count: neu, sentiment: "neutral", category: normalizedCat });
-          }
+          distributeCount(pos, catData.positive, "positive");
+          distributeCount(neg, catData.negative, "negative");
+          distributeCount(neu, catData.neutral, "neutral");
         } else {
           let sentiment = "neutral";
           if (pos > neg && pos > neu) sentiment = "positive";
@@ -1140,7 +1167,7 @@ export default function SentimentPage() {
                     {groupedMentions.map((group, gIdx) => (
                       <div 
                         key={group.name} 
-                        className="flex flex-col p-6 rounded-2xl bg-gradient-to-br from-slate-50/70 to-slate-100/50 dark:from-slate-900/60 dark:to-slate-950/80 border border-slate-200/60 dark:border-white/[0.05] shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.37)] backdrop-blur-xl hover:border-slate-300 dark:hover:border-white/[0.12] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:hover:shadow-indigo-500/[0.02] transition-all duration-500 relative overflow-hidden group"
+                        className="flex flex-col p-6 rounded-2xl bg-white/[0.4] dark:bg-black/[0.2] border border-slate-200/60 dark:border-white/[0.05] shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.2)] backdrop-blur-xl hover:border-slate-300 dark:hover:border-white/[0.1] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] transition-all duration-500 relative overflow-hidden group"
                       >
                         {/* Ambient styling backdrop */}
                         <div className={`absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br ${getCategoryGlow(group.name)} to-transparent rounded-full blur-3xl pointer-events-none group-hover:scale-125 transition-transform duration-1000`} />
