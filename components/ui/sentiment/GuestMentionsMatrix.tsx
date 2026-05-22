@@ -9,7 +9,6 @@ export const GuestMentionsMatrix = ({ groupedMentions, locale }: { groupedMentio
 
   return (
     <div className="mb-10 pb-8 border-b border-[var(--glass-border)] relative">
-                <div className="mb-10 pb-8 border-b border-[var(--glass-border)] relative">
                   <div className="flex flex-col mb-6">
                     <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-[0.2em] flex items-center gap-2">
                       <MessageSquare className="w-3 h-3 text-[var(--soft-gold)]" />
@@ -75,7 +74,7 @@ export const GuestMentionsMatrix = ({ groupedMentions, locale }: { groupedMentio
                                   <span className={`ml-0.5 px-1.5 py-0.5 rounded text-[9px] font-black tracking-wider transition-colors duration-300 ${countBadgeStyle}`}>
                                     {mention.count}
                                   </span>
-                      </div>
+                                )}
                               </motion.div>
                             );
                           })}
