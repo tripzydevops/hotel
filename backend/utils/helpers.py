@@ -1,8 +1,10 @@
 import json
 import os
 import time
-import urllib.request
+import asyncio
 from datetime import date
+
+import httpx
 from typing import Optional
 
 # EXPLANATION: uuid4 is used to generate the required primary key for query_logs
@@ -65,8 +67,10 @@ _EXCHANGE_RATE_CACHE, _LAST_FETCH_TIME = _load_cache_from_disk()
 _CACHE_TTL_SECONDS = 14400  # 4 hours cache lifetime
 
 
-def _update_exchange_rates_live() -> None:
-    """Fetch live exchange rates from public API and update cache, falling back gracefully on failure."""
+async def _update_exchange_rates_live() -> None:
+    """Fetch live exchange rates from public API using non-blocking httpx.
+    Falls back gracefully on failure, preserving cached rates.
+    """
     global _LAST_FETCH_TIME, _EXCHANGE_RATE_CACHE
     now = time.time()
 
@@ -75,12 +79,12 @@ def _update_exchange_rates_live() -> None:
         return
 
     try:
-        req = urllib.request.Request(
-            "https://open.er-api.com/v6/latest/USD",
-            headers={"User-Agent": "HotelPlus-Exchange-Rate-Fetcher/1.0"}
-        )
-        with urllib.request.urlopen(req, timeout=3) as response:
-            data = json.loads(response.read().decode("utf-8"))
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            response = await client.get(
+                "https://open.er-api.com/v6/latest/USD",
+                headers={"User-Agent": "HotelPlus-Exchange-Rate-Fetcher/1.0"},
+            )
+            data = response.json()
 
             if data.get("result") == "success" and "rates" in data:
                 rates = data["rates"]
@@ -100,10 +104,23 @@ def _update_exchange_rates_live() -> None:
                 _LAST_FETCH_TIME = now
                 _save_cache_to_disk(new_cache)
     except Exception as e:
-        # Gracefully handle network/API failures by printing a warning and continuing with cached rates
+        # Gracefully handle network/API failures — continue with cached/static fallbacks
         print(f"[CURRENCY API WARNING] Failed to fetch live exchange rates: {e}. Using cached/static fallbacks.")
-        # Delay the next retry by 5 minutes to prevent spamming
+        # Delay the next retry by 5 minutes to avoid spamming the external API
         _LAST_FETCH_TIME = now - _CACHE_TTL_SECONDS + 300
+
+
+def _update_exchange_rates_sync() -> None:
+    """Synchronous shim: runs the async rate fetcher without blocking the event loop.
+    Safe to call from synchronous code that may or may not be running inside an event loop.
+    """
+    try:
+        loop = asyncio.get_running_loop()
+        # We're inside an async context — schedule as a fire-and-forget task
+        loop.create_task(_update_exchange_rates_live())
+    except RuntimeError:
+        # No running event loop (e.g., called from a test or startup script)
+        asyncio.run(_update_exchange_rates_live())
 
 
 def convert_currency(amount: float, from_currency: str, to_currency: str) -> float:
@@ -114,8 +131,8 @@ def convert_currency(amount: float, from_currency: str, to_currency: str) -> flo
     if from_currency == to_currency:
         return amount
 
-    # Update exchange rates if expired
-    _update_exchange_rates_live()
+    # Update exchange rates if expired (non-blocking async path)
+    _update_exchange_rates_sync()
 
     # Convert to USD first (using cache with static fallback)
     usd_rate = _EXCHANGE_RATE_CACHE.get(

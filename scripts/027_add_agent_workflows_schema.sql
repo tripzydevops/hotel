@@ -1,0 +1,8 @@
+-- DEPRECATED: This migration has been merged into 027_add_agent_and_signal_schema.sql
+-- which now contains the complete agent_workflows schema with both hotel_id and triggered_by columns.
+-- 
+-- This file is kept for migration history but should NOT be executed independently.
+-- Original content created the agent_workflows table with hotel_id but without triggered_by,
+-- which conflicted with the other 027 migration that had triggered_by but no hotel_id.
+--
+-- Resolution: Both columns merged into 027_add_agent_and_signal_schema.sql (May 2026)

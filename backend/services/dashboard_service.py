@@ -76,6 +76,19 @@ def _fetch_directory(db: Client, serp_ids: list):
     return db.table("hotel_directory").select("*").in_("serp_api_id", serp_ids).execute()
 
 
+def extract_vendor_name(offer: Dict[str, Any]) -> str:
+    """
+    Extracts the vendor/OTA name from an offer dict, trying multiple field names in priority order.
+    Centralizes the repeated vendor resolution chain across all offer-processing loops.
+    """
+    for key in ("vendor", "source", "site", "ota_name", "name"):
+        val = offer.get(key)
+        if val and isinstance(val, str) and val.strip():
+            return val.strip()
+    return "Unknown"
+
+
+
 def is_standard_room_type(room_name: str) -> bool:
     """
     Classifies if a room is standard based on keyword checks.
@@ -640,8 +653,7 @@ async def get_dashboard_logic(
                             if val and isinstance(val, list):
                                 for of in val:
                                     if not isinstance(of, dict): continue
-                                    v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
-                                    v_norm = normalize_vendor_name(v_raw)
+                                    v_norm = normalize_vendor_name(extract_vendor_name(of))
                                     price = _extract_price(of.get("price"))
                                     
                                     # Deduplicate by vendor + price key within this log
@@ -652,8 +664,7 @@ async def get_dashboard_logic(
                         
                         # Add offers from this log if the vendor hasn't been seen in newer logs
                         for of in log_offers:
-                            v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
-                            v_norm = normalize_vendor_name(v_raw)
+                            v_norm = normalize_vendor_name(extract_vendor_name(of))
                             price = _extract_price(of.get("price"))
                             offer_key = f"{v_norm}_{price}".lower().strip()
                             
@@ -663,9 +674,7 @@ async def get_dashboard_logic(
                         
                         # Mark all vendors from this log as seen globally, so older logs don't override them
                         for of in log_offers:
-                            v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
-                            v_norm = normalize_vendor_name(v_raw)
-                            seen_offers_global.add(v_norm)
+                            seen_offers_global.add(normalize_vendor_name(extract_vendor_name(of)))
 
                     # AGENT_FIX: OTA Fallback from hotels table
                     for key in ["market_offers", "parity_offers", "offers"]:
@@ -673,8 +682,7 @@ async def get_dashboard_logic(
                         if val and isinstance(val, list):
                             for of in val:
                                 if not isinstance(of, dict): continue
-                                v_raw = of.get("vendor") or of.get("ota_name") or of.get("name") or "Unknown"
-                                v_norm = normalize_vendor_name(v_raw)
+                                v_norm = normalize_vendor_name(extract_vendor_name(of))
                                 price = _extract_price(of.get("price"))
                                 offer_key = f"{v_norm}_{price}".lower().strip()
                                 
@@ -705,8 +713,7 @@ async def get_dashboard_logic(
                             continue
                         
                         # Vendor Extraction Logic: Prioritize 'vendor' -> 'ota_name' -> 'name'
-                        v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
-                        v_name = normalize_vendor_name(v_raw)
+                        v_name = normalize_vendor_name(extract_vendor_name(of))
                         
                         of_cur = of.get("currency") or active_currency
                         p_raw = of.get("price")
@@ -797,8 +804,7 @@ async def get_dashboard_logic(
                     if not is_standard_room_type(room_name):
                         continue
                         
-                    v_raw = of.get("vendor") or of.get("source") or of.get("site") or of.get("ota_name") or of.get("name") or "Unknown"
-                    v_name = normalize_vendor_name(v_raw)
+                    v_name = normalize_vendor_name(extract_vendor_name(of))
                     
                     of_cur = of.get("currency") or h_cur
                     p_raw = of.get("price")

@@ -1,12 +1,10 @@
 import json
-import time
 
 # from backend.agents.analyst_agent import AnalystAgent  # Lazy loaded below
 from datetime import date
 from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
 
-from cachetools import TTLCache
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -24,27 +22,6 @@ from supabase import Client
 # Removed "/api" prefix from APIRouter to avoid doubled paths
 # (e.g., /api/api/analysis/...) when registered in main.py.
 router = APIRouter(tags=["analysis"])
-
-# AGENT_FIX: Proper TTL Cache replacing unbounded global dict hack.
-_brief_cache: TTLCache = TTLCache(maxsize=100, ttl=300)
-
-
-async def get_verified_hotel_id(
-    hotel_id: str,
-    db: Client = Depends(get_supabase_rls),
-    current_user=Depends(get_current_active_user),
-) -> str:
-    """
-    Reusable FastAPI dependency that verifies the current user owns hotel_id.
-    Raises 403 if not owner, 503 if DB unavailable.
-    """
-    if not db:
-        raise HTTPException(status_code=503, detail="Database service unavailable")
-    from backend.services.analysis_service import check_hotel_ownership
-    is_owner = await check_hotel_ownership(db, str(current_user.id), hotel_id)
-    if not is_owner:
-        raise HTTPException(status_code=403, detail="Unauthorized: You do not own this hotel")
-    return hotel_id
 
 
 @router.get("/v1/discovery/{hotel_id}")
@@ -233,6 +210,7 @@ async def debug_analysis_data(
 ):
     """
     Diagnostic endpoint for Reports page debugging.
+    Restricted to admin users only.
     """
     from datetime import datetime, timedelta
 
@@ -240,6 +218,20 @@ async def debug_analysis_data(
         user_id = current_user.id
         if not db:
             raise HTTPException(503, "Database unavailable")
+
+        # SECURITY: Restrict debug endpoint to admin role
+        user_role_res = (
+            db.table("user_hotels")
+            .select("role")
+            .eq("user_id", str(user_id))
+            .limit(1)
+            .execute()
+        )
+        user_role = (user_role_res.data[0].get("role", "") if user_role_res.data else "").lower()
+        if user_role not in ("admin", "market admin", "superadmin"):
+            raise HTTPException(
+                status_code=403, detail="Debug endpoint is restricted to admin users"
+            )
 
         diag: Dict[str, Any] = {
             "user_id": str(user_id),
@@ -465,12 +457,20 @@ async def get_market_intelligence_brief(
     # AGENT_FIX: Memory Cache for Serverless Context
     # Since Vercel instances are ephemeral, we use a simple dict.
     # It protects against immediate double-refreshes.
-    cache_key = f"{current_user.id}_{hotel_id}"
+    global _brief_cache
+    if "_brief_cache" not in globals():
+        globals()["_brief_cache"] = {}
 
-    # Serve from TTLCache if still valid (cachetools handles expiry automatically)
-    if cache_key in _brief_cache:
-        get_logger(__name__).info(f"Serving cached intelligence brief for {hotel_id}")
-        return _brief_cache[cache_key]
+    cache_key = f"{current_user.id}_{hotel_id}"
+    now = time.time()
+
+    if cache_key in globals()["_brief_cache"]:
+        cached_data, expiry = globals()["_brief_cache"][cache_key]
+        if now < expiry:
+            get_logger(__name__).info(
+                f"Serving cached intelligence brief for {hotel_id}"
+            )
+            return cached_data
 
     try:
         # 1. Fetch the raw market intelligence data
@@ -484,7 +484,7 @@ async def get_market_intelligence_brief(
         brief = await intelligence_service.generate_market_brief(analysis_data)
 
         # 3. Store in cache (300 seconds)
-        _brief_cache[cache_key] = brief
+        globals()["_brief_cache"][cache_key] = (brief, now + 300)
 
         return brief
     except Exception as e:
