@@ -82,7 +82,6 @@ export const GuestMentionsMatrix = ({ groupedMentions, locale }: { groupedMentio
                       </div>
                     ))}
                   </div>
-                </div>
     </div>
   );
 };
