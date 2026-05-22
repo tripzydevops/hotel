@@ -196,3 +196,17 @@ export function normalizeVendor(vendor: string | null | undefined): string {
     .join(' ');
 }
 
+/** Maps raw DataForSEO source/vendor strings to recognizable OTA brand names */
+export function resolveOtaName(raw: string | undefined | null): { name: string; type: string } {
+  const name = normalizeVendor(raw);
+  
+  // Categorization logic
+  let type = "Market Partner";
+  const metaSearch = ["Google Hotels", "Trivago", "Tripadvisor", "Kayak"];
+  const ota = ["Booking.com", "Expedia", "Agoda", "Hotels.com", "Trip.com", "Priceline", "OtelFiyat", "TatilSepeti", "Jolly", "Otelz"];
+
+  if (metaSearch.includes(name)) type = "Meta-Search";
+  else if (ota.includes(name)) type = "OTA";
+
+  return { name, type };
+}
