@@ -128,6 +128,10 @@ export default function HotelDetailsModal({
             <button
               type="button"
               key={tab.id}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-controls={`panel-${tab.id}`}
+              tabIndex={activeTab === tab.id ? 0 : -1}
               onClick={(e) => {
                 e.stopPropagation();
                 setActiveTab(tab.id);

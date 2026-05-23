@@ -105,6 +105,15 @@ export default function HotelTile(props: HotelTileProps) {
 
   return (
     <motion.div
+      tabIndex={0}
+      role="button"
+      aria-label={`View details for ${name}`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onViewDetails?.(props as any);
+        }
+      }}
       whileHover={{ y: -5 }}
       layout
       className={`glass-card group cursor-pointer flex flex-col h-full overflow-hidden border border-[var(--glass-border)] ${variant === "competitor" ? "border-l-4 border-l-[var(--soft-gold)]" : "border-l-4 border-l-emerald-500"}`}
