@@ -42,8 +42,15 @@ export default function HotelDetailsModal({
   >("overview");
   const [showStandardInRooms, setShowStandardInRooms] = useState(true);
 
-  if (!hotel) return null;
+  const {
+    other_sites_reviews,
+    sentiment_breakdown,
+    guest_mentions,
+    rating_distribution,
+    normalizedImages
+  } = useHotelDetailsData(hotel);
 
+  if (!hotel) return null;
   const tabs: {
     id: "overview" | "amenities" | "offers" | "gallery" | "rooms" | "reviews";
     label: string;
@@ -56,14 +63,6 @@ export default function HotelDetailsModal({
     { id: "rooms", label: t("hotelDetails.rooms"), icon: Building2 },
     { id: "reviews", label: "Reviews", icon: Star },
   ];
-
-  const {
-    other_sites_reviews,
-    sentiment_breakdown,
-    guest_mentions,
-    rating_distribution,
-    normalizedImages
-  } = useHotelDetailsData(hotel);
 
   return (
     <div
