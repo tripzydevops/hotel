@@ -14,6 +14,11 @@ export interface GuestMention {
   count: number;
   sentiment: "positive" | "negative" | "neutral" | string;
   text?: string;
+  title?: string;
+  total_count?: number;
+  positive_count?: number;
+  negative_count?: number;
+  category?: string;
 }
 
 export type HotelImage = { thumbnail?: string; original?: string } | string;

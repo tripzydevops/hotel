@@ -1,6 +1,6 @@
-# Tripzy.travel Backend Architecture (Speed-Optimized)
+# HotelPlus Backend Architecture (Speed-Optimized)
 
-The Tripzy backend is built with FastAPI and follows a 3-Layer Modular Architecture designed for scalability, AI navigability, and performance.
+The HotelPlus backend is built with FastAPI and follows a 3-Layer Modular Architecture designed for scalability, AI navigability, and performance.
 
 ## 🏗️ Core Structure
 
@@ -27,8 +27,9 @@ graph TD
     D --> D1[ScraperAgent]
     D --> D2[AnalystAgent - pgvector]
     D --> D3[NotifierAgent]
+    D --> D4[PersonaAgent - Cold Start Solver]
 
-    C --> E[Data Layer - Supabase]
+    C --> E[Data Layer - InsForge]
     E --> E1[PostgreSQL]
     E --> E2[pgvector Semantic Search]
 ```
@@ -62,6 +63,7 @@ Specialized LLM-powered agents:
 - **ScraperAgent:** Multi-provider data extraction.
 - **AnalystAgent:** Vector-based reasoning and parity detection.
 - **NotifierAgent:** Intelligent alerting based on user preferences.
+- **PersonaAgent (Cold Start Solver):** Continuously tails the `user_signals` InsForge table (via `signal_processor.py`) to infer psychological travel personas from UI interactions, embedding them into `user_profiles` for vector search.
 - **Collaborative Directory Engine:** (Part of `hotel_service.py`) Automatically indexes manually added hotels into the global hotel directory, creating a community-driven marketplace.
 
 ## 🗄️ Unified Data Strategy
@@ -75,7 +77,7 @@ The system bridges official and community data through a dual-upsert mechanism:
 The system maintains persistent health and data freshness through a **Lean Serverless Infrastructure**:
 
 - **FastAPI BackgroundTasks**: All manual and asynchronous monitoring logic runs in-process. This eliminates the need for a separate Celery/Redis cluster and stays within free-tier infrastructure limits.
-- **Supabase-Backed State Machine**: The `scan_sessions` table acts as the system-wide queue. Analysts and Scrapers update their "Reasoning Trace" directly in the database for real-time frontend auditing.
+- **InsForge-Backed State Machine**: The `scan_sessions` table acts as the system-wide queue. Analysts and Scrapers update their "Reasoning Trace" directly in the database for real-time frontend auditing.
 - **Self-Healing Scheduler**: A multi-layered trigger (Cron + GitHub Actions) ensures scans are dispatched on time. The system anchors next scan times to the database to prevent drift and executes scans directly.
 
 ## ⚡ Speed & AI Optimization
@@ -107,7 +109,7 @@ graph TD
     end
 
     subgraph Directory["Core DB & Directory Maintenance Communities"]
-        DS["Hotel Directory & Normalization<br>(Geospatial Enrichment, Data Sanitization, Retention, Supabase Migration)"]
+        DS["Hotel Directory & Normalization<br>(Geospatial Enrichment, Data Sanitization, Retention, InsForge Migration)"]
     end
 
     UI <--> DC

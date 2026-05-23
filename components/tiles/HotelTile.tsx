@@ -22,6 +22,7 @@ import FallbackImage from "@/components/ui/FallbackImage";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatCurrency, parsePrice, normalizeVendor } from "@/lib/utils";
 import { HotelWithPrice, PricePoint, HotelImage } from "@/types";
+import { useI18n } from "@/lib/i18n";
 import { ReactNode, useState } from "react";
 import { getStandardizedRoomCategory } from "@/utils/roomNormalization";
 
@@ -68,6 +69,8 @@ export interface HotelTileProps {
 }
 
 export default function HotelTile(props: HotelTileProps) {
+  const { t } = useI18n();
+
   const [showAllOffers, setShowAllOffers] = useState(false);
   
   // Atomic derivation of best price and vendor (Standard Rooms only)
@@ -143,17 +146,13 @@ export default function HotelTile(props: HotelTileProps) {
            {props.headerBadges}
            {isScanning && (
              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-optimal-green/20 backdrop-blur-md border border-optimal-green/30 text-[9px] font-black text-optimal-green uppercase animate-pulse">
-               <RefreshCw className="w-2.5 h-2.5 animate-spin" />
-               Scanning
-             </span>
+               <RefreshCw className="w-2.5 h-2.5 animate-spin" />{t("common.scanning")}</span>
            )}
         </div>
 
         {props.isUndercut && (
           <div className="absolute top-3 right-3 px-2 py-1 bg-optimal-green text-[var(--overlay-text)] text-[9px] font-black rounded-sm uppercase tracking-tighter shadow-lg flex items-center gap-1">
-            <TrendingDown className="w-3 h-3" />
-            Optimal Price
-          </div>
+            <TrendingDown className="w-3 h-3" />{t("hotelDetails.optimalPrice")}</div>
         )}
 
         {props.rating && (
@@ -181,14 +180,12 @@ export default function HotelTile(props: HotelTileProps) {
             </h3>
             <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-widest flex items-center gap-1 truncate">
               <MapPin className="w-3 h-3 text-[var(--soft-gold)]/50 flex-shrink-0" />
-              {props.location || "Location Unknown"}
+              {props.location || t("hotelDetails.locationUnknown")}
             </p>
           </div>
           
           <div className="text-right flex-shrink-0 ml-4">
-            <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 opacity-50">
-              Lead Rate
-            </div>
+            <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 opacity-50">{t("hotelDetails.leadRate")}</div>
             <div className="text-2xl font-black text-[var(--soft-gold)] tracking-tighter italic leading-none">
               {displayPriceValue > 0 ? formatCurrency(displayPriceValue, currency) : "---"}
             </div>
@@ -207,11 +204,11 @@ export default function HotelTile(props: HotelTileProps) {
             >
               <div className="flex items-center gap-1.5 text-[9px] text-[var(--text-muted)] uppercase font-black tracking-[0.2em] opacity-60">
                 <Globe className="w-2.5 h-2.5" />
-                Market Presence ({allOffers.length})
+                t("hotelDetails.marketPresence") + " (\"{allOffers.length})
               </div>
               {allOffers.length > 1 && (
                 <div className="text-[9px] font-black text-[var(--soft-gold)] flex items-center gap-1 uppercase tracking-widest">
-                  {showAllOffers ? "Collapse" : "Compare"}
+                  {showAllOffers ? t("common.collapse") : t("common.compare")}
                   {showAllOffers ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                 </div>
               )}
@@ -269,19 +266,15 @@ export default function HotelTile(props: HotelTileProps) {
         <div className="grid grid-cols-2 gap-3 mb-4 pt-4 border-t border-[var(--glass-border)]" onClick={() => onViewDetails?.(props as any)}>
           <div className="p-2 rounded bg-[var(--deep-ocean-accent)]/30 border border-[var(--glass-border)]">
             <div className="flex items-center gap-1.5 text-[9px] text-[var(--text-muted)] uppercase font-black tracking-widest mb-1.5 opacity-60">
-              <RefreshCw className="w-2.5 h-2.5" />
-              Recency
-            </div>
+              <RefreshCw className="w-2.5 h-2.5" />{t("hotelDetails.recency")}</div>
             <div className="text-[10px] font-bold text-[var(--text-secondary)] uppercase">
-              {props.lastUpdated || "Pending Sync"}
+              {props.lastUpdated || t("hotelDetails.pendingSync")}
             </div>
           </div>
 
           <div className="p-2 rounded bg-[var(--deep-ocean-accent)]/30 border border-[var(--glass-border)]">
             <div className="flex items-center gap-1.5 text-[9px] text-[var(--text-muted)] uppercase font-black tracking-widest mb-1.5 opacity-60">
-              <TrendingUp className="w-2.5 h-2.5" />
-              Shift
-            </div>
+              <TrendingUp className="w-2.5 h-2.5" />{t("hotelDetails.shift")}</div>
             <div className={`text-[10px] font-bold flex items-center gap-1 ${
               changePercent > 0 ? "text-emerald-500" : changePercent < 0 ? "text-rose-500" : "text-[var(--text-muted)]"
             }`}>
@@ -299,9 +292,7 @@ export default function HotelTile(props: HotelTileProps) {
               onViewDetails?.(props as any);
             }}
             className="flex-1 py-2.5 rounded bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 text-[var(--soft-gold)] text-[10px] uppercase font-black tracking-[0.2em] hover:bg-[var(--soft-gold)] transition-all hover:text-[var(--deep-ocean)] flex items-center justify-center gap-2 shadow-sm"
-          >
-            Tactical Intel
-            <ExternalLink className="w-3 h-3" />
+          >{t("hotelDetails.tacticalIntel")}<ExternalLink className="w-3 h-3" />
           </button>
           
           <div className="flex items-center gap-1.5">
@@ -312,7 +303,7 @@ export default function HotelTile(props: HotelTileProps) {
                   onSetTarget(id);
                 }}
                 className="p-2.5 rounded bg-[var(--deep-ocean-accent)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--soft-gold)] hover:border-[var(--soft-gold)] transition-all"
-                title="Set as My Hotel"
+                title={t("hotelDetails.setAsMyHotel")}
               >
                 <Building2 className="w-3.5 h-3.5" />
               </button>
@@ -324,7 +315,7 @@ export default function HotelTile(props: HotelTileProps) {
                 onEdit?.(id, props as any);
               }}
               className="p-2.5 rounded bg-[var(--deep-ocean-accent)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--soft-gold)] transition-all"
-              title="Edit Intel"
+              title={t("hotelDetails.editIntel")}
             >
               <Edit2 className="w-3.5 h-3.5" />
             </button>
@@ -335,7 +326,7 @@ export default function HotelTile(props: HotelTileProps) {
                 onDelete?.(id);
               }}
               className="p-2.5 rounded bg-[var(--deep-ocean-accent)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-alert-red hover:border-alert-red/30 transition-all"
-              title="Purge Intel"
+              title={t("hotelDetails.purgeIntel")}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>

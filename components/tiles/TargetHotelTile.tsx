@@ -1,3 +1,4 @@
+import { HotelWithPrice, GuestMention } from "@/types";
 "use client";
 
 import {
@@ -35,7 +36,7 @@ interface TargetHotelTileProps {
   checkOut?: string;
   adults?: number;
   onEdit?: (id: string, hotel: any) => void;
-  onViewDetails?: (hotel: any) => void;
+  onViewDetails?: (hotel: HotelWithPrice) => void;
   isEnterprise?: boolean;
   amenities?: string[];
   images?: HotelImage[];

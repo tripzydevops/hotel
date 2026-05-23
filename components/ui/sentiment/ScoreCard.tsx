@@ -1,4 +1,5 @@
 "use client";
+import { HotelWithPrice, GuestMention } from "@/types";
 
 import { motion } from "framer-motion";
 import { Star, TrendingUp, TrendingDown } from "lucide-react";
@@ -28,7 +29,7 @@ export const ScoreCard = ({
   currency = "USD",
   index = 0,
 }: {
-  hotel: any;
+  hotel: HotelWithPrice;
   rank: string;
   isTarget?: boolean;
   currency?: string;
@@ -159,20 +160,20 @@ export const ScoreCard = ({
               {(hotel.review_count || 0).toLocaleString()} reviews
             </span>
           </div>
-          {hotel.price_info?.price_change_percent !== undefined && (
+          {hotel.price_info?.change_percent !== undefined && (
             <div
               className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                hotel.price_info.price_change_percent > 0
+                hotel.price_info.change_percent > 0
                   ? "bg-emerald-500/10 text-emerald-400"
                   : "bg-red-500/10 text-red-400"
               }`}
             >
-              {hotel.price_info.price_change_percent > 0 ? (
+              {hotel.price_info.change_percent > 0 ? (
                 <TrendingUp className="w-3 h-3" />
               ) : (
                 <TrendingDown className="w-3 h-3" />
               )}
-              {Math.abs(hotel.price_info.price_change_percent)}%
+              {Math.abs(hotel.price_info.change_percent)}%
             </div>
           )}
         </div>

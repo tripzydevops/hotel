@@ -1,6 +1,6 @@
 "use client";
 
-import { HotelWithPrice } from "@/types";
+import { HotelWithPrice, GuestMention } from "@/types";
 import { useState } from "react";
 import {
   Building2,

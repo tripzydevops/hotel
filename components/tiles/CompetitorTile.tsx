@@ -1,3 +1,4 @@
+import { HotelWithPrice, GuestMention } from "@/types";
 "use client";
 
 import {
@@ -41,7 +42,7 @@ interface CompetitorTileProps {
   adults?: number;
   onEdit?: (id: string, hotel: any) => void;
 
-  onViewDetails?: (hotel: any) => void;
+  onViewDetails?: (hotel: HotelWithPrice) => void;
   onSetTarget?: (id: string) => void;
   isEnterprise?: boolean;
   amenities?: string[];

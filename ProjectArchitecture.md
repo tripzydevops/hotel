@@ -3,6 +3,13 @@
 > [!IMPORTANT]
 > **PRIMARY SOURCE OF TRUTH**: This document is the authoritative record of the HotelPlus platform. Every agent, service, and database table MUST be documented here. Reference this file FIRST when starting any task.
 
+## 🕒 Recent Updates (May 23, 2026)
+- ✅ **Autonomous Agent Recommendation Engine (Cold Start Solver)**:
+    - Built `persona_agent.py` (using LangGraph/Gemini) to infer user travel personas from UI interaction patterns (e.g., clicking on specific amenities).
+    - Added `signal_processor.py` background worker to aggregate row UI signals and orchestrate semantic vector embeddings.
+    - Updated InsForge `hotels` schema with `vector(1536)` columns and HNSW indexes via `042_add_hotel_embeddings.sql`.
+    - Automated API docs via Pydantic (`models.py`) and implemented comprehensive `locust` and `pytest` testing for enterprise readiness.
+
 ## 🕒 Recent Updates (May 20, 2026)
 - ✅ **Dashboard Aggregation Cache & Historical Rollup Integration (Rank 1 Optimization)**:
     - Upgraded `dashboard_service.py` price trend loader to query a hybrid pipeline: `_fetch_trend_live()` retrieves last 7 days of raw `price_logs` entries, while `_fetch_trend_historical()` fetches older rollups from `price_history_daily`.
@@ -170,7 +177,9 @@ hotel/
 │   │   └── webhook.py            # POST /api/webhook/dataforseo
 │   ├── agents/                   # Specialized LLM agents
 │   │   ├── scraping_agent.py     # DataForSEO result parsing
-│   │   └── narrative_agent.py    # Synthetic narrative generation
+│   │   ├── narrative_agent.py    # Synthetic narrative generation
+│   │   ├── persona_agent.py      # *** Cold Start Persona Inference (LangGraph) ***
+│   │   └── signal_processor.py   # *** Background UI signal aggregator ***
 │   ├── services/                 # Pure business logic
 │   │   ├── dashboard_service.py  # *** Main dashboard assembly logic ***
 │   │   ├── hotel_service.py      # Hotel CRUD + metadata enrichment
@@ -235,6 +244,28 @@ updated_at          TIMESTAMP
 ```
 
 **Critical note**: `currency` is the DB-authoritative currency. The frontend must use this as fallback when `price_info.currency` is absent.
+
+#### `user_signals` (New: Cold Start Solver)
+Raw UI interactions collected from the Next.js frontend.
+```sql
+id                  UUID PRIMARY KEY
+session_id          TEXT
+user_id             UUID               -- Optional FK to auth.users
+signal_type         TEXT               -- 'view', 'click', 'dwell_time'
+payload             JSONB              -- Interaction metadata
+created_at          TIMESTAMP
+```
+
+#### `user_personas` (New: Cold Start Solver)
+Inferred psychological traveler archetypes and vector embeddings.
+```sql
+user_id             UUID PRIMARY KEY
+primary_archetype   TEXT               -- e.g., 'Wellness Explorer'
+implied_preferences JSONB              -- Array of strings
+lifestyle_embedding VECTOR(1536)       -- pgvector embedding for semantic matching
+reasoning_trace     TEXT               -- LLM explanation of persona
+updated_at          TIMESTAMP
+```
 
 #### `user_hotels`
 Join table linking users to hotels with preferences.

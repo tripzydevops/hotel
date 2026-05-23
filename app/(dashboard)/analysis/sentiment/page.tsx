@@ -1,4 +1,5 @@
 "use client";
+import { HotelWithPrice, GuestMention } from "@/types";
 
 /**
  * =====================================================================
@@ -94,7 +95,7 @@ const AdvisorQuadrant = dynamic(() => import("@/components/analytics/AdvisorQuad
 const ScoreCard = ({
   hotel, rank, isTarget, currency = "USD", index = 0,
 }: {
-  hotel: any; rank: string; isTarget?: boolean; currency?: string; index?: number;
+  hotel: HotelWithPrice; rank: string; isTarget?: boolean; currency?: string; index?: number;
 }) => {
   const { t } = useI18n();
 
@@ -185,17 +186,17 @@ const ScoreCard = ({
             <Star className="w-3 h-3 text-amber-500/70" />
             <span className="font-medium">{(hotel.review_count || 0).toLocaleString()} reviews</span>
           </div>
-          {hotel.price_info?.price_change_percent !== undefined && (
-            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${hotel.price_info.price_change_percent > 0
+          {hotel.price_info?.change_percent !== undefined && (
+            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${hotel.price_info.change_percent > 0
               ? "bg-emerald-500/10 text-emerald-400"
               : "bg-red-500/10 text-red-400"
               }`}>
-              {hotel.price_info.price_change_percent > 0 ? (
+              {hotel.price_info.change_percent > 0 ? (
                 <TrendingUp className="w-3 h-3" />
               ) : (
                 <TrendingDown className="w-3 h-3" />
               )}
-              {Math.abs(hotel.price_info.price_change_percent)}%
+              {Math.abs(hotel.price_info.change_percent)}%
             </div>
           )}
         </div>
@@ -432,7 +433,7 @@ export default function SentimentPage() {
   // 2. Global Hotel List & Leader Logic
   const allHotels = useMemo(() => [
     ...(targetHotel ? [{ ...targetHotel, isTarget: true }] : []),
-    ...competitors.map((c: any) => ({ ...c, isTarget: false })),
+    ...competitors.map((c: HotelWithPrice) => ({ ...c, isTarget: false })),
   ].sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0)), [targetHotel, competitors]);
 
   const leader = useMemo(() => allHotels[0], [allHotels]);
@@ -448,7 +449,7 @@ export default function SentimentPage() {
   useEffect(() => {
     if (targetHotel && !initialized) {
       const compLimit = data?.comparison_limit || 5;
-      const initialIds = [targetHotel.id, ...competitors.map((c: any) => c.id)];
+      const initialIds = [targetHotel.id, ...competitors.map((c: HotelWithPrice) => c.id)];
       setSelectedHotelIds(initialIds.slice(0, compLimit));
       setInitialized(true);
     }
@@ -496,7 +497,7 @@ export default function SentimentPage() {
    * 2. Historical records (trend data)
    * 3. Guest mentions (weighted keyword average)
    */
-  const getCategoryScore = (hotel: any, category: string, history: any[] = []) => {
+  const getCategoryScore = (hotel: HotelWithPrice, category: string, history: any[] = []) => {
     if (!hotel?.sentiment_breakdown) return 0;
     const target = category.toLowerCase();
     const aliases: Record<string, string[]> = {
@@ -540,15 +541,15 @@ export default function SentimentPage() {
       }
 
       // Attempt Level 3: Guest Mentions Scaling
-      if (hotel.guest_mentions?.length > 0) {
-        const relevantMentions = hotel.guest_mentions.filter((m: any) => {
+      if (hotel.guest_mentions && hotel.guest_mentions.length > 0) {
+        const relevantMentions = (hotel.guest_mentions || []).filter((m: GuestMention) => {
           const text = (m.keyword || m.text || "").toLowerCase();
           return aliases[target]?.some(alias => text.includes(alias));
         });
         if (relevantMentions.length > 0) {
           let weightedSum = 0;
           let totalCount = 0;
-          relevantMentions.forEach((m: any) => {
+          relevantMentions.forEach((m: GuestMention) => {
             const count = Number(m.count) || 1;
             totalCount += count;
             const score = m.sentiment === 'positive' ? 5 : m.sentiment === 'negative' ? 1 : 3;
@@ -576,7 +577,7 @@ export default function SentimentPage() {
     if (!targetHotel) return null;
     const myPrice = parsePrice(targetHotel.price_info?.current_price || 0);
     const myRating = Number(targetHotel.rating) || 0;
-    const validCompetitors = competitors.filter((c: any) => c.price_info?.current_price);
+    const validCompetitors = competitors.filter((c: HotelWithPrice) => c.price_info?.current_price);
 
     const avgMarketPrice = validCompetitors.length > 0
       ? validCompetitors.reduce((sum: number, c: any) => sum + parsePrice(c.price_info?.current_price || 0), 0) / validCompetitors.length
@@ -617,9 +618,9 @@ export default function SentimentPage() {
     
     const isTr = locale === 'tr';
 
-    let parsedMentions: any[] = [];
+    let parsedMentions: GuestMention[] = [];
     const hotel = targetHotel as any;
-    let rawMentions: any[] = [];
+    let rawMentions: GuestMention[] = [];
     
     // Attempt deep extraction from multiples locations
     if (Array.isArray(hotel.guest_mentions)) {
@@ -768,7 +769,7 @@ export default function SentimentPage() {
       return name.charAt(0).toUpperCase() + name.slice(1);
     };
 
-    rawMentions.forEach((m: any) => {
+    rawMentions.forEach((m: GuestMention) => {
       const keywordRaw = m.title || m.keyword || m.text || m.raw_keyword || "N/A";
       if (keywordRaw === "N/A") return;
 
@@ -874,7 +875,7 @@ export default function SentimentPage() {
   // 7. Computed Visibility Toggles
   const groupedMentions = useMemo(() => {
     const groups: Record<string, any[]> = {};
-    guestMentions.forEach((m: any) => {
+    guestMentions.forEach((m: GuestMention) => {
       const cat = m.category || "General";
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(m);
@@ -890,7 +891,7 @@ export default function SentimentPage() {
   }, [guestMentions]);
 
   const visibleCompetitors = useMemo(() =>
-    competitors.filter((c: any) => selectedHotelIds.includes(c.id))
+    competitors.filter((c: HotelWithPrice) => selectedHotelIds.includes(c.id))
     , [competitors, selectedHotelIds]);
 
   const isTargetSelected = useMemo(() =>
@@ -957,7 +958,7 @@ export default function SentimentPage() {
                   <span className="text-xs font-medium">{t("sentiment.myHotel")}</span>
                 </button>
               )}
-              {competitors.map((comp: any) => (
+              {competitors.map((comp: HotelWithPrice) => (
                 <button
                   key={comp.id}
                   onClick={() => {
@@ -1018,7 +1019,7 @@ export default function SentimentPage() {
                   index={0}
                 />
               )}
-              {visibleCompetitors.map((comp: any, idx: number) => {
+              {visibleCompetitors.map((comp: HotelWithPrice, idx: number) => {
                 const compRank = getRank(comp.id);
                 return (
                   <ScoreCard
@@ -1190,7 +1191,7 @@ export default function SentimentPage() {
                         </h5>
 
                         <div className="flex flex-wrap gap-2.5">
-                          {group.items.map((mention: any, index: number) => {
+                          {group.items.map((mention: GuestMention, index: number) => {
                             let pillStyle = "";
                             let countBadgeStyle = "";
                             let dotColor = "";
@@ -1348,7 +1349,7 @@ export default function SentimentPage() {
                           if (history.length === 0) return null;
 
                           const points = history
-                            .map((h: any, i: number) => {
+                            .map((h: HotelWithPrice, i: number) => {
                               const val = Number(h.rating) || 3;
                               const x = (i / (history.length - 1)) * 100;
                               const y = 100 - ((val - minScore) / range) * 100;
@@ -1395,11 +1396,11 @@ export default function SentimentPage() {
                       {(function () {
                         const firstHist = Object.values(sentimentHistory)[0] || [];
                         if (firstHist.length < 2) return null;
-                        return [firstHist[0], firstHist[Math.floor(firstHist.length / 2)], firstHist[firstHist.length - 1]].map((h: any, i: number) => {
+                        return [firstHist[0], firstHist[Math.floor(firstHist.length / 2)], firstHist[firstHist.length - 1]].map((h: { date?: string; recorded_at?: string; sentiment_breakdown?: any; breakdown?: any; [key: string]: any }, i: number) => {
                           if (!h) return null;
                           return (
                             <span key={i}>
-                              {new Date(h.date || h.recorded_at).toLocaleDateString(undefined, {
+                              {new Date(h.date || h.recorded_at || Date.now()).toLocaleDateString(undefined, {
                                 month: "short",
                                 day: "numeric",
                               })}
