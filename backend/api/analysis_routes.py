@@ -1,3 +1,5 @@
+
+from backend.models.schemas import HotelWithPrice, MarketAnalysis, SuccessResponse
 import json
 import time
 
@@ -47,7 +49,7 @@ async def get_verified_hotel_id(
     return hotel_id
 
 
-@router.get("/v1/discovery/{hotel_id}")
+@router.get("/v1/discovery/{hotel_id}", response_model=Dict[str, Any])
 async def discover_competitors_v1(
     hotel_id: str,
     limit: int = 5,
@@ -87,8 +89,8 @@ async def discover_competitors_v1(
 # route was POST /api/analysis/market/{user_id}. Both path and method were
 # mismatched, causing all analysis pages to show "N/A" / empty data.
 # We register BOTH to maintain backward compatibility.
-@router.post("/analysis/market")
-@router.get("/analysis")
+@router.post("/analysis/market", response_model=MarketAnalysis)
+@router.get("/analysis", response_model=List[HotelWithPrice])
 async def get_market_intelligence(
     room_type: str = "Standard",
     display_currency: str = "TRY",
@@ -130,7 +132,7 @@ async def get_market_intelligence(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/analysis/discovery/{hotel_id}")
+@router.post("/analysis/discovery/{hotel_id}", response_model=SuccessResponse)
 async def discover_competitors_trigger(
     hotel_id: UUID,
     db: Client = Depends(get_supabase_rls),
@@ -166,7 +168,7 @@ async def discover_competitors_trigger(
         raise HTTPException(500, str(e))
 
 
-@router.get("/analysis/{hotel_id}/sentiment-history")
+@router.get("/analysis/{hotel_id}/sentiment-history", response_model=List[Dict[str, Any]])
 async def get_sentiment_history(
     hotel_id: str,
     days: int = 30,
@@ -226,7 +228,7 @@ async def get_sentiment_history(
         return []
 
 
-@router.get("/analysis/debug")
+@router.get("/analysis/debug", response_model=Dict[str, Any])
 async def debug_analysis_data(
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
@@ -445,7 +447,7 @@ async def stream_market_intelligence(
     return EventSourceResponse(event_generator())
 
 
-@router.get("/v1/analysis/intelligence-brief/{hotel_id}")
+@router.get("/v1/analysis/intelligence-brief/{hotel_id}", response_model=Dict[str, Any])
 async def get_market_intelligence_brief(
     hotel_id: str,
     db: Client = Depends(get_supabase_rls),

@@ -1,4 +1,6 @@
-from typing import List
+
+from backend.models.schemas import SuccessResponse
+from typing import List, Dict, Any, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
@@ -55,7 +57,7 @@ async def get_session_logs(
         return []
 
 
-@router.delete("/logs/{log_id}")
+@router.delete("/logs/{log_id}", response_model=SuccessResponse)
 async def delete_log(
     log_id: UUID,
     db: Client = Depends(get_supabase_rls),

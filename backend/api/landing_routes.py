@@ -1,4 +1,6 @@
-from typing import Any, Dict, List
+
+from backend.models.schemas import SuccessResponse
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -23,7 +25,7 @@ class ConfigUpdate(BaseModel):
     configs: List[Dict[str, Any]]
 
 
-@router.get("/landing/config")
+@router.get("/landing/config", response_model=Dict[str, Any])
 async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supabase)):
     """
     KAIZEN: Ultra-fast landing page config delivery.
@@ -92,7 +94,7 @@ async def get_landing_config(locale: str = "tr", db: Client = Depends(get_supaba
         }
 
 
-@router.get("/admin/landing/config")
+@router.get("/admin/landing/config", response_model=Dict[str, Any])
 async def get_admin_landing_config(
     locale: str = "tr",
     current_user: dict = Depends(get_current_admin_user),
@@ -111,7 +113,7 @@ async def get_admin_landing_config(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/admin/landing/config")
+@router.put("/admin/landing/config", response_model=SuccessResponse)
 async def update_landing_config(
     data: ConfigUpdate,
     current_user: dict = Depends(get_current_admin_user),

@@ -1,4 +1,6 @@
-from typing import Optional
+
+from backend.models.schemas import SuccessResponse
+from typing import Optional, Dict, List, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -22,7 +24,7 @@ class DisputeRequest(BaseModel):
     language: Optional[str] = "tr"
 
 
-@router.post("/generate-dispute")
+@router.post("/generate-dispute", response_model=SuccessResponse)
 async def api_generate_dispute(
     req: DisputeRequest, db: Client = Depends(get_supabase_rls)
 ):

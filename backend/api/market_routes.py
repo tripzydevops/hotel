@@ -1,4 +1,6 @@
-from typing import Optional
+
+from backend.models.schemas import CitiesResponse, SuccessResponse
+from typing import List, Dict, Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -11,7 +13,7 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/market", tags=["Market Intelligence"])
 
 
-@router.post("/scrape/tobb")
+@router.post("/scrape/tobb", response_model=SuccessResponse)
 async def trigger_tobb_scrape(db: Client = Depends(get_supabase_rls)):
     """
     Triggers the TOBB Fair Calendar Scraper.
@@ -27,7 +29,7 @@ async def trigger_tobb_scrape(db: Client = Depends(get_supabase_rls)):
     return result
 
 
-@router.post("/scrape/tga")
+@router.post("/scrape/tga", response_model=SuccessResponse)
 async def trigger_tga_scrape(db: Client = Depends(get_supabase_rls)):
     """
     Triggers the TGA Activity Scraper.
@@ -43,7 +45,7 @@ async def trigger_tga_scrape(db: Client = Depends(get_supabase_rls)):
     return result
 
 
-@router.post("/scrape/all")
+@router.post("/scrape/all", response_model=SuccessResponse)
 async def trigger_full_market_sync(db: Client = Depends(get_supabase_rls)):
     """
     Runs both TOBB and TGA scrapers in sequence.
@@ -60,7 +62,7 @@ async def trigger_full_market_sync(db: Client = Depends(get_supabase_rls)):
     return {"tobb": tobb_res, "tga": tga_res}
 
 
-@router.post("/scrape/clear")
+@router.post("/scrape/clear", response_model=SuccessResponse)
 async def clear_market_events(db: Client = Depends(get_supabase_rls)):
     """
     Clears all market events from the database.
@@ -74,7 +76,7 @@ async def clear_market_events(db: Client = Depends(get_supabase_rls)):
     return {"status": "success", "cleared": len(res.data)}
 
 
-@router.get("/cities")
+@router.get("/cities", response_model=CitiesResponse)
 async def get_market_cities(db: Client = Depends(get_supabase_rls)):
     """
     Returns a unique list of cities present in the market_events table.
@@ -84,7 +86,7 @@ async def get_market_cities(db: Client = Depends(get_supabase_rls)):
     return cities
 
 
-@router.get("/events")
+@router.get("/events", response_model=List[Dict[str, Any]])
 async def get_market_events(
     city: Optional[str] = None, db: Client = Depends(get_supabase_rls)
 ):
@@ -100,7 +102,7 @@ async def get_market_events(
     return res.data
 
 
-@router.get("/forecast")
+@router.get("/forecast", response_model=Dict[str, Any])
 async def get_market_forecast(
     city: str,
     days: int = 30,

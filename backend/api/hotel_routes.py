@@ -1,4 +1,6 @@
-from typing import List, Optional
+
+from backend.models.schemas import Hotel, SuccessResponse
+from typing import Dict, Any, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -21,7 +23,7 @@ from supabase import Client
 router = APIRouter(tags=["hotels"])
 
 
-@router.get("/v1/directory/search")
+@router.get("/v1/directory/search", response_model=List[Dict[str, Any]])
 async def search_hotel_directory(
     q: str,
     user_id: Optional[UUID] = Query(None),
@@ -83,7 +85,7 @@ async def list_locations(db: Client = Depends(get_supabase)):
     return await service.get_locations()
 
 
-@router.get("/hotels/search")
+@router.get("/hotels/search", response_model=List[Hotel])
 async def search_hotel_directory_v2(
     query: str,
     limit: int = 20,
@@ -144,7 +146,7 @@ async def create_hotel(
     return result
 
 
-@router.patch("/hotels/{hotel_id}")
+@router.patch("/hotels/{hotel_id}", response_model=Hotel)
 async def update_hotel(
     hotel_id: UUID,
     hotel: HotelUpdate,
@@ -159,7 +161,7 @@ async def update_hotel(
     )
 
 
-@router.delete("/hotels/{hotel_id}")
+@router.delete("/hotels/{hotel_id}", response_model=SuccessResponse)
 async def delete_hotel(
     hotel_id: UUID,
     db: Client = Depends(get_supabase_rls),

@@ -28,6 +28,32 @@ class TrendDirection(str, Enum):
     STABLE = "stable"
 
 
+# ===== Standard Response Models =====
+
+
+class SuccessResponse(BaseModel):
+    success: bool = True
+    message: str = "Operation completed successfully"
+    data: Optional[Dict[str, Any]] = None
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class CitiesResponse(BaseModel):
+    cities: List[str]
+
+
+class GlobalPulseStatsResponse(BaseModel):
+    total_hotels: int
+    scans_24h: int
+    avg_price_change: float
+    market_sentiment: float
+    active_competitors: int
+
+
 # ===== Hotel Models =====
 
 

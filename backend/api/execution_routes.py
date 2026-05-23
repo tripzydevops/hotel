@@ -1,4 +1,6 @@
-from typing import Any, Dict
+
+from backend.models.schemas import SuccessResponse
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -18,7 +20,7 @@ class ExecutionRequest(BaseModel):
     strategy: Dict[str, Any]
 
 
-@router.post("/bridge")
+@router.post("/bridge", response_model=SuccessResponse)
 async def execute_strategy_bridge(
     req: ExecutionRequest, db: Client = Depends(get_supabase_rls)
 ):

@@ -1,4 +1,6 @@
-from typing import List
+
+from backend.models.schemas import SuccessResponse
+from typing import List, Dict, Any, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -31,7 +33,7 @@ async def list_alerts(
         return []
 
 
-@router.patch("/{alert_id}/read")
+@router.patch("/{alert_id}/read", response_model=SuccessResponse)
 async def mark_alert_read(
     alert_id: UUID,
     db: Client = Depends(get_supabase_rls),
@@ -65,7 +67,7 @@ async def mark_alert_read(
     return {"status": "marked_read"}
 
 
-@router.delete("/user")
+@router.delete("/user", response_model=SuccessResponse)
 async def clear_all_alerts(
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
@@ -85,7 +87,7 @@ async def clear_all_alerts(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.delete("/{alert_id}")
+@router.delete("/{alert_id}", response_model=SuccessResponse)
 async def delete_alert(
     alert_id: UUID,
     db: Client = Depends(get_supabase_rls),

@@ -1,5 +1,7 @@
+
+from backend.models.schemas import ReportsResponse, SuccessResponse
 import io
-from typing import Optional
+from typing import List, Dict, Any, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response
@@ -53,7 +55,7 @@ class BriefingRequest(BaseModel):
     report_type: Optional[str] = "Strategic Market Pulse"
 
 
-@router.post("/briefing")
+@router.post("/briefing", response_model=ReportsResponse)
 async def generate_briefing(
     request: BriefingRequest,
     db: Client = Depends(get_supabase_rls),
@@ -111,7 +113,7 @@ async def generate_briefing(
     return result
 
 
-@router.get("/briefing/{report_id}")
+@router.get("/briefing/{report_id}", response_model=Dict[str, Any])
 async def get_briefing_detail(
     report_id: UUID,
     db: Client = Depends(get_supabase_rls),
@@ -309,7 +311,7 @@ async def export_saved_briefing_pdf(
     )
 
 
-@router.get("")
+@router.get("", response_model=ReportsResponse)
 async def get_reports(
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
@@ -322,7 +324,7 @@ async def get_reports(
     return await get_reports_logic(user_id, db)
 
 
-@router.post("/export")
+@router.post("/export", response_model=SuccessResponse)
 async def export_report(
     format: str = "csv",
     db: Client = Depends(get_supabase_rls),

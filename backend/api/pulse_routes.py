@@ -1,3 +1,5 @@
+
+from backend.models.schemas import GlobalPulseStatsResponse
 """
 [Global Pulse Phase 2] — Pulse Routes
 API endpoints for the Global Pulse network intelligence layer.
@@ -23,7 +25,7 @@ from supabase import Client
 router = APIRouter(prefix="/global-pulse", tags=["pulse"])
 
 
-@router.get("/stats")
+@router.get("/stats", response_model=GlobalPulseStatsResponse)
 async def get_network_stats(db: Client = Depends(get_supabase)):
     """
     Returns live Global Pulse network metrics.

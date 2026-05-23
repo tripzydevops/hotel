@@ -1,3 +1,6 @@
+from typing import Dict, List, Any, Optional
+
+from backend.models.schemas import DashboardResponse
 from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -13,7 +16,7 @@ from supabase import Client
 router = APIRouter(tags=["dashboard"])
 
 
-@router.get("/dashboard")
+@router.get("/dashboard", response_model=DashboardResponse)
 async def get_dashboard(
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
@@ -31,7 +34,7 @@ async def get_dashboard(
     return JSONResponse(content=jsonable_encoder(data))
 
 
-@router.get("/global-pulse")
+@router.get("/global-pulse", response_model=Dict[str, Any])
 async def get_global_pulse(db: Client = Depends(get_supabase)):
     """
     Fetches recent price drops discovered by the Global Pulse network.
