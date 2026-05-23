@@ -185,7 +185,8 @@ hotel/
 │   │   ├── hotel_service.py      # Hotel CRUD + metadata enrichment
 │   │   ├── scan_persistence.py   # *** Writes scan results to DB ***
 │   │   ├── monitor_service.py    # Scan scheduling & recovery
-│   │   ├── analysis_service.py   # Sentiment & parity analysis
+│   │   ├── analysis_core.py      # Core data crunching & LLM sentiment/parity logic
+│   │   ├── analysis_service.py   # Sentiment & parity analysis API Integration Layer
 │   │   ├── alert_service.py      # Parity alert generation
 │   │   └── providers/
 │   │       └── dataforseo_provider.py  # *** DataForSEO API integration ***
@@ -888,6 +889,9 @@ Writes DataForSEO task results to the DB. Two paths: `price_search` → `price_l
 
 ### `monitor_service.py`
 Scan scheduler. Creates `scan_sessions` and `scan_tasks`, submits to DataForSEO, runs a recovery loop for stuck tasks. Also includes `trigger_global_heartbeat()` for the autonomous system heartbeat scan.
+
+### `analysis_core.py`
+Contains all the heavy-lifting logic for the market analysis engine. Includes AI prompt assembly for the LLM-Based Reasoning Engine, mathematical breakdown logic, and raw data crunching.
 
 ### `analysis_service.py`
 Complex market analysis engine combining heuristic logic with Gemini-based reasoning.
