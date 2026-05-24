@@ -7,6 +7,7 @@ import { Alert } from "@/types";
 import { useI18n } from "@/lib/i18n";
 import EmptyState from "@/components/ui/EmptyState";
 import { useToast } from "@/components/ui/ToastContext";
+import { useSignalBuffer } from "@/hooks/useSignalBuffer";
 
 interface AlertsModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export default function AlertsModal({
 }: AlertsModalProps) {
   const { t } = useI18n();
   const { toast } = useToast();
+  const { track } = useSignalBuffer();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -50,6 +52,13 @@ export default function AlertsModal({
       setAlerts((prev) =>
         prev.map((a) => (a.id === alertId ? { ...a, is_read: true } : a)),
       );
+      // Signal: user investigated this specific alert
+      const investigatedAlert = alerts.find((a) => a.id === alertId);
+      track("alert_investigated", {
+        alert_id: alertId,
+        alert_type: investigatedAlert?.alert_type ?? "unknown",
+        hotel_id: investigatedAlert?.hotel_id ?? null,
+      });
       onUpdate();
     } catch (error) {
       console.error("Failed to mark alert as read:", error);
@@ -58,8 +67,6 @@ export default function AlertsModal({
 
   const handleClearAll = async () => {
     // KAİZEN: Optimistic UI
-    // We clear the local state immediately for instant feedback, 
-    // then sync with the database in the background.
     const originalAlerts = [...alerts];
     if (originalAlerts.length === 0) return;
 
@@ -69,11 +76,20 @@ export default function AlertsModal({
       console.log(`[AlertsModal] Clearing all alerts for user ${userId}`);
       await api.clearAlerts();
       toast.info(t("common.saveSuccess") || "Alarmlar temizlendi");
+      // Signal: batch dismiss — one event per unread alert dismissed
+      originalAlerts
+        .filter((a) => !a.is_read)
+        .forEach((a) => {
+          track("alert_dismissed", {
+            alert_id: a.id,
+            alert_type: a.alert_type ?? "unknown",
+            hotel_id: a.hotel_id ?? null,
+          });
+        });
       onUpdate();
     } catch (error) {
       console.error("Failed to clear alerts:", error);
       toast.error(t("common.errorTitle") || "Hata: Alarmlar silinemedi");
-      // Fallback if API fails
       setAlerts(originalAlerts);
     }
   };
