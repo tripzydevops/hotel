@@ -25,6 +25,7 @@ import { HotelWithPrice, PricePoint, HotelImage } from "@/types";
 import { useI18n } from "@/lib/i18n";
 import { ReactNode, useState } from "react";
 import { getStandardizedRoomCategory } from "@/utils/roomNormalization";
+import { useSignalBuffer } from "@/hooks/useSignalBuffer";
 
 export type TrendDirection = "up" | "down" | "stable";
 
@@ -70,6 +71,7 @@ export interface HotelTileProps {
 
 export default function HotelTile(props: HotelTileProps) {
   const { t } = useI18n();
+  const { track } = useSignalBuffer();
 
   const [showAllOffers, setShowAllOffers] = useState(false);
   
@@ -200,7 +202,14 @@ export default function HotelTile(props: HotelTileProps) {
           <div className="mb-4 pt-4 border-t border-[var(--glass-border)]">
             <div 
               className="flex items-center justify-between cursor-pointer group/toggle mb-2"
-              onClick={() => setShowAllOffers(!showAllOffers)}
+              onClick={() => {
+                const next = !showAllOffers;
+                setShowAllOffers(next);
+                if (next) {
+                  // Track competitor expansion for CompsetIntelligenceAgent
+                  track('competitor_expand', { hotel_id: id, hotel_name: name, offers_count: allOffers.length });
+                }
+              }}
             >
               <div className="flex items-center gap-1.5 text-[9px] text-[var(--text-muted)] uppercase font-black tracking-[0.2em] opacity-60">
                 <Globe className="w-2.5 h-2.5" />
@@ -289,6 +298,10 @@ export default function HotelTile(props: HotelTileProps) {
           <button
             onClick={(e) => {
               e.stopPropagation();
+              // Track competitor click for CompsetIntelligenceAgent
+              if (variant === 'competitor') {
+                track('competitor_click', { hotel_id: id, hotel_name: name, current_price: props.currentPrice });
+              }
               onViewDetails?.(props as any);
             }}
             className="flex-1 py-2.5 rounded bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 text-[var(--soft-gold)] text-[10px] uppercase font-black tracking-[0.2em] hover:bg-[var(--soft-gold)] transition-all hover:text-[var(--deep-ocean)] flex items-center justify-center gap-2 shadow-sm"

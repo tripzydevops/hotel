@@ -53,6 +53,8 @@ from backend.api import (
     auth_routes,
     webhook_routes,
     hotel_webhook,
+    signals_routes,
+    intelligence_routes,
 )
 from backend.api.v1.webhooks import dataforseo as dataforseo_v1
 
@@ -293,6 +295,9 @@ app.include_router(recovery_routes.router, prefix="/api")
 app.include_router(webhook_routes.router, prefix="/api")
 app.include_router(dataforseo_v1.router, prefix="/api")
 app.include_router(hotel_webhook.router, prefix="/api")
+app.include_router(signals_routes.router, prefix="/api")
+app.include_router(intelligence_routes.router, prefix="/api")
+
 
 
 @app.on_event("startup")

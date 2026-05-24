@@ -317,6 +317,53 @@ class ApiClient {
     });
   }
 
+  // ===== Feature 7.5 — What-If Scenario Modeling =====
+
+  async simulateWhatIf(hotelId: string, scenario: string): Promise<any> {
+    return this.fetch<any>('/api/v1/analysis/whatif', {
+      method: 'POST',
+      body: JSON.stringify({ hotel_id: hotelId, scenario }),
+    });
+  }
+
+  // ===== Feature 7.2 — Revenue Impact from Sentiment =====
+
+  async getRevenueImpact(hotelId: string): Promise<any> {
+    return this.fetch<any>(`/api/v1/analysis/revenue-impact/${hotelId}`);
+  }
+
+  // ===== Feature 7.3 — Proactive Alert Evaluation =====
+
+  async evaluateProactiveAlerts(hotelId: string): Promise<any> {
+    return this.fetch<any>(`/api/v1/alerts/evaluate/${hotelId}`, { method: 'POST' });
+  }
+
+  // ===== Feature 7.6 — Collaborative Annotations =====
+
+  async getAnnotations(hotelId: string): Promise<any[]> {
+    return this.fetch<any[]>(`/api/v1/hotels/${hotelId}/annotations`);
+  }
+
+  async addAnnotation(hotelId: string, note: string, annotationType = 'general'): Promise<any> {
+    return this.fetch<any>(`/api/v1/hotels/${hotelId}/annotations`, {
+      method: 'POST',
+      body: JSON.stringify({ note, annotation_type: annotationType }),
+    });
+  }
+
+  async deleteAnnotation(hotelId: string, annotationId: string): Promise<any> {
+    return this.fetch<any>(`/api/v1/hotels/${hotelId}/annotations/${annotationId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async generateMeetingPrep(hotelId: string): Promise<any> {
+    return this.fetch<any>(`/api/v1/hotels/${hotelId}/annotations/meeting-prep`, {
+      method: 'POST',
+    });
+  }
+
+
   async getIntelligenceBrief(hotelId: string, locale?: string): Promise<any> {
     const params = locale ? `?locale=${locale}` : "";
     return this.fetch<any>(`/api/v1/analysis/intelligence-brief/${hotelId}${params}`);
