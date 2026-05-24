@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Target, TrendingUp, AlertTriangle, Cpu, Command } from 'lucide-react';
 
 import { useI18n } from '@/lib/i18n';
+import { api } from '@/lib/api';
 
 interface IntelligenceBrief {
   summary: string;
@@ -23,8 +24,7 @@ export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
     const fetchBrief = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/v1/analysis/intelligence-brief/${hotelId}`);
-        const data = await response.json();
+        const data = await api.getIntelligenceBrief(hotelId);
         setBrief(data);
       } catch (error) {
         console.error("Failed to fetch command brief", error);

@@ -295,6 +295,10 @@ class ApiClient {
     return this.fetch<any>(`/api/v1/discovery/${hotelId}`);
   }
 
+  async getIntelligenceBrief(hotelId: string): Promise<any> {
+    return this.fetch<any>(`/api/v1/analysis/intelligence-brief/${hotelId}`);
+  }
+
   async getLocations(): Promise<any[]> {
     return this.fetch<any[]>("/api/locations", { authenticated: false });
   }
