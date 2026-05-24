@@ -8,7 +8,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # SYSTEM STANDARDS: All scans follow a unified 4-hour interval pulse.
 # Individual user-selectable frequencies have been removed.
@@ -92,8 +92,7 @@ class HotelBase(BaseModel):
             return []
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class HotelCreate(HotelBase):
@@ -228,8 +227,7 @@ class SettingsUpdate(BaseModel):
     dynamic_threshold_enabled: Optional[bool] = None
     dynamic_threshold_sensitivity: Optional[float] = None
 
-    class Config:
-        extra = "ignore"
+    model_config = ConfigDict(extra="ignore")
 
 
 class Settings(SettingsBase):
@@ -251,9 +249,7 @@ class UserProfileBase(BaseModel):
     theme_preference: Optional[str] = "light"
     language_preference: Optional[str] = "en"
 
-    class Config:
-        from_attributes = True
-        extra = "allow"
+    model_config = ConfigDict(from_attributes=True, extra="allow")
 
 
 class UserProfileCreate(UserProfileBase):
@@ -286,8 +282,7 @@ class LocationRegistry(BaseModel):
     district: Optional[str] = ""
     occurrence_count: int = 1
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ===== Alert Models =====
@@ -376,9 +371,7 @@ class QueryLog(BaseModel):
     property_token: Optional[str] = None
     api_key_suffix: Optional[str] = None
 
-    class Config:
-        from_attributes = True
-        extra = "allow"
+    model_config = ConfigDict(from_attributes=True, extra="allow")
 
 
 class ScanSession(BaseModel):
@@ -413,8 +406,7 @@ class ScanSession(BaseModel):
             return [v]
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DashboardResponse(BaseModel):
@@ -431,9 +423,7 @@ class DashboardResponse(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc)
     )
 
-    class Config:
-        extra = "allow"
-        from_attributes = True
+    model_config = ConfigDict(extra="allow", from_attributes=True)
 
 
 class ScanOptions(BaseModel):
@@ -626,8 +616,7 @@ class AdminSettings(BaseModel):
     next_global_scan_at: Optional[datetime] = None
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AdminSettingsUpdate(BaseModel):
@@ -671,8 +660,7 @@ class MembershipPlan(PlanBase):
     id: UUID
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProviderHealth(BaseModel):
