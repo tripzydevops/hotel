@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 # Conservative revenue-sensitivity assumptions (industry benchmarks)
 # Each 0.1 star drop in review score = ~0.8-1.2% RevPAR decline (Cornell CREF study)
-REVPAR_SENSITIVITY_PER_POINT = 0.10   # 1.0 review point = 10% RevPAR impact
+# 1.0 review point = 10% RevPAR impact
+REVPAR_SENSITIVITY_PER_POINT = 10.0   # percentage points of RevPAR change per 1.0 review point
 ASSUMED_ROOMS = 60                     # fallback if hotel doesn't have room count
 ASSUMED_OCCUPANCY = 0.68              # 68% average occupancy (Turkey midscale)
 ASSUMED_ADR = 1200.0                  # ₺1200 ADR fallback
@@ -31,7 +32,12 @@ async def calculate_sentiment_revenue_impact(
     """
     try:
         hotel_res = db.table("hotels").select("name").eq("id", hotel_id).single().execute()
-        hotel_name = hotel_res.data.get("name", "Your Hotel") if hotel_res.data else "Your Hotel"
+        # .single() returns a dict in real Supabase; handle list fallback defensively
+        raw = hotel_res.data
+        if isinstance(raw, list):
+            hotel_name = raw[0].get("name", "Your Hotel") if raw else "Your Hotel"
+        else:
+            hotel_name = (raw or {}).get("name", "Your Hotel")
 
         # Fetch sentiment history
         cutoff_recent = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()

@@ -29,7 +29,7 @@ class BatchSignalRequest(BaseModel):
     )
     signals: List[SignalPayload] = Field(
         ...,
-        max_items=100,
+        max_length=100,
         description="An array of user signals to be ingested (max 100 per batch).",
     )
 
