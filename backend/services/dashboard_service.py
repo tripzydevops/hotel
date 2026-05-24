@@ -661,6 +661,34 @@ async def get_dashboard_logic(
         if isinstance(user_settings, list) and len(user_settings) > 0: user_settings = user_settings[0]
         if not isinstance(user_settings, dict): user_settings = {}
 
+        # Self-heal profile and settings if missing, and enrich profile (plan, admin overrides)
+        from uuid import UUID
+        from backend.services.profile_service import get_enriched_profile_logic
+        try:
+            user_uuid = UUID(str(user_id)) if isinstance(user_id, str) else user_id
+            user_profile = await get_enriched_profile_logic(user_uuid, user_profile if user_profile else None, db)
+        except Exception as pe:
+            logger.warning(f"[Dashboard] Profile enrichment/self-healing failed: {pe}")
+
+        if not user_settings:
+            now_str = datetime.now(timezone.utc).isoformat()
+            user_settings = {
+                "user_id": str(user_id),
+                "threshold_percent": 2.0,
+                "notifications_enabled": True,
+                "push_enabled": False,
+                "currency": "USD",
+                "dynamic_threshold_enabled": False,
+                "dynamic_threshold_sensitivity": 1.0,
+                "created_at": now_str,
+                "updated_at": now_str,
+            }
+            try:
+                db.table("settings").upsert(user_settings).execute()
+                logger.info(f"[Dashboard] Self-healed missing settings for {user_id}")
+            except Exception as se:
+                logger.warning(f"[Dashboard] Settings self-healing failed: {se}")
+
         display_currency = user_settings.get("currency", "TRY") if user_settings else "TRY"
         unread_count = getattr(alerts_res, "count", 0) or 0
         recent_searches_raw = getattr(searches_res, "data", []) or []
@@ -692,7 +720,7 @@ async def get_dashboard_logic(
         directory_map = await _build_directory_map(all_hotels, db)
         
         hotel_ids = [str(h.get("id")) for h in all_hotels if isinstance(h, dict) and h.get("id") is not None]
-        hotel_prices_map = await _fetch_and_filter_prices(hotel_ids, all_hotels, db, display_currency)
+        hotel_prices_map = await _fetch_and_filter_prices(hotel_ids, all_hotels, db)
 
         recovered_sentiment_map, recovered_ratings_map = await _recover_missing_reputation_data(all_hotels, directory_map, db)
 
