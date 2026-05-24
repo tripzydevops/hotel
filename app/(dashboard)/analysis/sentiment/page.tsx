@@ -228,9 +228,14 @@ const CategoryBar = ({
       ? t(`sentiment.${categoryKey}`)
       : category;
 
+  // Ensure all numerical values are safe numbers
+  const safeMyScore = typeof myScore === "number" && !isNaN(myScore) ? myScore : 0;
+  const safeLeaderScore = typeof leaderScore === "number" && !isNaN(leaderScore) ? leaderScore : 0;
+  const safeMarketAvg = typeof marketAvg === "number" && !isNaN(marketAvg) ? marketAvg : 0;
+
   // Fixed color for My Hotel (Blue gradient)
   const getBarGradient = () => {
-    if (myScore <= 0) return "from-gray-700/50 to-gray-600/30";
+    if (safeMyScore <= 0) return "from-gray-700/50 to-gray-600/30";
     return "from-blue-500 to-blue-400";
   };
 
@@ -241,7 +246,7 @@ const CategoryBar = ({
         <span className="text-sm font-bold text-slate-800 dark:text-gray-400">{localizedCategory}</span>
         <div className="flex items-baseline gap-1.5">
           <span className="text-xl font-black text-slate-900 dark:text-white">
-            {myScore > 0 ? myScore.toFixed(2) : "N/A"}
+            {safeMyScore > 0 ? safeMyScore.toFixed(2) : "N/A"}
           </span>
           <span className="text-[10px] text-gray-600 font-semibold">/ 5.0</span>
         </div>
@@ -251,14 +256,14 @@ const CategoryBar = ({
       <div className="h-[6px] bg-white/[0.06] rounded-full overflow-hidden relative">
         <motion.div
           initial={{ width: 0 }}
-          animate={{ width: `${(Math.max(myScore, 0.5) / 5) * 100}%` }}
+          animate={{ width: `${(Math.max(safeMyScore, 0.5) / 5) * 100}%` }}
           transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
           className={`h-full rounded-full bg-gradient-to-r ${getBarGradient()} relative group`}
         >
           {/* Tooltip on hover */}
-          {myScore > 0 && (
+          {safeMyScore > 0 && (
             <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-900/95 backdrop-blur-sm text-slate-900 dark:text-white text-xs px-2.5 py-1.5 rounded-lg whitespace-nowrap z-10 border border-slate-200 dark:border-[var(--overlay-border)] shadow-md">
-              {t("sentiment.myHotel")}: {myScore.toFixed(2)}
+              {t("sentiment.myHotel")}: {safeMyScore.toFixed(2)}
             </div>
           )}
         </motion.div>
@@ -273,13 +278,13 @@ const CategoryBar = ({
           <div className="flex-1 h-[4px] bg-[var(--bg-accent)] rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${(leaderScore / 5) * 100}%` }}
+              animate={{ width: `${(safeLeaderScore / 5) * 100}%` }}
               transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
               className="h-full bg-gradient-to-r from-amber-500/80 to-amber-400/60 rounded-full"
             />
           </div>
           <span className="text-[11px] text-amber-400/80 font-bold w-8 text-right">
-            {leaderScore.toFixed(2)}
+            {safeLeaderScore > 0 ? safeLeaderScore.toFixed(2) : "0.00"}
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -289,13 +294,13 @@ const CategoryBar = ({
           <div className="flex-1 h-[4px] bg-[var(--bg-accent)] rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${(marketAvg / 5) * 100}%` }}
+              animate={{ width: `${(safeMarketAvg / 5) * 100}%` }}
               transition={{ duration: 0.8, ease: "easeOut", delay: 0.4 }}
               className="h-full bg-gradient-to-r from-gray-500/60 to-gray-400/40 rounded-full"
             />
           </div>
           <span className="text-[11px] text-gray-400 w-8 text-right">
-            {marketAvg.toFixed(2)}
+            {safeMarketAvg > 0 ? safeMarketAvg.toFixed(2) : "0.00"}
           </span>
         </div>
       </div>
@@ -314,6 +319,9 @@ const KeywordTag = ({
   text: string; count: number; sentiment: "positive" | "negative" | "neutral"; size?: "sm" | "md"; description?: string;
 }) => {
   const t_name = KEYWORD_TRANSLATIONS[text.toLowerCase()] || text;
+
+  // Ensure count is a safe number
+  const safeCount = typeof count === "number" && !isNaN(count) ? count : 0;
 
   // Gradient-based pill styling per sentiment bucket
   const colors = {
@@ -335,7 +343,7 @@ const KeywordTag = ({
         <span className="capitalize">{t_name}</span>
         <span className="w-[1px] h-3 bg-white/10" />
         <span className="text-[10px] font-black opacity-80">
-          {count > 999 ? (count / 1000).toFixed(1) + "k" : count}
+          {safeCount > 999 ? (safeCount / 1000).toFixed(1) + "k" : safeCount}
         </span>
       </span>
       {/* Glass-panel tooltip with review snippet */}

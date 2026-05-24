@@ -98,7 +98,7 @@ export default function RevenueImpactCard({ hotelId }: { hotelId: string }) {
             </span>
             <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${bgColor} ${accentColor}`}>
               {data.past_score?.toFixed(1)} → {data.recent_score?.toFixed(1)}
-              {" "}({data.score_delta > 0 ? "+" : ""}{data.score_delta.toFixed(1)} pts)
+              {" "}({typeof data.score_delta === "number" && !isNaN(data.score_delta) ? (data.score_delta > 0 ? "+" : "") + data.score_delta.toFixed(1) : "0.0"} pts)
             </span>
           </div>
 
