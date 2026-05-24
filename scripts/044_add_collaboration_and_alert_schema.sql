@@ -24,6 +24,7 @@ COMMENT ON TABLE public.hotel_annotations IS
 -- RLS: Users can only see annotations for hotels they own
 ALTER TABLE public.hotel_annotations ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view annotations for their hotels" ON public.hotel_annotations;
 CREATE POLICY "Users can view annotations for their hotels"
     ON public.hotel_annotations FOR SELECT
     USING (
@@ -32,6 +33,7 @@ CREATE POLICY "Users can view annotations for their hotels"
         )
     );
 
+DROP POLICY IF EXISTS "Users can insert annotations for their hotels" ON public.hotel_annotations;
 CREATE POLICY "Users can insert annotations for their hotels"
     ON public.hotel_annotations FOR INSERT
     WITH CHECK (
@@ -41,6 +43,7 @@ CREATE POLICY "Users can insert annotations for their hotels"
         AND user_id = auth.uid()
     );
 
+DROP POLICY IF EXISTS "Users can delete their own annotations" ON public.hotel_annotations;
 CREATE POLICY "Users can delete their own annotations"
     ON public.hotel_annotations FOR DELETE
     USING (user_id = auth.uid());
