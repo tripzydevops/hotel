@@ -123,6 +123,8 @@ export const en = {
     dataUpdated: "Data Updated",
     noHotelsFound: "No Hotels Tracked",
     addFirstHotel: "Add your first hotel to start monitoring your competitive set.",
+    aiInsight: "AI Insight",
+    liveAnalysis: "Live Analysis",
   },
   hotelDetails: {
     overview: "Overview",

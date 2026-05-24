@@ -123,6 +123,8 @@ export const tr = {
     dataUpdated: "Veriler Güncellendi",
     noHotelsFound: "İzlenen Otel Bulunmuyor",
     addFirstHotel: "Rekabet setinizi izlemeye başlamak için ilk otelinizi ekleyin.",
+    aiInsight: "Yapay Zeka Analizi",
+    liveAnalysis: "Canlı Analiz",
   },
   hotelDetails: {
     overview: "Genel Bakış",

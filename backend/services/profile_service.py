@@ -14,7 +14,7 @@ from supabase import Client
 
 
 async def get_enriched_profile_logic(
-    user_id: UUID, base_data: Optional[Dict[str, Any]], db: Client
+    user_id: UUID, base_data: Optional[Dict[str, Any]], db: Client, email: Optional[str] = None
 ) -> Dict[str, Any]:
     # EXPLANATION: Profile Enrichment & Data Governance
     # We separate 'user_profiles' (managed metadata) from 'profiles' (auth system truth)
@@ -48,16 +48,20 @@ async def get_enriched_profile_logic(
                 # we create a fallback record from Auth metadata. This prevents
                 # users from being 'invisible' in the admin dashboard and protects
                 # them from "account cleanup" scripts that look for orphaned hotels.
-                if admin_db:
+                if email or admin_db:
                     try:
-                        auth_user = admin_db.auth.admin.get_user_by_id(user_id_str)
-                        if auth_user and auth_user.user:
-                            email = auth_user.user.email
+                        resolved_email = email
+                        if not resolved_email and admin_db:
+                            auth_user = admin_db.auth.admin.get_user_by_id(user_id_str)
+                            if auth_user and auth_user.user:
+                                resolved_email = auth_user.user.email
+                        
+                        if resolved_email:
                             new_profile = {
                                 "user_id": user_id_str,
-                                "email": email,
-                                "display_name": email.split("@")[0]
-                                if email
+                                "email": resolved_email,
+                                "display_name": resolved_email.split("@")[0].capitalize()
+                                if resolved_email
                                 else "User",
                                 "role": "user",
                                 "plan_type": "trial",
@@ -66,16 +70,18 @@ async def get_enriched_profile_logic(
                                 "created_at": datetime.now(timezone.utc).isoformat(),
                                 "updated_at": datetime.now(timezone.utc).isoformat(),
                             }
-                            admin_db.table("user_profiles").insert(
+                            # Use admin_db if RLS blocks regular db insert
+                            writer_db = admin_db or db
+                            writer_db.table("user_profiles").insert(
                                 new_profile
                             ).execute()
                             base_data = new_profile
                             print(
-                                f"[Profile] Self-healed missing profile for {user_id_str}"
+                                f"[Profile] Self-healed missing profile for {user_id_str} using email {resolved_email}"
                             )
 
                             # Initialize default settings
-                            admin_db.table("settings").upsert(
+                            writer_db.table("settings").upsert(
                                 {
                                     "user_id": user_id_str,
                                     "threshold_percent": 1.0,
@@ -141,22 +147,26 @@ async def get_enriched_profile_logic(
 
     # EMAIL CHECK (Requires Admin access)
     is_admin_email = False
-    if admin_db:
+    resolved_email = (base_data.get("email") or email) if base_data else email
+    if not resolved_email and admin_db:
         try:
             user_auth = admin_db.auth.admin.get_user_by_id(user_id_str)
             if user_auth and user_auth.user and user_auth.user.email:
-                email_lower = user_auth.user.email.lower()
-                is_admin_email = email_lower in [
-                    "admin@hotel.plus",
-                    "selcuk@rate-sentinel.com",
-                    "asknsezen@gmail.com",
-                    "askinsezen@gmail.com",
-                    "yusuf@tripzy.travel",
-                    "elif@tripzy.travel",
-                    "tripzydevops@gmail.com", # Fix for the specific user reporting issues
-                ] or email_lower.endswith("@hotel.plus")
+                resolved_email = user_auth.user.email
         except Exception:
             pass
+
+    if resolved_email:
+        email_lower = resolved_email.lower()
+        is_admin_email = email_lower in [
+            "admin@hotel.plus",
+            "selcuk@rate-sentinel.com",
+            "asknsezen@gmail.com",
+            "askinsezen@gmail.com",
+            "yusuf@tripzy.travel",
+            "elif@tripzy.travel",
+            "tripzydevops@gmail.com", # Fix for the specific user reporting issues
+        ] or email_lower.endswith("@hotel.plus")
 
     # GLOBAL ACCESS RESOLUTION
     # Rule 1: Admins and Known DevOps/Support accounts are always Enterprise
@@ -190,17 +200,17 @@ async def get_enriched_profile_logic(
 
     # ENSURE AT LEAST ONE NAME FIELD IS POPULATED
     if not profile_result.get("display_name"):
-        email = profile_result.get("email")
-        if not email and admin_db:
+        resolved_name_email = profile_result.get("email") or resolved_email
+        if not resolved_name_email and admin_db:
             try:
                 auth_user = admin_db.auth.admin.get_user_by_id(user_id_str)
                 if auth_user and auth_user.user:
-                    email = auth_user.user.email
+                    resolved_name_email = auth_user.user.email
             except Exception:
                 pass
 
         profile_result["display_name"] = (
-            email.split("@")[0].capitalize() if email else "User"
+            resolved_name_email.split("@")[0].capitalize() if resolved_name_email else "User"
         )
 
     profile_result["plan_type"] = final_plan
@@ -242,7 +252,7 @@ async def get_enriched_profile_logic(
 
 
 async def update_profile_logic(
-    user_id: UUID, profile: UserProfileUpdate, db: Client
+    user_id: UUID, profile: UserProfileUpdate, db: Client, email: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Handles the 'upsert' logic for user profiles.
@@ -269,7 +279,7 @@ async def update_profile_logic(
 
     if not update_data:
         # Nothing to update — just return current profile
-        return await get_enriched_profile_logic(user_id, None, db)
+        return await get_enriched_profile_logic(user_id, None, db, email=email)
 
     # Always stamp updated_at
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -302,4 +312,4 @@ async def update_profile_logic(
         raise HTTPException(status_code=500, detail="Database update returned no data — check RLS policies")
 
     # After update, always re-enrich the data so the UI gets the correct plan status immediately
-    return await get_enriched_profile_logic(user_id, result.data[0], db)
+    return await get_enriched_profile_logic(user_id, result.data[0], db, email=email or update_data.get("email"))

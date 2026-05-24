@@ -666,7 +666,12 @@ async def get_dashboard_logic(
         from backend.services.profile_service import get_enriched_profile_logic
         try:
             user_uuid = UUID(str(user_id)) if isinstance(user_id, str) else user_id
-            user_profile = await get_enriched_profile_logic(user_uuid, user_profile if user_profile else None, db)
+            user_profile = await get_enriched_profile_logic(
+                user_uuid, 
+                user_profile if user_profile else None, 
+                db, 
+                email=current_user_email
+            )
         except Exception as pe:
             logger.warning(f"[Dashboard] Profile enrichment/self-healing failed: {pe}")
 
@@ -709,6 +714,7 @@ async def get_dashboard_logic(
 
         if not all_hotels:
             logger.info(f"Dashboard: No hotels found for {user_id}, returning metadata only.")
+            fallback_data["market_insight"] = None
             fallback_data["profile"] = user_profile
             fallback_data["user_settings"] = user_settings
             fallback_data["unread_alerts_count"] = unread_count

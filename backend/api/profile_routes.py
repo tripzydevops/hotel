@@ -48,7 +48,9 @@ async def get_profile(
         # Cast to UUID
         user_uuid = UUID(str(user_id)) if isinstance(user_id, str) else user_id
 
-        return await get_enriched_profile_logic(user_uuid, None, db)
+        return await get_enriched_profile_logic(
+            user_uuid, None, db, email=getattr(current_user, "email", None)
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -71,7 +73,9 @@ async def update_profile(
         # Cast to UUID
         user_uuid = UUID(str(user_id)) if isinstance(user_id, str) else user_id
 
-        return await update_profile_logic(user_uuid, profile, db)
+        return await update_profile_logic(
+            user_uuid, profile, db, email=getattr(current_user, "email", None)
+        )
     except HTTPException:
         # Re-raise HTTP exceptions as-is (preserves specific status codes from service layer)
         raise
