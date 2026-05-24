@@ -55,7 +55,7 @@ class MarketIntelligenceService:
                 )
 
     async def generate_market_brief(
-        self, market_data: Dict[str, Any]
+        self, market_data: Dict[str, Any], locale: str = "en"
     ) -> Dict[str, Any]:
         """
         Summarizes market data into high-level insights using Gemini.
@@ -87,14 +87,15 @@ class MarketIntelligenceService:
             ],
         }
 
+        language = "Turkish" if locale == "tr" else "English"
         prompt = f"""
         System: You are an expert Hotel Revenue Strategy Consultant.
         Task: Analyze the following hotel market data and provide a concise Market Intelligence Brief.
-        Respond in strict JSON format with the following keys:
+        Respond in strict JSON format with the following keys. Translate all narrative values (summary, strategic_actions, market_sentiment) into {language}:
         - summary: A one-sentence high-level strategic summary.
         - strategic_actions: A list of 3 specific, actionable steps to increase RevPAR.
         - market_sentiment: A short narrative about how the market perceives this hotel relative to competitors.
-        - market_stability: 'Optimal', 'Moderate', or 'Volatile'.
+        - market_stability: Must be exactly one of: 'Optimal', 'Moderate', or 'Volatile' (keep this stability value in English).
 
         Data:
         {json.dumps(context, indent=2)}

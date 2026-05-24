@@ -295,8 +295,9 @@ class ApiClient {
     return this.fetch<any>(`/api/v1/discovery/${hotelId}`);
   }
 
-  async getIntelligenceBrief(hotelId: string): Promise<any> {
-    return this.fetch<any>(`/api/v1/analysis/intelligence-brief/${hotelId}`);
+  async getIntelligenceBrief(hotelId: string, locale?: string): Promise<any> {
+    const params = locale ? `?locale=${locale}` : "";
+    return this.fetch<any>(`/api/v1/analysis/intelligence-brief/${hotelId}${params}`);
   }
 
   async getLocations(): Promise<any[]> {

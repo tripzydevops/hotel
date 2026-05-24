@@ -440,6 +440,7 @@ async def stream_market_intelligence(
 @router.get("/v1/analysis/intelligence-brief/{hotel_id}")
 async def get_market_intelligence_brief(
     hotel_id: str,
+    locale: str = "en",
     db: Client = Depends(get_supabase_rls),
     admin_db: Client = Depends(get_supabase_admin),
     current_user=Depends(get_current_active_user),
@@ -461,7 +462,7 @@ async def get_market_intelligence_brief(
     if "_brief_cache" not in globals():
         globals()["_brief_cache"] = {}
 
-    cache_key = f"{current_user.id}_{hotel_id}"
+    cache_key = f"{current_user.id}_{hotel_id}_{locale}"
     now = time.time()
 
     if cache_key in globals()["_brief_cache"]:
@@ -481,7 +482,7 @@ async def get_market_intelligence_brief(
         )
 
         # 2. Generate the intelligence brief
-        brief = await intelligence_service.generate_market_brief(analysis_data)
+        brief = await intelligence_service.generate_market_brief(analysis_data, locale=locale)
 
         # 3. Store in cache (300 seconds)
         globals()["_brief_cache"][cache_key] = (brief, now + 300)

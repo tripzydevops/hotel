@@ -15,7 +15,7 @@ interface IntelligenceBrief {
 }
 
 export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [brief, setBrief] = useState<IntelligenceBrief | null>(null);
   const [loading, setLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(true);
@@ -24,7 +24,7 @@ export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
     const fetchBrief = async () => {
       try {
         setLoading(true);
-        const data = await api.getIntelligenceBrief(hotelId);
+        const data = await api.getIntelligenceBrief(hotelId, locale);
         setBrief(data);
       } catch (error) {
         console.error("Failed to fetch command brief", error);
@@ -35,7 +35,7 @@ export const IntelligenceHUD: React.FC<{ hotelId: string }> = ({ hotelId }) => {
     };
 
     if (hotelId) fetchBrief();
-  }, [hotelId]);
+  }, [hotelId, locale]);
 
   const stabilityColors = {
     Optimal: 'border-emerald-500 text-emerald-400 bg-emerald-500/10',

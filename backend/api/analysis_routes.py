@@ -450,6 +450,7 @@ async def stream_market_intelligence(
 @router.get("/v1/analysis/intelligence-brief/{hotel_id}", response_model=Dict[str, Any])
 async def get_market_intelligence_brief(
     hotel_id: str,
+    locale: str = "en",
     db: Client = Depends(get_supabase_rls),
     admin_db: Client = Depends(get_supabase_admin),
     current_user=Depends(get_current_active_user),
@@ -467,7 +468,7 @@ async def get_market_intelligence_brief(
     # AGENT_FIX: Memory Cache for Serverless Context
     # Since Vercel instances are ephemeral, we use a simple dict.
     # It protects against immediate double-refreshes.
-    cache_key = f"{current_user.id}_{hotel_id}"
+    cache_key = f"{current_user.id}_{hotel_id}_{locale}"
 
     # Serve from TTLCache if still valid (cachetools handles expiry automatically)
     if cache_key in _brief_cache:
@@ -483,7 +484,7 @@ async def get_market_intelligence_brief(
         )
 
         # 2. Generate the intelligence brief
-        brief = await intelligence_service.generate_market_brief(analysis_data)
+        brief = await intelligence_service.generate_market_brief(analysis_data, locale=locale)
 
         # 3. Store in cache (300 seconds)
         _brief_cache[cache_key] = brief
