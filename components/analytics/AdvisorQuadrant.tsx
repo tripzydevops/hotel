@@ -69,13 +69,14 @@ export default function AdvisorQuadrant({
 
   // EXPLANATION: Coordinate Mapping
   // The backend sends x,y in [-50, 50] range. We map to CSS percentages
-  // with 15% padding so the indicator never clips the chart border.
+  // relative to the square grid container, leaving an 8% padding on all sides
+  // to ensure the trophy marker never clips the chart borders.
   // Y-axis is inverted (CSS top goes down, value index goes up).
   const clamp = (val: number, min: number, max: number) =>
     Math.max(min, Math.min(max, val));
 
-  const leftPercent = clamp(((x + 50) / 100) * 70 + 15, 15, 85);
-  const topPercent = clamp(85 - ((y + 50) / 100) * 70, 15, 85);
+  const leftPercent = clamp(((x + 50) / 100) * 84 + 8, 8, 92);
+  const topPercent = clamp(92 - ((y + 50) / 100) * 84, 8, 92);
 
   const quadrantStyle = QUADRANT_STYLE[label] || QUADRANT_STYLE["Standard"];
   const posKey = LABEL_TO_KEY[label] || "standard";
@@ -89,147 +90,140 @@ export default function AdvisorQuadrant({
     <div className={`${!compact ? "glass-card" : ""}`}>
       <div className="flex flex-col lg:flex-row">
         {/* Quadrant Visualization - Left Side */}
-        <div className={`relative flex-1 ${compact ? "h-[320px] lg:h-[380px]" : "h-[240px] lg:h-[280px]"} p-4`}>
+        <div className={`relative flex-1 ${compact ? "min-h-[320px] lg:min-h-[380px]" : "min-h-[350px] lg:min-h-[480px]"} p-6 flex flex-col justify-between`}>
           {/* Header */}
           {!compact && (
-            <div className="absolute top-4 left-4 z-10 flex items-center gap-2 group/help">
+            <div className="flex items-center gap-2 group/help mb-4">
               <h3 className="text-[10px] font-black text-[var(--overlay-text)] uppercase tracking-[0.15em]">
-                Advisor Quadrant
+                {t("strategicMap.advisorQuadrant")}
               </h3>
               <div className="relative">
                 <Zap className="w-3 h-3 text-[var(--soft-gold)] animate-pulse cursor-help" />
                 {/* Hover Explanation (Kaizen) */}
                 <div className="absolute left-0 top-full mt-2 w-64 p-3 bg-black/95 border border-[var(--overlay-border)] rounded-xl shadow-2xl opacity-0 group-hover/help:opacity-100 transition-opacity pointer-events-none z-[100] backdrop-blur-xl">
-                  <div className="text-[9px] font-black text-[var(--soft-gold)] uppercase tracking-widest mb-1">Strategic Logic</div>
+                  <div className="text-[9px] font-black text-[var(--soft-gold)] uppercase tracking-widest mb-1">
+                    {t("strategicMap.strategicLogic")}
+                  </div>
                   <p className="text-[10px] leading-relaxed text-[var(--overlay-text)]/70">
-                    This matrix cross-references your <strong>Price Index (ARI)</strong> against your <strong>Value Index (Guest Satisfaction)</strong> to determine your current market territory.
+                    {t("strategicMap.strategicLogicDesc")}
                   </p>
                 </div>
               </div>
               <span className="px-1.5 py-0.5 rounded bg-white/5 text-[7px] font-bold text-[var(--text-muted)] border border-[var(--overlay-border)] uppercase">
-                Strategic Map
+                {t("strategicMap.title")}
               </span>
             </div>
           )}
 
-          {/* Background Grid & Labels */}
-          <div className="absolute inset-4 top-10 grid grid-cols-2 grid-rows-2 pointer-events-none opacity-20">
-            {/* Top-Left: Danger Zone (High Price, Low Sentiment) */}
-            <div className="border-r border-b border-[var(--overlay-border)] bg-red-500/10 flex items-center justify-center">
-              <div className="text-[8px] font-black uppercase tracking-widest text-red-400/80 -rotate-45">
-                Danger
-              </div>
-            </div>
-            {/* Top-Right: Premium King (High Price, High Sentiment) */}
-            <div className="border-b border-[var(--overlay-border)] bg-blue-500/10 flex items-center justify-center">
-              <div className="text-[8px] font-black uppercase tracking-widest text-blue-400 -rotate-45">
-                Premium
-              </div>
-            </div>
-            {/* Bottom-Left: Economy (Low Price, Low Sentiment) */}
-            <div className="border-r border-[var(--overlay-border)] bg-gray-500/10 flex items-center justify-center">
-              <div className="text-[8px] font-black uppercase tracking-widest text-gray-500 -rotate-45">
-                Economy
-              </div>
-            </div>
-            {/* Bottom-Right: Value Leader (Low Price, High Sentiment) */}
-            <div className="bg-emerald-500/10 flex items-center justify-center">
-              <div className="text-[8px] font-black uppercase tracking-widest text-emerald-400 -rotate-45">
-                Value
-              </div>
-            </div>
-          </div>
-
-          {/* Axis Labels */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[7px] font-black uppercase text-[var(--text-muted)] tracking-[0.2em]">
-            {t("strategicMap.valueIndex")}
-          </div>
-          <div className="absolute left-1 top-1/2 -rotate-90 -translate-y-1/2 text-[7px] font-black uppercase text-[var(--text-muted)] tracking-[0.2em] whitespace-nowrap">
-            {t("strategicMap.priceIndex")}
-          </div>
-
-          {/* Crosshair lines */}
-          <div className="absolute top-1/2 left-6 right-6 h-[1px] bg-white/10 -translate-y-1/2" />
-          <div className="absolute left-1/2 top-12 bottom-6 w-[1px] bg-white/10 -translate-x-1/2" />
-
-          {/* EXPLANATION: Position Indicator
-              The gold Trophy icon represents the hotel's current strategic position
-              on the quadrant map. Its CSS position is computed from the x/y props.
-              On hover, it reveals a tooltip with an in-depth explanation of what
-              the position means and what action the hotelier should take. */}
-          {/* The Indicator */}
-          <div
-            className="absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 transition-all duration-1000 ease-out z-20"
-            style={{
-              left: `${leftPercent}%`,
-              top: `${topPercent}%`,
-            }}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-          >
-            <div className="relative w-full h-full flex items-center justify-center cursor-pointer">
-              {/* Pulse Effect */}
-              <div className="absolute inset-0 bg-[var(--soft-gold)] rounded-full animate-ping opacity-20" />
-              <div className="absolute inset-0 bg-[var(--soft-gold)]/20 rounded-full blur-lg animate-pulse" />
-
-              <div className="relative p-1.5 rounded-lg bg-[var(--soft-gold)] text-black shadow-xl shadow-[var(--soft-gold)]/40 border border-white/20">
-                <Trophy className="w-4 h-4" />
-              </div>
-            </div>
-
-            {/* EXPLANATION: Smart Tooltip Positioning
-                If the indicator is in the upper half of the chart (topPercent < 45),
-                the tooltip renders BELOW the icon to avoid clipping off the top edge.
-                Otherwise it renders ABOVE. 
-                
-                KAIZEN: Horizontal Smart Positioning
-                If indicator is too far left (leftPercent < 30) or too far right (leftPercent > 70),
-                we shift the tooltip horizontally to avoid sidebar/edge clipping.
-                */}
-            {/* Hover Tooltip */}
-            {isHovered && (
-              <div
-                className={`absolute z-50 w-[280px] pointer-events-none transition-all duration-300
-                  ${leftPercent < 30 ? "left-0 translate-x-0" : leftPercent > 70 ? "right-0 translate-x-0" : "left-1/2 -translate-x-1/2"}
-                  ${topPercent < 45 ? "top-full mt-3" : "bottom-full mb-3"}`}
-              >
-                {/* Arrow */}
-                <div
-                  className={`absolute w-2.5 h-2.5 rotate-45 bg-black/90 border border-[var(--overlay-border)]
-                    ${leftPercent < 30 ? "left-4" : leftPercent > 70 ? "right-4" : "left-1/2 -translate-x-1/2"}
-                    ${topPercent < 45 ? "-top-[6px] border-b-0 border-r-0" : "-bottom-[6px] border-t-0 border-l-0"}`}
-                />
-                <div className="relative bg-black/90 backdrop-blur-xl border border-[var(--overlay-border)] rounded-xl p-4 shadow-2xl shadow-black/60">
-                  <div className={`flex items-center gap-2 mb-2 ${quadrantStyle.color}`}>
-                    {quadrantStyle.icon}
-                    <span className="text-xs font-black uppercase tracking-wide">{posLabel}</span>
+          {/* Centered square plot area */}
+          <div className="flex-1 flex items-center justify-center p-4">
+            <div className="relative w-full max-w-[340px] aspect-square flex-shrink-0">
+              {/* Background Grid */}
+              <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 pointer-events-none opacity-20 border border-[var(--overlay-border)] rounded-lg overflow-hidden bg-white/[0.01]">
+                {/* Top-Left: Danger Zone (High Price, Low Sentiment) */}
+                <div className="border-r border-b border-[var(--overlay-border)] bg-red-500/10 flex items-center justify-center">
+                  <div className="text-[8px] font-black uppercase tracking-widest text-red-400/80 -rotate-45">
+                    {t("strategicMap.quadrantLabels.danger")}
                   </div>
-                  <p className="text-[11px] leading-relaxed text-[var(--overlay-text)]/70 mb-3 whitespace-pre-line">
-                    {customInsight || posDescription}
-                  </p>
-                  <div className="flex items-center gap-1.5 pt-2 border-t border-[var(--overlay-border)]">
-                    <ArrowUpRight className="w-3 h-3 text-[var(--soft-gold)] flex-shrink-0" />
-                    <span className="text-[10px] font-bold text-[var(--soft-gold)] uppercase tracking-wide">
-                      {posAction}
-                    </span>
+                </div>
+                {/* Top-Right: Premium King (High Price, High Sentiment) */}
+                <div className="border-b border-[var(--overlay-border)] bg-blue-500/10 flex items-center justify-center">
+                  <div className="text-[8px] font-black uppercase tracking-widest text-blue-400 -rotate-45">
+                    {t("strategicMap.quadrantLabels.premium")}
+                  </div>
+                </div>
+                {/* Bottom-Left: Economy (Low Price, Low Sentiment) */}
+                <div className="border-r border-[var(--overlay-border)] bg-gray-500/10 flex items-center justify-center">
+                  <div className="text-[8px] font-black uppercase tracking-widest text-gray-500 -rotate-45">
+                    {t("strategicMap.quadrantLabels.economy")}
+                  </div>
+                </div>
+                {/* Bottom-Right: Value Leader (Low Price, High Sentiment) */}
+                <div className="bg-emerald-500/10 flex items-center justify-center">
+                  <div className="text-[8px] font-black uppercase tracking-widest text-emerald-400 -rotate-45">
+                    {t("strategicMap.quadrantLabels.value")}
                   </div>
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Corner Icons */}
-          <div className="absolute top-12 right-4 text-[var(--soft-gold)]/20">
-            <Zap className="w-4 h-4" />
-          </div>
-          <div className="absolute bottom-6 right-4 text-blue-400/20">
-            <Target className="w-4 h-4" />
-          </div>
-          <div className="absolute top-12 left-6 text-red-400/20">
-            <AlertTriangle className="w-4 h-4" />
-          </div>
-          <div className="absolute bottom-6 left-6 text-[var(--optimal-green)]/20">
-            <TrendingDown className="w-4 h-4" />
+              {/* Axis Labels */}
+              <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[7px] font-black uppercase text-[var(--text-muted)] tracking-[0.2em] whitespace-nowrap">
+                {t("strategicMap.valueIndex")}
+              </div>
+              <div className="absolute -left-12 top-1/2 -rotate-90 -translate-y-1/2 text-[7px] font-black uppercase text-[var(--text-muted)] tracking-[0.2em] whitespace-nowrap">
+                {t("strategicMap.priceIndex")}
+              </div>
+
+              {/* Crosshair lines */}
+              <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-white/10 -translate-y-1/2 pointer-events-none" />
+              <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-white/10 -translate-x-1/2 pointer-events-none" />
+
+              {/* Position Indicator (Trophy) */}
+              <div
+                className="absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 transition-all duration-1000 ease-out z-20"
+                style={{
+                  left: `${leftPercent}%`,
+                  top: `${topPercent}%`,
+                }}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+              >
+                <div className="relative w-full h-full flex items-center justify-center cursor-pointer">
+                  {/* Pulse Effect */}
+                  <div className="absolute inset-0 bg-[var(--soft-gold)] rounded-full animate-ping opacity-20" />
+                  <div className="absolute inset-0 bg-[var(--soft-gold)]/20 rounded-full blur-lg animate-pulse" />
+
+                  <div className="relative p-1.5 rounded-lg bg-[var(--soft-gold)] text-black shadow-xl shadow-[var(--soft-gold)]/40 border border-white/20">
+                    <Trophy className="w-4 h-4" />
+                  </div>
+                </div>
+
+                {/* Hover Tooltip */}
+                {isHovered && (
+                  <div
+                    className={`absolute z-50 w-[280px] pointer-events-none transition-all duration-300
+                      ${leftPercent < 30 ? "left-0 translate-x-0" : leftPercent > 70 ? "right-0 translate-x-0" : "left-1/2 -translate-x-1/2"}
+                      ${topPercent < 45 ? "top-full mt-3" : "bottom-full mb-3"}`}
+                  >
+                    {/* Arrow */}
+                    <div
+                      className={`absolute w-2.5 h-2.5 rotate-45 bg-black/90 border border-[var(--overlay-border)]
+                        ${leftPercent < 30 ? "left-4" : leftPercent > 70 ? "right-4" : "left-1/2 -translate-x-1/2"}
+                        ${topPercent < 45 ? "-top-[6px] border-b-0 border-r-0" : "-bottom-[6px] border-t-0 border-l-0"}`}
+                    />
+                    <div className="relative bg-black/90 backdrop-blur-xl border border-[var(--overlay-border)] rounded-xl p-4 shadow-2xl shadow-black/60 animate-in fade-in zoom-in-95 duration-200">
+                      <div className={`flex items-center gap-2 mb-2 ${quadrantStyle.color}`}>
+                        {quadrantStyle.icon}
+                        <span className="text-xs font-black uppercase tracking-wide">{posLabel}</span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed text-[var(--overlay-text)]/70 mb-3 whitespace-pre-line">
+                        {customInsight || posDescription}
+                      </p>
+                      <div className="flex items-center gap-1.5 pt-2 border-t border-[var(--overlay-border)]">
+                        <ArrowUpRight className="w-3 h-3 text-[var(--soft-gold)] flex-shrink-0" />
+                        <span className="text-[10px] font-bold text-[var(--soft-gold)] uppercase tracking-wide">
+                          {posAction}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Corner Icons (subtle background watermarks inside the grid) */}
+              <div className="absolute top-2 right-2 text-[var(--soft-gold)]/10 pointer-events-none">
+                <Zap className="w-3 h-3" />
+              </div>
+              <div className="absolute bottom-2 right-2 text-blue-400/10 pointer-events-none">
+                <Target className="w-3 h-3" />
+              </div>
+              <div className="absolute top-2 left-2 text-red-400/10 pointer-events-none">
+                <AlertTriangle className="w-3 h-3" />
+              </div>
+              <div className="absolute bottom-2 left-2 text-[var(--optimal-green)]/10 pointer-events-none">
+                <TrendingDown className="w-3 h-3" />
+              </div>
+            </div>
           </div>
         </div>
 

@@ -449,8 +449,8 @@ export default function AnalysisPage() {
         {/* Strategic Map: Advisor Quadrant */}
         <div className="mb-12">
           <AdvisorQuadrant
-            x={data?.quadrant_x || 0}
-            y={data?.quadrant_y || 0}
+            x={data?.sentiment_index ? Math.min(Math.max(data.sentiment_index - 100, -50), 50) : 0}
+            y={data?.ari ? Math.min(Math.max(data.ari - 100, -50), 50) : 0}
             label={data?.quadrant_label || "Standard"}
             ari={data?.ari}
             sentiment={data?.sentiment_index}
