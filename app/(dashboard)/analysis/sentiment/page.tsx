@@ -827,15 +827,16 @@ export default function SentimentPage() {
     });
 
     // Fallback to dynamic breakdown synthesis if empty
-    if (parsedMentions.length === 0 && Array.isArray(hotel.sentiment_breakdown)) {
-      hotel.sentiment_breakdown.forEach((s: any) => {
+    const breakdownForSynthesis = hotel.sentiment_raw_breakdown || hotel.sentiment_breakdown;
+    if (parsedMentions.length === 0 && Array.isArray(breakdownForSynthesis)) {
+      breakdownForSynthesis.forEach((s: any) => {
         const name = s.name || s.display_name || "N/A";
         if (name === "N/A") return;
 
         const pos = Number(s.positive) || 0;
         const neg = Number(s.negative) || 0;
         const neu = Number(s.neutral) || 0;
-        const total = Number(s.total) || (pos + neg + neu);
+        const total = Number(s.total_mentioned) || Number(s.total) || (pos + neg + neu);
         if (total === 0) return;
 
         const normalizedCat = normalizeCategoryName(name);
