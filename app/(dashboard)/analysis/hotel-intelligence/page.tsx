@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import { 
   Star, 
   MapPin, 
@@ -18,6 +19,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
+
+const WhatIfPanel = dynamic(() => import("@/components/features/analysis/WhatIfPanel"), { ssr: false });
+const AnnotationsPanel = dynamic(() => import("@/components/features/analysis/AnnotationsPanel"), { ssr: false });
+
+// Temporary hotel ID — replace when page is migrated to dynamic routing
+const DEMO_HOTEL_ID = "00000000-0000-0000-0000-000000000000";
 
 // Mock data extracted from output.txt
 const HOTEL_DATA = {
@@ -275,6 +282,12 @@ export default function HotelIntelligencePage() {
                <p className="text-white/60 text-sm mt-1">{d.discoveredVia}</p>
             </div>
          </div>
+      </div>
+
+      {/* Section 7 Innovation Features */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <WhatIfPanel hotelId={DEMO_HOTEL_ID} />
+        <AnnotationsPanel hotelId={DEMO_HOTEL_ID} />
       </div>
     </div>
   );

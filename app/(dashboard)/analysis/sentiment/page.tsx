@@ -58,6 +58,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import SentimentBreakdown from "@/components/ui/SentimentBreakdown";
 import SentimentBattlefield from "@/components/analytics/SentimentBattlefield";
+import RevenueImpactCard from "@/components/features/analysis/RevenueImpactCard";
 
 const KeywordTrendsChart = dynamic(() => import("@/components/analytics/KeywordTrendsChart"), { ssr: false });
 
@@ -1120,6 +1121,13 @@ export default function SentimentPage() {
                 );
               })}
             </motion.div>
+
+            {/* ── Revenue Impact from Sentiment (Feature 7.2) ── */}
+            {targetHotel?.id && (
+              <div className="mb-8">
+                <RevenueImpactCard hotelId={targetHotel.id} />
+              </div>
+            )}
 
             {/* ── Intelligence Hub: Strategic Map (Left) + Experience Core (Right) ── */}
             {/* ── Strategic Map (Full Width) ── */}
