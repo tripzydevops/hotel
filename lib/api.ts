@@ -295,6 +295,28 @@ class ApiClient {
     return this.fetch<any>(`/api/v1/discovery/${hotelId}`);
   }
 
+  /**
+   * Ghost Competitor Discovery — Semantic Vector Search.
+   * Automatically suggests the most semantically similar hotels to the target
+   * hotel using pgvector cosine similarity (B2B Cold Start Solver).
+   * Called automatically when a hotel has < 2 configured competitors.
+   */
+  async discoverGhostCompetitors(hotelId: string, limit = 5): Promise<any[]> {
+    return this.fetch<any[]>(`/api/v1/discovery/${hotelId}/semantic?limit=${limit}`);
+  }
+
+  /**
+   * Batch signal ingestion — B2B product intelligence telemetry.
+   * Called by useSignalBuffer to flush buffered competitor interaction signals.
+   * Used by the CompsetIntelligenceAgent to build competitor attention profiles.
+   */
+  async batchSignals(payload: { session_id: string; signals: unknown[] }): Promise<any> {
+    return this.fetch<any>('/api/signals/batch', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
   async getIntelligenceBrief(hotelId: string, locale?: string): Promise<any> {
     const params = locale ? `?locale=${locale}` : "";
     return this.fetch<any>(`/api/v1/analysis/intelligence-brief/${hotelId}${params}`);

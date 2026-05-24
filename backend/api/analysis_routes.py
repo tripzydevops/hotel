@@ -57,7 +57,8 @@ async def discover_competitors_v1(
     db: Client = Depends(get_supabase_rls),
 ):
     """
-    Autonomous Rival Discovery.
+    Autonomous Rival Discovery (SerpAPI-based).
+    Discovers competitors via real-time web search using the hotel's SerpAPI ID.
     """
     # AGENT_LOGIC: AI-Driven Competitor Discovery
     # Uses vector search and semantic similarity to automatically identify
@@ -82,6 +83,54 @@ async def discover_competitors_v1(
         return rivals
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/v1/discovery/{hotel_id}/semantic", response_model=List[Dict[str, Any]])
+async def discover_ghost_competitors_semantic(
+    hotel_id: str,
+    limit: int = 5,
+    current_user=Depends(get_current_active_user),
+    db: Client = Depends(get_supabase_rls),
+):
+    """
+    Ghost Competitor Discovery — Semantic Vector Search (B2B Cold Start Solver).
+
+    Automatically identifies hotels that are semantically similar to the target
+    hotel using pgvector cosine similarity on Gemini-generated hotel embeddings.
+
+    This route is called automatically when a hotel has fewer than 2 configured
+    competitors, providing instant "Suggested Competitors" without any manual
+    configuration by the hotelier.
+
+    Unlike /v1/discovery/{hotel_id} (SerpAPI real-time search), this route:
+    - Is instantaneous (no external API calls once embeddings exist)
+    - Works offline from OTA data
+    - Improves over time as more hotels are embedded in the directory
+
+    Returns hotels ranked by semantic similarity (descending).
+    """
+    try:
+        if not db:
+            raise HTTPException(status_code=503, detail="Database service unavailable")
+
+        from backend.services.analysis_service import check_hotel_ownership
+        from backend.services.recommendation_engine import discover_ghost_competitors
+
+        is_owner = await check_hotel_ownership(db, str(current_user.id), hotel_id)
+        if not is_owner:
+            raise HTTPException(
+                status_code=403, detail="Unauthorized: You do not own this hotel"
+            )
+
+        suggestions = await discover_ghost_competitors(hotel_id, limit=limit)
+        return JSONResponse(content=jsonable_encoder(suggestions))
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 # AGENT_LOGIC: Dual Route Registration
