@@ -51,6 +51,7 @@ import {
   Bed,
   Coffee,
   Heart,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -425,10 +426,41 @@ export default function SentimentPage() {
   const [selectedHotelIds, setSelectedHotelIds] = useState<string[]>([]);
   const [initialized, setInitialized] = useState(false);
   const [view, setView] = useState<"battlefield" | "history">("battlefield");
+  const [visibleReviewsCount, setVisibleReviewsCount] = useState(6);
 
   // 1. Core Data Extraction (Memoized)
   const targetHotel = useMemo(() => data?.target_hotel, [data?.target_hotel]);
   const competitors = useMemo(() => data?.competitors || [], [data?.competitors]);
+
+  const platformReviews = useMemo(() => {
+    if (!targetHotel || !Array.isArray(targetHotel.other_sites_reviews)) return [];
+    
+    const list: Array<{ source: string; text: string; rating?: number; url?: string }> = [];
+    
+    targetHotel.other_sites_reviews.forEach((osr: any) => {
+      const source = osr.title || "Unknown Source";
+      const url = osr.url || "";
+      const rating = osr.rating?.value || osr.rating || null;
+      const reviewTextRaw = osr.review_text || "";
+      
+      if (reviewTextRaw) {
+        const texts = reviewTextRaw.split("|");
+        texts.forEach((text: string) => {
+          const cleanText = text.trim();
+          if (cleanText) {
+            list.push({
+              source,
+              text: cleanText,
+              rating,
+              url
+            });
+          }
+        });
+      }
+    });
+    
+    return list;
+  }, [targetHotel]);
 
   // 2. Global Hotel List & Leader Logic
   const allHotels = useMemo(() => [
@@ -1234,6 +1266,94 @@ export default function SentimentPage() {
                     .slice(0, 24)
                 }
               />
+
+              <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/[0.08] to-transparent my-10" />
+
+              {/* ── Platform Review Streams ── */}
+              <div className="relative">
+                <div className="flex flex-col mb-6">
+                  <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-[0.2em] flex items-center gap-2">
+                    <Building2 className="w-3.5 h-3.5 text-[var(--soft-gold)]" />
+                    {locale === 'tr' ? "Çapraz Platform İnceleme Akışı" : "Cross-Platform Review Streams"}
+                  </p>
+                  <h4 className="text-sm font-semibold text-[var(--text-primary)] mt-1">
+                    {locale === 'tr' ? "Farklı kaynaklardan toplanan gerçek konuk geri bildirimleri" : "Actual guest feedback gathered from various platform sources"}
+                  </h4>
+                </div>
+
+                {platformReviews.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {platformReviews.slice(0, visibleReviewsCount).map((rev, idx) => {
+                      const isBooking = rev.source.toLowerCase().includes("booking");
+                      const isTripAdvisor = rev.source.toLowerCase().includes("tripadvisor") || rev.source.toLowerCase().includes("trip advisor");
+                      const isGoogle = rev.source.toLowerCase().includes("google");
+                      
+                      let badgeColor = "bg-slate-500/10 text-slate-400 border-slate-500/20";
+                      if (isBooking) badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
+                      else if (isTripAdvisor) badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                      else if (isGoogle) badgeColor = "bg-red-500/10 text-red-400 border-red-500/20";
+
+                      return (
+                        <div
+                          key={idx}
+                          className="flex flex-col justify-between p-5 rounded-2xl bg-[var(--glass-bg)] border border-[var(--glass-border)] hover:border-[var(--overlay-border)] transition-all duration-300 relative group overflow-hidden"
+                        >
+                          <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-white/[0.01] to-transparent rounded-full blur-3xl pointer-events-none" />
+                          
+                          <div>
+                            <div className="flex items-center justify-between mb-4 relative z-10">
+                              <span className={`px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-wider ${badgeColor}`}>
+                                {rev.source}
+                              </span>
+                              {rev.url && (
+                                <a
+                                  href={rev.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="opacity-40 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--soft-gold)] transition-all"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                              )}
+                            </div>
+
+                            <p className="text-xs text-[var(--text-secondary)] italic leading-relaxed mb-4 relative z-10 line-clamp-4">
+                              &ldquo;{rev.text}&rdquo;
+                            </p>
+                          </div>
+
+                          {rev.rating && (
+                            <div className="flex items-center gap-1.5 mt-2 pt-3 border-t border-[var(--glass-border)]/20 text-[10px] font-black text-[var(--text-muted)] relative z-10">
+                              <span>Rating:</span>
+                              <span className="text-[var(--text-primary)] font-bold">{rev.rating}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-8 rounded-2xl bg-[var(--glass-bg)] border border-[var(--glass-border)] text-center relative overflow-hidden">
+                    <MessageSquare className="w-8 h-8 text-[var(--soft-gold)] opacity-40 mb-3" />
+                    <p className="text-xs text-[var(--text-secondary)] font-medium">
+                      {locale === 'tr' 
+                        ? "Booking.com, Tripadvisor veya diğer harici platformlardan henüz değerlendirme toplanmamıştır." 
+                        : "No reviews from Booking.com, Tripadvisor, or other platforms have been collected for this hotel yet."}
+                    </p>
+                  </div>
+                )}
+
+                {platformReviews.length > 6 && (
+                  <div className="flex justify-center mt-8 relative z-10">
+                    <button
+                      onClick={() => setVisibleReviewsCount(prev => prev > 6 ? 6 : platformReviews.length)}
+                      className="px-6 py-3 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] text-xs font-black uppercase tracking-widest text-[var(--text-primary)] hover:border-[var(--soft-gold)] hover:text-[var(--soft-gold)] hover:bg-[var(--deep-ocean-accent)]/20 transition-all duration-300"
+                    >
+                      {visibleReviewsCount > 6 ? (locale === 'tr' ? "Daha Az Göster" : "Show Less") : (locale === 'tr' ? "Tümünü Göster" : "Show All")}
+                    </button>
+                  </div>
+                )}
+              </div>
             </motion.div>
 
             {/* ── Gradient Section Divider ── */}
