@@ -28,6 +28,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
+  ArrowRight,
   TrendingUp,
   TrendingDown,
   Sparkles,
@@ -57,6 +58,8 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import SentimentBreakdown from "@/components/ui/SentimentBreakdown";
 import SentimentBattlefield from "@/components/analytics/SentimentBattlefield";
+
+const KeywordTrendsChart = dynamic(() => import("@/components/analytics/KeywordTrendsChart"), { ssr: false });
 
 /* ── Stagger animation variants (per frontend-ui-dark-ts skill) ── */
 const staggerContainer = {
@@ -425,8 +428,31 @@ export default function SentimentPage() {
   );
   const [selectedHotelIds, setSelectedHotelIds] = useState<string[]>([]);
   const [initialized, setInitialized] = useState(false);
-  const [view, setView] = useState<"battlefield" | "history">("battlefield");
+  const [view, setView] = useState<"battlefield" | "history" | "trends">("battlefield");
   const [visibleReviewsCount, setVisibleReviewsCount] = useState(6);
+  const [analysis, setAnalysis] = useState<any | null>(null);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+  const [selectedRadarSource, setSelectedRadarSource] = useState<"all" | "booking" | "tripadvisor">("all");
+  const [completedChecklist, setCompletedChecklist] = useState<Record<number, boolean>>({});
+
+  // Fetch analysis data for audit_checklist
+  useEffect(() => {
+    const fetchAnalysis = async () => {
+      if (!userId) return;
+      setLoadingAnalysis(true);
+      try {
+        const res = await api.getAnalysis();
+        if (res) {
+          setAnalysis(res);
+        }
+      } catch (err) {
+        console.error("Error fetching analysis:", err);
+      } finally {
+        setLoadingAnalysis(false);
+      }
+    };
+    fetchAnalysis();
+  }, [userId]);
 
   // 1. Core Data Extraction (Memoized)
   const targetHotel = useMemo(() => data?.target_hotel, [data?.target_hotel]);
@@ -631,18 +657,90 @@ export default function SentimentPage() {
   }, [targetHotel, competitors, marketAvgRating]);
 
 
+  // Helper to dynamically calculate platform-specific category scores
+  const getPlatformCategoryScore = (hotel: any, category: string, sourceFilter: "booking" | "tripadvisor" | "all") => {
+    if (sourceFilter === "all" || !hotel) {
+      return getCategoryScore(hotel, category, sentimentHistory[hotel?.id || ""]);
+    }
+    
+    if (!Array.isArray(hotel.other_sites_reviews)) {
+      return getCategoryScore(hotel, category, sentimentHistory[hotel.id]);
+    }
+    
+    const aliases: Record<string, string[]> = {
+      cleanliness: ["clean", "temiz", "hijyen", "kirli", "dirty", "housekeeping", "çarşaf", "banyo", "room clean", "odalar temiz", "linens", "spotless", "dusty", "dust", "odası kirli"],
+      service: ["service", "hizmet", "staff", "personel", "resepsiyon", "reception", "yardım", "help", "crew", "ekip", "karşılama", "welcome", "check-in", "check in", "saygısız", "slow", "yavaş"],
+      location: ["location", "konum", "merkez", "yürüme", "walking", "transport", "ulaşım", "otopark", "parking", "view", "manzara", "noisy", "gürültü", "neighborhood", "safe", "güvenli"],
+      value: ["value", "fiyat", "price", "performans", "ekonomik", "pahalı", "expensive", "cheap", "ucuz", "worth", "para", "money", "cost", "performance", "overpriced", "değer"],
+    };
+    
+    const target = category.toLowerCase();
+    const keywords = aliases[target] || [];
+    let matchCount = 0;
+    let matchSum = 0;
+    
+    hotel.other_sites_reviews.forEach((osr: any) => {
+      const source = (osr.title || "").toLowerCase();
+      if (!source.includes(sourceFilter)) return;
+      
+      const ratingVal = osr.rating?.value || osr.rating || null;
+      if (!ratingVal) return;
+      
+      const reviewTextRaw = osr.review_text || "";
+      const texts = reviewTextRaw.split("|");
+      
+      let matchesCategory = false;
+      texts.forEach((text: string) => {
+        const cleanText = text.toLowerCase().trim();
+        if (keywords.some(kw => cleanText.includes(kw))) {
+          matchesCategory = true;
+        }
+      });
+      
+      if (matchesCategory) {
+        let normalizedRating = ratingVal;
+        if (sourceFilter === "booking" && ratingVal > 5) {
+          normalizedRating = ratingVal / 2;
+        } else if (ratingVal > 5) {
+          normalizedRating = (ratingVal / 10) * 5;
+        }
+        matchSum += normalizedRating;
+        matchCount++;
+      }
+    });
+    
+    if (matchCount > 0) {
+      return matchSum / matchCount;
+    }
+    
+    return getCategoryScore(hotel, category, sentimentHistory[hotel.id]);
+  };
+
   // 6. Visualization Data (Radar)
   const radarData = useMemo(() => {
     if (!targetHotel) return [];
-    return ["Cleanliness", "Service", "Location", "Value"].map((cat) => ({
-      subject: t(`sentiment.${cat.toLowerCase()}`) !== `sentiment.${cat.toLowerCase()}`
-        ? t(`sentiment.${cat.toLowerCase()}`)
-        : cat,
-      myHotel: getCategoryScore(targetHotel, cat, sentimentHistory[targetHotel.id]),
-      marketLeader: leader ? getCategoryScore(leader, cat, sentimentHistory[leader.id]) : 0,
-      marketAvg: marketAvgRating || 3, // Fallback to neutral 3 if avg unavailable
-    }));
-  }, [targetHotel, leader, sentimentHistory, marketAvgRating, t]);
+    return ["Cleanliness", "Service", "Location", "Value"].map((cat) => {
+      const myHotelScore = getPlatformCategoryScore(targetHotel, cat, selectedRadarSource);
+      const leaderScore = leader ? getPlatformCategoryScore(leader, cat, selectedRadarSource) : 0;
+      
+      const validScores = allHotels
+        .map(h => getPlatformCategoryScore(h, cat, selectedRadarSource))
+        .filter(score => score > 0);
+      
+      const avgScore = validScores.length > 0
+        ? validScores.reduce((a, b) => a + b, 0) / validScores.length
+        : marketAvgRating || 3;
+
+      return {
+        subject: t(`sentiment.${cat.toLowerCase()}`) !== `sentiment.${cat.toLowerCase()}`
+          ? t(`sentiment.${cat.toLowerCase()}`)
+          : cat,
+        myHotel: myHotelScore,
+        marketLeader: leaderScore,
+        marketAvg: avgScore,
+      };
+    });
+  }, [targetHotel, leader, allHotels, selectedRadarSource, sentimentHistory, marketAvgRating, t]);
 
   // 6b. Premium Guest Mentions Extraction & Synthesis (KAİZEN)
   const guestMentions = useMemo(() => {
@@ -1114,9 +1212,31 @@ export default function SentimentPage() {
                     />
                   </div>
                   {/* Radar chart container with glass effect + decorative orbs */}
-                  <div className="flex items-center justify-center bg-[var(--bg-accent)] rounded-2xl p-8 border border-white/[0.05] relative overflow-hidden">
+                  <div className="flex flex-col items-center justify-center bg-[var(--bg-accent)] rounded-2xl p-8 border border-white/[0.05] relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/[0.06] blur-[60px] rounded-full" />
                     <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-500/[0.05] blur-[60px] rounded-full" />
+                    
+                    {/* Platform toggle segment control */}
+                    <div className="flex bg-slate-900/50 backdrop-blur-md rounded-xl p-1 border border-white/5 mb-6 z-10">
+                      {[
+                        { id: "all", label: locale === "tr" ? "Tüm Platformlar" : "All Platforms" },
+                        { id: "booking", label: "Booking.com" },
+                        { id: "tripadvisor", label: "TripAdvisor" },
+                      ].map((source) => (
+                        <button
+                          key={source.id}
+                          onClick={() => setSelectedRadarSource(source.id as any)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
+                            selectedRadarSource === source.id
+                              ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          {source.label}
+                        </button>
+                      ))}
+                    </div>
+
                     <SentimentRadar data={radarData} />
                   </div>
                 </div>
@@ -1269,90 +1389,185 @@ export default function SentimentPage() {
 
               <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-white/[0.08] to-transparent my-10" />
 
-              {/* ── Platform Review Streams ── */}
-              <div className="relative">
-                <div className="flex flex-col mb-6">
-                  <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-[0.2em] flex items-center gap-2">
-                    <Building2 className="w-3.5 h-3.5 text-[var(--soft-gold)]" />
-                    {locale === 'tr' ? "Çapraz Platform İnceleme Akışı" : "Cross-Platform Review Streams"}
-                  </p>
-                  <h4 className="text-sm font-semibold text-[var(--text-primary)] mt-1">
-                    {locale === 'tr' ? "Farklı kaynaklardan toplanan gerçek konuk geri bildirimleri" : "Actual guest feedback gathered from various platform sources"}
-                  </h4>
+              {/* ── Side-by-Side Review Streams & AI Action Checklist ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Left Column: Review Streams */}
+                <div className="lg:col-span-8 relative">
+                  <div className="flex flex-col mb-6">
+                    <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-[0.2em] flex items-center gap-2">
+                      <Building2 className="w-3.5 h-3.5 text-[var(--soft-gold)]" />
+                      {locale === 'tr' ? "Çapraz Platform İnceleme Akışı" : "Cross-Platform Review Streams"}
+                    </p>
+                    <h4 className="text-sm font-semibold text-[var(--text-primary)] mt-1">
+                      {locale === 'tr' ? "Farklı kaynaklardan toplanan gerçek konuk geri bildirimleri" : "Actual guest feedback gathered from various platform sources"}
+                    </h4>
+                  </div>
+
+                  {platformReviews.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {platformReviews.slice(0, visibleReviewsCount).map((rev, idx) => {
+                        const isBooking = rev.source.toLowerCase().includes("booking");
+                        const isTripAdvisor = rev.source.toLowerCase().includes("tripadvisor") || rev.source.toLowerCase().includes("trip advisor");
+                        const isGoogle = rev.source.toLowerCase().includes("google");
+                        
+                        let badgeColor = "bg-slate-500/10 text-slate-400 border-slate-500/20";
+                        if (isBooking) badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
+                        else if (isTripAdvisor) badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                        else if (isGoogle) badgeColor = "bg-red-500/10 text-red-400 border-red-500/20";
+
+                        return (
+                          <div
+                            key={idx}
+                            className="flex flex-col justify-between p-5 rounded-2xl bg-[var(--glass-bg)] border border-[var(--glass-border)] hover:border-[var(--overlay-border)] transition-all duration-300 relative group overflow-hidden"
+                          >
+                            <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-white/[0.01] to-transparent rounded-full blur-3xl pointer-events-none" />
+                            
+                            <div>
+                              <div className="flex items-center justify-between mb-4 relative z-10">
+                                <span className={`px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-wider ${badgeColor}`}>
+                                  {rev.source}
+                                </span>
+                                {rev.url && (
+                                  <a
+                                    href={rev.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="opacity-40 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--soft-gold)] transition-all"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                              </div>
+
+                              <p className="text-xs text-[var(--text-secondary)] italic leading-relaxed mb-4 relative z-10 line-clamp-4">
+                                &ldquo;{rev.text}&rdquo;
+                              </p>
+                            </div>
+
+                            {rev.rating && (
+                              <div className="flex items-center gap-1.5 mt-2 pt-3 border-t border-[var(--glass-border)]/20 text-[10px] font-black text-[var(--text-muted)] relative z-10">
+                                <span>Rating:</span>
+                                <span className="text-[var(--text-primary)] font-bold">{rev.rating}</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-8 rounded-2xl bg-[var(--glass-bg)] border border-[var(--glass-border)] text-center relative overflow-hidden">
+                      <MessageSquare className="w-8 h-8 text-[var(--soft-gold)] opacity-40 mb-3" />
+                      <p className="text-xs text-[var(--text-secondary)] font-medium">
+                        {locale === 'tr' 
+                          ? "Booking.com, Tripadvisor veya diğer harici platformlardan henüz değerlendirme toplanmamıştır." 
+                          : "No reviews from Booking.com, Tripadvisor, or other platforms have been collected for this hotel yet."}
+                      </p>
+                    </div>
+                  )}
+
+                  {platformReviews.length > 6 && (
+                    <div className="flex justify-center mt-8 relative z-10">
+                      <button
+                        onClick={() => setVisibleReviewsCount(prev => prev > 6 ? 6 : platformReviews.length)}
+                        className="px-6 py-3 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] text-xs font-black uppercase tracking-widest text-[var(--text-primary)] hover:border-[var(--soft-gold)] hover:text-[var(--soft-gold)] hover:bg-[var(--deep-ocean-accent)]/20 transition-all duration-300"
+                      >
+                        {visibleReviewsCount > 6 ? (locale === 'tr' ? "Daha Az Göster" : "Show Less") : (locale === 'tr' ? "Tümünü Göster" : "Show All")}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {platformReviews.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {platformReviews.slice(0, visibleReviewsCount).map((rev, idx) => {
-                      const isBooking = rev.source.toLowerCase().includes("booking");
-                      const isTripAdvisor = rev.source.toLowerCase().includes("tripadvisor") || rev.source.toLowerCase().includes("trip advisor");
-                      const isGoogle = rev.source.toLowerCase().includes("google");
-                      
-                      let badgeColor = "bg-slate-500/10 text-slate-400 border-slate-500/20";
-                      if (isBooking) badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
-                      else if (isTripAdvisor) badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
-                      else if (isGoogle) badgeColor = "bg-red-500/10 text-red-400 border-red-500/20";
+                {/* Right Column: AI Action Checklist */}
+                <div className="lg:col-span-4 flex flex-col gap-6">
+                  <div className="flex flex-col p-6 rounded-2xl bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-[0_8px_32px_rgba(0,0,0,0.2)] backdrop-blur-xl hover:border-[var(--overlay-border)] transition-all duration-500 relative overflow-hidden group">
+                    <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-indigo-500/[0.05] to-transparent rounded-full blur-3xl pointer-events-none" />
+                    
+                    <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[var(--glass-border)]">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                        <Check className="w-4 h-4 text-indigo-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
+                          {locale === "tr" ? "AI Eylem Kontrol Listesi" : "AI Action Checklist"}
+                        </h4>
+                        <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest font-bold mt-0.5">
+                          {locale === "tr" ? "Öncelikli Görev Listesi" : "Prioritized Task List"}
+                        </p>
+                      </div>
+                    </div>
 
-                      return (
-                        <div
-                          key={idx}
-                          className="flex flex-col justify-between p-5 rounded-2xl bg-[var(--glass-bg)] border border-[var(--glass-border)] hover:border-[var(--overlay-border)] transition-all duration-300 relative group overflow-hidden"
-                        >
-                          <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-white/[0.01] to-transparent rounded-full blur-3xl pointer-events-none" />
-                          
-                          <div>
-                            <div className="flex items-center justify-between mb-4 relative z-10">
-                              <span className={`px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-wider ${badgeColor}`}>
-                                {rev.source}
-                              </span>
-                              {rev.url && (
-                                <a
-                                  href={rev.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="opacity-40 group-hover:opacity-100 text-[var(--text-muted)] hover:text-[var(--soft-gold)] transition-all"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </a>
-                              )}
-                            </div>
-
-                            <p className="text-xs text-[var(--text-secondary)] italic leading-relaxed mb-4 relative z-10 line-clamp-4">
-                              &ldquo;{rev.text}&rdquo;
-                            </p>
-                          </div>
-
-                          {rev.rating && (
-                            <div className="flex items-center gap-1.5 mt-2 pt-3 border-t border-[var(--glass-border)]/20 text-[10px] font-black text-[var(--text-muted)] relative z-10">
-                              <span>Rating:</span>
-                              <span className="text-[var(--text-primary)] font-bold">{rev.rating}</span>
-                            </div>
-                          )}
+                    <div className="space-y-4">
+                      {loadingAnalysis ? (
+                        <div className="flex flex-col items-center justify-center py-10 gap-2">
+                          <div className="animate-spin w-6 h-6 border-2 border-indigo-500/30 border-t-indigo-400 rounded-full" />
+                          <span className="text-[10px] text-gray-500">Loading audit checklist...</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-8 rounded-2xl bg-[var(--glass-bg)] border border-[var(--glass-border)] text-center relative overflow-hidden">
-                    <MessageSquare className="w-8 h-8 text-[var(--soft-gold)] opacity-40 mb-3" />
-                    <p className="text-xs text-[var(--text-secondary)] font-medium">
-                      {locale === 'tr' 
-                        ? "Booking.com, Tripadvisor veya diğer harici platformlardan henüz değerlendirme toplanmamıştır." 
-                        : "No reviews from Booking.com, Tripadvisor, or other platforms have been collected for this hotel yet."}
-                    </p>
-                  </div>
-                )}
+                      ) : analysis?.audit_checklist?.length > 0 ? (
+                        analysis.audit_checklist.map((item: any, idx: number) => {
+                          const isChecked = !!completedChecklist[idx];
+                          
+                          const pillarColors: Record<string, string> = {
+                            cleanliness: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+                            service: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+                            location: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+                            value: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+                            room: "bg-sky-500/10 text-sky-400 border-sky-500/20",
+                          };
+                          const pilKey = item.pillar.toLowerCase();
+                          const pillStyle = pillarColors[pilKey] || "bg-slate-500/10 text-slate-400 border-slate-500/20";
 
-                {platformReviews.length > 6 && (
-                  <div className="flex justify-center mt-8 relative z-10">
-                    <button
-                      onClick={() => setVisibleReviewsCount(prev => prev > 6 ? 6 : platformReviews.length)}
-                      className="px-6 py-3 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] text-xs font-black uppercase tracking-widest text-[var(--text-primary)] hover:border-[var(--soft-gold)] hover:text-[var(--soft-gold)] hover:bg-[var(--deep-ocean-accent)]/20 transition-all duration-300"
-                    >
-                      {visibleReviewsCount > 6 ? (locale === 'tr' ? "Daha Az Göster" : "Show Less") : (locale === 'tr' ? "Tümünü Göster" : "Show All")}
-                    </button>
+                          return (
+                            <div 
+                              key={idx} 
+                              onClick={() => setCompletedChecklist(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                              className={`flex gap-3 p-4 rounded-xl border transition-all duration-300 cursor-pointer select-none group/item ${
+                                isChecked 
+                                  ? "bg-slate-900/20 border-white/5 opacity-55 hover:opacity-75" 
+                                  : "bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.05] hover:border-white/10"
+                              }`}
+                            >
+                              <div className="mt-0.5 flex-shrink-0">
+                                <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                                  isChecked 
+                                    ? "bg-indigo-600 border-indigo-500 text-white" 
+                                    : "border-slate-600 group-hover/item:border-slate-400 bg-black/20"
+                                }`}>
+                                  {isChecked && <Check className="w-3.5 h-3.5" />}
+                                </div>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2 mb-1.5">
+                                  <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${pillStyle}`}>
+                                    {item.pillar}
+                                  </span>
+                                </div>
+                                <p className={`text-[11px] font-semibold text-[var(--text-secondary)] leading-relaxed mb-1 ${isChecked ? "line-through text-slate-500" : ""}`}>
+                                  {item.issue}
+                                </p>
+                                <p className="text-[10px] text-indigo-400 font-bold flex items-center gap-1">
+                                  <ArrowRight className="w-3 h-3" />
+                                  {item.action}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-8 text-center bg-white/[0.01] border border-dashed border-white/5 rounded-xl">
+                          <Check className="w-6 h-6 text-emerald-500 mb-2 opacity-65" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-primary)]">
+                            {locale === "tr" ? "Sorun Bulunamadı" : "No Issues Found"}
+                          </span>
+                          <p className="text-[9px] text-[var(--text-muted)] max-w-[200px] mt-1">
+                            {locale === "tr"
+                              ? "Tüm itibar metrikleri pazar ortalamalarıyla uyumludur veya üzerindedir."
+                              : "All reputation metrics are aligned with or exceed the market average."}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             </motion.div>
 
@@ -1375,7 +1590,7 @@ export default function SentimentPage() {
                 </h3>
                 {/* Segmented control with animated sliding indicator */}
                 <div className="flex bg-[var(--bg-accent)] rounded-xl p-1 border border-[var(--glass-border)]">
-                  {(["battlefield", "history"] as const).map((v) => (
+                  {(["battlefield", "history", "trends"] as const).map((v) => (
                     <button
                       key={v}
                       onClick={() => setView(v)}
@@ -1385,7 +1600,7 @@ export default function SentimentPage() {
                           : "text-slate-700 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white"
                       }`}
                     >
-                      {v === "battlefield" ? "⚔️ Battlefield" : "📊 History"}
+                      {v === "battlefield" ? "⚔️ Battlefield" : v === "history" ? "📊 History" : "📈 Trends"}
                     </button>
                   ))}
                 </div>
@@ -1393,7 +1608,7 @@ export default function SentimentPage() {
                   {(["daily", "weekly", "monthly"] as const).map((tf) => (
                     <button
                       key={tf}
-                      disabled={view === "battlefield"}
+                      disabled={view !== "history"}
                       onClick={() => setTimeframe(tf)}
                       className={`px-4 py-1.5 rounded-lg text-sm font-semibold border transition-all duration-200 ${
                         timeframe === tf
@@ -1413,6 +1628,12 @@ export default function SentimentPage() {
                     targetHotel={targetHotel as any}
                     competitors={visibleCompetitors as any}
                     sentimentHistory={sentimentHistory}
+                  />
+                </div>
+              ) : view === "trends" ? (
+                <div className="mb-10">
+                  <KeywordTrendsChart
+                    history={sentimentHistory[targetHotel.id] || []}
                   />
                 </div>
               ) : (
