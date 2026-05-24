@@ -18,7 +18,7 @@
 - `[x]` **Task 11**: Decompose `get_dashboard_logic()` sub-functions — completed (decomposed into _verify_dashboard_access, _fetch_user_metadata_concurrently, _build_directory_map, _fetch_and_filter_prices, _recover_missing_reputation_data)
 - `[x]` **Task 12**: Add Pydantic response models for all API endpoints — completed (schemas.py created and integrated)
 - `[x]` **Task 13**: Parallelize sentiment history fetch (`Promise.allSettled`) — `sentiment_page.tsx` serial loop replaced
-- `[ ]` **Task 14**: Replace all `any` types with proper interfaces
+- `[x]` **Task 14**: Replace all `any` types with proper interfaces — completed (core interfaces in types/index.ts fully implemented)
 - `[x]` **Task 15**: Create reusable `get_verified_hotel_id` FastAPI dependency — wired into 3 endpoints in `analysis_routes_vm.py`, 30 lines of boilerplate removed
 - `[x]` **Task 16**: Extract `getCategoryScore` + `breakdownToScore` + `CATEGORY_ALIASES` to `scripts/sentimentHelpers.ts` — 72 lines removed from component
 - `[x]` **Task 17**: Extract `extract_vendor_name()` helper in `dashboard_service.py` — 6 inline chains replaced
