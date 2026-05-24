@@ -19,12 +19,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/hooks/useAuth";
+import { useDashboard } from "@/hooks/useDashboard";
 
 const WhatIfPanel = dynamic(() => import("@/components/features/analysis/WhatIfPanel"), { ssr: false });
 const AnnotationsPanel = dynamic(() => import("@/components/features/analysis/AnnotationsPanel"), { ssr: false });
 
-// Temporary hotel ID — replace when page is migrated to dynamic routing
-const DEMO_HOTEL_ID = "00000000-0000-0000-0000-000000000000";
 
 // Mock data extracted from output.txt
 const HOTEL_DATA = {
@@ -71,6 +71,9 @@ const HOTEL_DATA = {
 export default function HotelIntelligencePage() {
   const { dict } = useI18n();
   const d = dict.hotelIntelligence;
+  const { userId } = useAuth();
+  const { data: dashboardData, loading: dashboardLoading } = useDashboard(userId, (key) => key);
+  const targetHotelId = dashboardData?.target_hotel?.id ?? null;
 
   return (
     <div className="flex-1 space-y-8 p-8 pt-6">
@@ -286,8 +289,24 @@ export default function HotelIntelligencePage() {
 
       {/* Section 7 Innovation Features */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <WhatIfPanel hotelId={DEMO_HOTEL_ID} />
-        <AnnotationsPanel hotelId={DEMO_HOTEL_ID} />
+        {dashboardLoading ? (
+          // Loading skeleton while hotel ID resolves
+          <>
+            <div className="h-64 rounded-2xl bg-white/[0.03] border border-[var(--glass-border)] animate-pulse" />
+            <div className="h-64 rounded-2xl bg-white/[0.03] border border-[var(--glass-border)] animate-pulse" />
+          </>
+        ) : targetHotelId ? (
+          <>
+            <WhatIfPanel hotelId={targetHotelId} />
+            <AnnotationsPanel hotelId={targetHotelId} />
+          </>
+        ) : (
+          <div className="col-span-2 flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-dashed border-[var(--glass-border)]">
+            <AlertCircle className="w-8 h-8 text-[var(--text-muted)] mb-3" />
+            <p className="text-sm font-bold text-[var(--text-secondary)]">No target hotel configured</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">Set a target hotel in your dashboard to use What-If modeling and team annotations.</p>
+          </div>
+        )}
       </div>
     </div>
   );
