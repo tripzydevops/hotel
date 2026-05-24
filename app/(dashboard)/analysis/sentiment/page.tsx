@@ -1239,6 +1239,7 @@ export default function SentimentPage() {
               )}
 
               <SentimentBreakdown
+                mentions={guestMentions}
                 items={
                   (targetHotel?.sentiment_raw_breakdown ||
                     (targetHotel as any)?.sentiment_breakdown || [])
