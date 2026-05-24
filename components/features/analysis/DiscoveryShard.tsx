@@ -37,8 +37,14 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.discoverCompetitors(hotelId);
-      setRivals(response);
+      // Use the semantic vector-based route (no SerpAPI dependency).
+      // Maps similarity_score → similarity for the existing UI.
+      const response = await api.discoverGhostCompetitors(hotelId);
+      const normalised = (response || []).map((r: any) => ({
+        ...r,
+        similarity: r.similarity_score ?? r.similarity ?? 0,
+      }));
+      setRivals(normalised);
     } catch (err) {
       console.error("Discovery failed:", err);
       setError("Autonomous scan failed. Re-initializing...");
