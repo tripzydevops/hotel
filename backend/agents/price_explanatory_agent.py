@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, Dict
 
 from backend.services.analysis_service import get_genai_client
@@ -66,14 +67,17 @@ class PriceExplanatoryAgent:
         """
 
         try:
-            interaction = client.interactions.create(
+            response = await asyncio.to_thread(
+                client.models.generate_content,
                 model="gemini-3-flash-preview",
-                input=prompt,
-                system_instruction="You are a Senior Revenue Strategist specializing in hotel market intelligence and compression analysis.",
+                contents=prompt,
+                config={
+                    "system_instruction": "You are a Senior Revenue Strategist specializing in hotel market intelligence and compression analysis."
+                },
             )
             
-            if interaction and interaction.outputs:
-                return interaction.outputs[-1].text.strip()
+            if response and response.text:
+                return response.text.strip()
             return fallback_msg
         except Exception as e:
             logger.error(f"[PriceExplanatoryAgent] AI generation failed: {e}")

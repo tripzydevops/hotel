@@ -690,6 +690,8 @@ class DataForSEOProvider(HotelDataProvider):
         # === 9. Best Price from prices object ===
         best_price = prices_obj.get("price")
         currency = prices_obj.get("currency")
+        check_in = prices_obj.get("check_in")
+        check_out = prices_obj.get("check_out")
 
         # Currency Fallback: check room catalog or items
         if not currency:
@@ -763,6 +765,8 @@ class DataForSEOProvider(HotelDataProvider):
             "best_price": best_price,
             "currency": currency,
             "rating_distribution": rating_distribution,
+            "check_in_date": check_in,
+            "check_out_date": check_out,
             "raw_data": data,
         }
 
@@ -1927,10 +1931,26 @@ class DataForSEOProvider(HotelDataProvider):
                     else:
                         parsed = self._parse_advanced_hotel_info(result)
 
+                    # [FIX 2026-05-24] Echo check-in/check-out dates from task payload
+                    # so scan_persistence.py can save stay dates for calendar views.
+                    task_data = task.get("data") or {}
+                    check_in_date = (
+                        task_data.get("check_in")
+                        or task_data.get("check_in_date")
+                        or parsed.get("check_in_date")
+                    )
+                    check_out_date = (
+                        task_data.get("check_out")
+                        or task_data.get("check_out_date")
+                        or parsed.get("check_out_date")
+                    )
+
                     info_result = {
                         "status": "success",
                         "task_type": "hotel_info",
-                        "tag": (task.get("data") or {}).get("tag"),
+                        "tag": task_data.get("tag"),
+                        "check_in_date": check_in_date,
+                        "check_out_date": check_out_date,
                         **parsed,
                     }
                     return info_result, res_json

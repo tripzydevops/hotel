@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 # LINTER FIX: Moved imports to top of file to resolve E402
@@ -100,12 +101,13 @@ class MarketIntelligenceService:
         """
 
         try:
-            interaction = self.client.interactions.create(
+            response = await asyncio.to_thread(
+                self.client.models.generate_content,
                 model=self.model_name,
-                input=prompt,
+                contents=prompt,
             )
             
-            response_text = interaction.outputs[-1].text
+            response_text = response.text
             # Clean up potential markdown formatting if Gemini includes it (fallback)
             if "```json" in response_text:
                 response_text = (
@@ -155,12 +157,15 @@ class MarketIntelligenceService:
         """
 
         try:
-            interaction = self.client.interactions.create(
+            response = await asyncio.to_thread(
+                self.client.models.generate_content,
                 model=self.model_name,
-                input=prompt,
-                system_instruction="You are a senior revenue management consultant focusing on actionable, concise market intelligence.",
+                contents=prompt,
+                config={
+                    "system_instruction": "You are a senior revenue management consultant focusing on actionable, concise market intelligence."
+                },
             )
-            return interaction.outputs[-1].text
+            return response.text
         except Exception as e:
             logger.error(f"[AI] City briefing failed: {e}")
             return f"# {city_data.get('city', 'Market')} Briefing\n\nError synthesizing briefing text."
