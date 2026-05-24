@@ -61,17 +61,7 @@ class MarketIntelligenceService:
         Summarizes market data into high-level insights using Gemini.
         """
         if not self.sdk_available or not self.client:
-            return {
-                "summary": "AI Synthesis is currently in Safe Mode.",
-                "strategic_actions": [
-                    "Perform manual data verification",
-                    "Configure GEMINI_API_KEY for automated insights",
-                    "Check system connectivity",
-                ],
-                "market_sentiment": "Sentiment analysis unavailable in Safe Mode.",
-                "market_stability": "Unknown",
-                "status": "safe_mode",
-            }
+            return self._heuristic_market_fallback(market_data, locale)
 
         # Prepare context from market data
         context = {
@@ -101,31 +91,185 @@ class MarketIntelligenceService:
         {json.dumps(context, indent=2)}
         """
 
-        try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-            )
-            
-            response_text = response.text
-            # Clean up potential markdown formatting if Gemini includes it (fallback)
-            if "```json" in response_text:
-                response_text = (
-                    response_text.split("```json")[1].split("```")[0].strip()
-                )
-            elif "```" in response_text:
-                response_text = response_text.split("```")[1].split("```")[0].strip()
+        models_to_try = [self.model_name, "gemini-2.5-flash", "gemini-1.5-flash"]
+        seen_models = set()
+        models_to_try = [x for x in models_to_try if not (x in seen_models or seen_models.add(x))]
 
-            return json.loads(response_text)
-        except Exception as e:
-            logger.error(f"[AI] Intelligence briefing synthesis failed: {e}")
-            return {
-                "summary": "An error occurred during insight synthesis.",
-                "strategic_actions": ["Review raw market parity logs"],
-                "market_sentiment": "Unavailable",
-                "market_stability": "Unknown",
-            }
+        response_text = None
+        last_error = None
+
+        for model in models_to_try:
+            try:
+                logger.info(f"[AI] Attempting generate_market_brief with model: {model}")
+                response = await asyncio.to_thread(
+                    self.client.models.generate_content,
+                    model=model,
+                    contents=prompt,
+                    config={
+                        "response_mime_type": "application/json"
+                    }
+                )
+                if response and response.text:
+                    response_text = response.text
+                    break
+            except Exception as e:
+                logger.warning(f"[AI] Model {model} failed in generate_market_brief: {e}")
+                last_error = e
+                continue
+
+        if response_text:
+            try:
+                cleaned_text = response_text
+                if "```json" in cleaned_text:
+                    cleaned_text = cleaned_text.split("```json")[1].split("```")[0].strip()
+                elif "```" in cleaned_text:
+                    cleaned_text = cleaned_text.split("```")[1].split("```")[0].strip()
+                
+                # Extract clean JSON braces block if needed
+                start_idx = cleaned_text.find("{")
+                end_idx = cleaned_text.rfind("}")
+                if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                    cleaned_text = cleaned_text[start_idx:end_idx + 1]
+
+                return json.loads(cleaned_text)
+            except Exception as json_err:
+                logger.error(f"[AI] JSON parsing failed in generate_market_brief: {json_err}. Text: {response_text}")
+                last_error = json_err
+
+        logger.error(f"[AI] All models failed in generate_market_brief. Error: {last_error}. Invoking heuristic fallback.")
+        return self._heuristic_market_fallback(market_data, locale)
+
+    def _heuristic_market_fallback(
+        self, market_data: Dict[str, Any], locale: str = "en"
+    ) -> Dict[str, Any]:
+        """
+        A high-fidelity backup rule engine that calculates strategic recommendations 
+        from raw metrics when LLM endpoints are offline or regional credentials fail.
+        """
+        ari = market_data.get("ari")
+        sent_index = market_data.get("sent_index")
+        
+        # Safely convert to float
+        try:
+            f_ari = float(ari) if ari is not None else 100.0
+        except (ValueError, TypeError):
+            f_ari = 100.0
+
+        try:
+            f_sent = float(sent_index) if sent_index is not None else 100.0
+        except (ValueError, TypeError):
+            f_sent = 100.0
+
+        is_tr = locale == "tr"
+
+        if f_ari >= 105 and f_sent >= 105:
+            summary = (
+                "Kusursuz misafir memnuniyeti sayesinde pazar ortalamasının üzerinde premium fiyatlandırma başarıyla sürdürülüyor."
+                if is_tr
+                else "Premium rates are successfully maintained above the market average, backed by excellent guest satisfaction."
+            )
+            actions = (
+                [
+                    "Hizmet kalitesini korumak için operasyonel standartları sürdürün.",
+                    "Premium konumlandırmayı vurgulayan pazarlama kampanyaları düzenleyin.",
+                    "Rakip fiyat hareketlerini ve doluluk oranlarını yakından izleyin."
+                ]
+                if is_tr
+                else [
+                    "Maintain operational standards to preserve high service quality.",
+                    "Run marketing campaigns highlighting premium positioning.",
+                    "Closely monitor competitor rate movements and occupancy."
+                ]
+            )
+            sentiment = (
+                "Son derece olumlu. Misafirler yüksek fiyatları sunulan üstün deneyimle uyumlu buluyor."
+                if is_tr
+                else "Highly positive. Guests perceive superior value, justifying the premium rate structure."
+            )
+            stability = "Optimal"
+        elif f_ari >= 105 and f_sent < 95:
+            summary = (
+                "Tesis yüksek fiyat segmentinde yer alırken misafir memnuniyetinin pazarın gerisinde kalması risk oluşturuyor."
+                if is_tr
+                else "The hotel is positioned in a high price segment, but guest satisfaction trailing the market poses a risk."
+            )
+            actions = (
+                [
+                    "Misafir şikayetlerinin yoğunlaştığı alanlarda acil kalite denetimi yapın.",
+                    "Müşteri memnuniyetini artırana kadar geçici taktiksel indirimler değerlendirin.",
+                    "Ön büro ve hizmet personeline yönelik müşteri ilişkileri eğitimi planlayın."
+                ]
+                if is_tr
+                else [
+                    "Conduct an immediate quality audit in areas with high complaints.",
+                    "Consider temporary tactical discounts until satisfaction improves.",
+                    "Plan guest relations training for front-of-house staff."
+                ]
+            )
+            sentiment = (
+                "Riskli. Misafirler sunulan hizmet kalitesine kıyasla fiyatların aşırı yüksek olduğunu düşünüyor."
+                if is_tr
+                else "At risk. Guests perceive rates as overpriced relative to current service quality."
+            )
+            stability = "Volatile"
+        elif f_ari < 95 and f_sent >= 105:
+            summary = (
+                "Yüksek misafir memnuniyetine rağmen fiyatların pazarın gerisinde kalması RevPAR artış fırsatı sunuyor."
+                if is_tr
+                else "Despite high guest satisfaction, rates trailing the market average represent a strong RevPAR growth opportunity."
+            )
+            actions = (
+                [
+                    "Fiyatları pazar ortalamasına çekmek için kademeli artışlar planlayın.",
+                    "Yüksek doluluk dönemlerinde oda fiyatlarını agresif şekilde optimize edin.",
+                    "Doğrudan rezervasyon kanallarında sadakat programı avantajlarını öne çıkarın."
+                ]
+                if is_tr
+                else [
+                    "Plan gradual rate increases to align closer with the market average.",
+                    "Optimize rates aggressively during high-occupancy windows.",
+                    "Highlight loyalty benefits on direct booking channels."
+                ]
+            )
+            sentiment = (
+                "Çok güçlü. Misafirler sunulan deneyimin ödenen ücrete göre harika bir değer sunduğunu belirtiyor."
+                if is_tr
+                else "Very strong. Guests note that the experience offers great value for the price paid."
+            )
+            stability = "Moderate"
+        else:
+            summary = (
+                "Tesis fiyat ve memnuniyet endeksleri açısından pazar ortalamasıyla dengeli bir seyir izliyor."
+                if is_tr
+                else "The hotel maintains a balanced position aligned with market averages for both price and satisfaction."
+            )
+            actions = (
+                [
+                    "Sezonluk talep dalgalanmalarına göre dinamik fiyatlandırma uygulayın.",
+                    "Doğrudan kanal rezervasyon oranını artırmak için özel paketler sunun.",
+                    "Rakip tesislerin müşteri yorumlarındaki zayıf yönlerini analiz edin."
+                ]
+                if is_tr
+                else [
+                    "Apply dynamic pricing based on seasonal demand fluctuations.",
+                    "Offer exclusive packages to boost direct booking share.",
+                    "Analyze weaknesses in competitor reviews for local advantages."
+                ]
+            )
+            sentiment = (
+                "Dengeli. Pazardaki rakiplerle benzer seviyede bir müşteri memnuniyeti gözleniyor."
+                if is_tr
+                else "Balanced. Guest satisfaction is aligned with local competitors."
+            )
+            stability = "Moderate"
+
+        return {
+            "summary": summary,
+            "strategic_actions": actions,
+            "market_sentiment": sentiment,
+            "market_stability": stability,
+            "status": "heuristic_fallback",
+        }
 
     async def generate_city_briefing(self, city_data: Dict[str, Any]) -> str:
         """
@@ -157,19 +301,31 @@ class MarketIntelligenceService:
         {json.dumps(city_data, indent=2)}
         """
 
-        try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config={
-                    "system_instruction": "You are a senior revenue management consultant focusing on actionable, concise market intelligence."
-                },
-            )
-            return response.text
-        except Exception as e:
-            logger.error(f"[AI] City briefing failed: {e}")
-            return f"# {city_data.get('city', 'Market')} Briefing\n\nError synthesizing briefing text."
+        models_to_try = [self.model_name, "gemini-2.5-flash", "gemini-1.5-flash"]
+        seen_models = set()
+        models_to_try = [x for x in models_to_try if not (x in seen_models or seen_models.add(x))]
+        
+        last_error = None
+        for model in models_to_try:
+            try:
+                logger.info(f"[AI] Attempting generate_city_briefing with model: {model}")
+                response = await asyncio.to_thread(
+                    self.client.models.generate_content,
+                    model=model,
+                    contents=prompt,
+                    config={
+                        "system_instruction": "You are a senior revenue management consultant focusing on actionable, concise market intelligence."
+                    },
+                )
+                if response and response.text:
+                    return response.text
+            except Exception as e:
+                logger.warning(f"[AI] Model {model} failed in generate_city_briefing: {e}")
+                last_error = e
+                continue
+                
+        logger.error(f"[AI] All models failed for city briefing: {last_error}")
+        return f"# {city_data.get('city', 'Market')} Briefing\n\nError synthesizing briefing text due to service interruption."
 
     async def get_embedding(self, text: str) -> Optional[List[float]]:
         """
@@ -178,20 +334,31 @@ class MarketIntelligenceService:
         if not self.sdk_available or not self.client:
             return None
 
-        try:
-            # Using models/gemini-embedding-2 with 768 output dimensionality
-            result = self.client.models.embed_content(
-                model="models/gemini-embedding-2",
-                contents=text,
-                config={
-                    "task_type": "RETRIEVAL_DOCUMENT",
-                    "output_dimensionality": 768,
-                }
-            )
-            return result.embeddings[0].values
-        except Exception as e:
-            logger.error(f"[AI] Embedding failed: {e}")
-            return None
+        models_to_try = [
+            ("models/gemini-embedding-2", 768),
+            ("models/text-embedding-004", 768)
+        ]
+        
+        last_error = None
+        for model_name, dims in models_to_try:
+            try:
+                result = self.client.models.embed_content(
+                    model=model_name,
+                    contents=text,
+                    config={
+                        "task_type": "RETRIEVAL_DOCUMENT",
+                        "output_dimensionality": dims,
+                    }
+                )
+                if result and result.embeddings and len(result.embeddings) > 0:
+                    return result.embeddings[0].values
+            except Exception as e:
+                logger.warning(f"[AI] Embedding model {model_name} failed: {e}")
+                last_error = e
+                continue
+                
+        logger.error(f"[AI] Embedding failed for all models: {last_error}")
+        return None
 
 
 # Singleton instance

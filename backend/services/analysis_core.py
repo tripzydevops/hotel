@@ -409,6 +409,13 @@ async def run_market_intelligence(
     if not client:
         return run_heuristic_market_fallback(summary, threshold, volatility)
 
+    models_to_try = [model, "gemini-2.5-flash", "gemini-1.5-flash"]
+    seen_models = set()
+    models_to_try = [x for x in models_to_try if not (x in seen_models or seen_models.add(x))]
+
+    response = None
+    last_error = None
+
     try:
         prompt = f"""
         You are a Senior Hotel Revenue Architect. Analyze this market dataset and provide strategic reasoning.
@@ -430,12 +437,26 @@ async def run_market_intelligence(
         }}
         """
 
-        response = await asyncio.to_thread(
-            client.models.generate_content, model=model, contents=prompt
-        )
+        for m in models_to_try:
+            try:
+                logger.info(f"[Analysis] Attempting run_market_intelligence with model: {m}")
+                response = await asyncio.to_thread(
+                    client.models.generate_content,
+                    model=m,
+                    contents=prompt,
+                    config={
+                        "response_mime_type": "application/json"
+                    }
+                )
+                if response and response.text:
+                    break
+            except Exception as model_err:
+                logger.warning(f"[Analysis] Model {m} failed in run_market_intelligence: {model_err}")
+                last_error = model_err
+                continue
 
         if not response or not response.text:
-            raise ValueError("No output from Gemini generate_content")
+            raise last_error or ValueError("No output from Gemini generate_content")
 
         raw_data = json.loads(_clean_json_output(response.text))
 
@@ -527,10 +548,35 @@ async def synthesize_pricing_dna(
     }}
     """
 
+    models_to_try = [model, "gemini-2.5-flash", "gemini-1.5-flash"]
+    seen_models = set()
+    models_to_try = [x for x in models_to_try if not (x in seen_models or seen_models.add(x))]
+
+    response = None
+    last_error = None
+
     try:
-        response = await asyncio.to_thread(
-            client.models.generate_content, model=model, contents=prompt
-        )
+        for m in models_to_try:
+            try:
+                logger.info(f"[Analysis] Attempting synthesize_pricing_dna with model: {m}")
+                response = await asyncio.to_thread(
+                    client.models.generate_content,
+                    model=m,
+                    contents=prompt,
+                    config={
+                        "response_mime_type": "application/json"
+                    }
+                )
+                if response and response.text:
+                    break
+            except Exception as model_err:
+                logger.warning(f"[Analysis] Model {m} failed in synthesize_pricing_dna: {model_err}")
+                last_error = model_err
+                continue
+
+        if not response or not response.text:
+            raise last_error or ValueError("No output from Gemini generate_content")
+
         dna = json.loads(_clean_json_output(response.text))
         dna["last_updated"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         return dna
@@ -592,11 +638,26 @@ async def stream_narrative_gen(
             return
 
         # AGENT_FEATURE: Using modern Async Generative models stream and Gemini 3.1
-        stream = await client.aio.models.generate_content_stream(
-            model="gemini-3-flash-preview",
-            contents=prompt,
-            config={"temperature": 0.7}
-        )
+        models_to_try = ["gemini-3-flash-preview", "gemini-2.5-flash", "gemini-1.5-flash"]
+        stream = None
+        last_error = None
+        for m in models_to_try:
+            try:
+                logger.info(f"[Analysis] Attempting stream_narrative_gen with model: {m}")
+                stream = await client.aio.models.generate_content_stream(
+                    model=m,
+                    contents=prompt,
+                    config={"temperature": 0.7}
+                )
+                break
+            except Exception as model_err:
+                logger.warning(f"[Analysis] Model {m} failed in stream_narrative_gen: {model_err}")
+                last_error = model_err
+                continue
+
+        if not stream:
+            raise last_error or ValueError("Failed to initialize any Gemini stream")
+
         async for chunk in stream:
             if chunk.text:
                 yield chunk.text
