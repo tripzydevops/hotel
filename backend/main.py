@@ -12,16 +12,14 @@ from datetime import datetime, timezone
 # Ensure backend module is resolvable
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, Request, Depends, BackgroundTasks, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Dict, Any, Union
+from fastapi import FastAPI, Request, Depends, HTTPException
+from typing import Dict, Any
 import traceback
 
 # GZipMiddleware compresses API responses to reduce bandwidth and speed up data transfer
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from dotenv import load_dotenv
 from supabase import Client
 from backend.utils.db import get_supabase
 from backend.utils.logger import get_logger

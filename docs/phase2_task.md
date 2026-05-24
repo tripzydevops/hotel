@@ -9,14 +9,14 @@
 - `[x]` **Task 5**: Restrict debug endpoint to admin role
 - `[x]` **Task 6**: Add auth + activate DB insert in `batch_route.ts`
 - `[x]` **Task 7**: Add composite index on `price_logs`
-- `[ ]` **Task 8**: Extract `analysis_core.py` — deferred (1,000 line refactor, risk of breakage)
+- `[x]` **Task 8**: Extract `analysis_core.py` — completed (refactored `backend/services/analysis_service.py` to import from `analysis_core.py`)
 
 ## Phase 2: Code Quality & UX Polish (Current Session)
 
 - `[x]` **Task 9**: Split `sentiment_page.tsx` into 6+ modular components. (1,486 lines → components)
-- `[ ]` **Task 10**: Split `HotelDetailsModal.tsx` into tab components
-- `[ ]` **Task 11**: Decompose `get_dashboard_logic()` sub-functions
-- `[ ]` **Task 12**: Add Pydantic response models for all API endpoints
+- `[x]` **Task 10**: Split `HotelDetailsModal.tsx` into tab components — completed (decomposed into TabRooms, TabOverview, TabGallery, TabAmenities, TabOffers, TabReviews)
+- `[x]` **Task 11**: Decompose `get_dashboard_logic()` sub-functions — completed (decomposed into _verify_dashboard_access, _fetch_user_metadata_concurrently, _build_directory_map, _fetch_and_filter_prices, _recover_missing_reputation_data)
+- `[x]` **Task 12**: Add Pydantic response models for all API endpoints — completed (schemas.py created and integrated)
 - `[x]` **Task 13**: Parallelize sentiment history fetch (`Promise.allSettled`) — `sentiment_page.tsx` serial loop replaced
 - `[ ]` **Task 14**: Replace all `any` types with proper interfaces
 - `[x]` **Task 15**: Create reusable `get_verified_hotel_id` FastAPI dependency — wired into 3 endpoints in `analysis_routes_vm.py`, 30 lines of boilerplate removed
