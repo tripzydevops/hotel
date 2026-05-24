@@ -13,7 +13,9 @@ if not db_url:
 files = [
     "041_market_analysis_rpc.sql",
     "scripts/027_add_agent_and_signal_schema.sql",
-    "scripts/042_add_price_logs_composite_index.sql"
+    "scripts/042_add_price_logs_composite_index.sql",
+    "scripts/043_repurpose_user_profiles_for_b2b.sql",
+    "scripts/044_add_collaboration_and_alert_schema.sql"
 ]
 
 try:
