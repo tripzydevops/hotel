@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS public.user_signals (
 );
 
 -- Index for fast aggregation of signals per user/session
-CREATE INDEX idx_user_signals_user_id ON public.user_signals(user_id);
-CREATE INDEX idx_user_signals_session_id ON public.user_signals(session_id);
+CREATE INDEX IF NOT EXISTS idx_user_signals_user_id ON public.user_signals(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_signals_session_id ON public.user_signals(session_id);
 
 -- 3. Agent Workflows (For asynchronous Agentic Reasoning tracking)
 -- NOTE: Merged schema from 027_add_agent_workflows_schema.sql (hotel_id column)
@@ -40,4 +40,4 @@ CREATE TABLE IF NOT EXISTS public.agent_workflows (
 );
 
 -- Index for fetching active workflows
-CREATE INDEX idx_agent_workflows_status ON public.agent_workflows(status);
+CREATE INDEX IF NOT EXISTS idx_agent_workflows_status ON public.agent_workflows(status);
