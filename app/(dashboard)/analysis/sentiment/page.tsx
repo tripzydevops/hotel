@@ -826,50 +826,7 @@ export default function SentimentPage() {
       }
     });
 
-    // Fallback to dynamic breakdown synthesis if empty
-    const breakdownForSynthesis = hotel.sentiment_raw_breakdown || hotel.sentiment_breakdown;
-    if (parsedMentions.length === 0 && Array.isArray(breakdownForSynthesis)) {
-      breakdownForSynthesis.forEach((s: any) => {
-        const name = s.name || s.display_name || "N/A";
-        if (name === "N/A") return;
-
-        const pos = Number(s.positive) || 0;
-        const neg = Number(s.negative) || 0;
-        const neu = Number(s.neutral) || 0;
-        const total = Number(s.total_mentioned) || Number(s.total) || (pos + neg + neu);
-        if (total === 0) return;
-
-        const normalizedCat = normalizeCategoryName(name);
-        
-        if (KEYWORD_MAP[normalizedCat]) {
-          const catData = KEYWORD_MAP[normalizedCat];
-          
-          const distributeCount = (count: number, phrases: string[], sentiment: string) => {
-            if (count <= 0) return;
-            const numPhrases = Math.max(1, Math.ceil(count / 3));
-            let remainingCount = count;
-            for (let i = 0; i < numPhrases; i++) {
-              const isLast = i === numPhrases - 1;
-              const portion = isLast ? remainingCount : Math.ceil(count / (numPhrases + 1));
-              if (portion > 0) {
-                parsedMentions.push({ keyword: phrases[i], count: portion, sentiment, category: normalizedCat });
-              }
-              remainingCount -= portion;
-            }
-          };
-
-          distributeCount(pos, catData.positive, "positive");
-          distributeCount(neg, catData.negative, "negative");
-          distributeCount(neu, catData.neutral, "neutral");
-        } else {
-          let sentiment = "neutral";
-          if (pos > neg && pos > neu) sentiment = "positive";
-          else if (neg > pos && neg > neu) sentiment = "negative";
-          parsedMentions.push({ keyword: name, count: total, sentiment, category: normalizedCat });
-        }
-      });
-    }
-
+    // Fallback dynamic synthesis disabled to ensure keywords truly represent real guest reviews.
     return parsedMentions.sort((a: any, b: any) => b.count - a.count);
   }, [targetHotel, locale]);
 
@@ -1161,17 +1118,19 @@ export default function SentimentPage() {
                 </h3>
               </div>
               {/* ── Premium Quantum Tactical Keyword Matrix (Guest Voice) ── */}
-              {groupedMentions.length > 0 && (
-                <div className="mb-10 pb-8 border-b border-[var(--glass-border)] relative">
-                  <div className="flex flex-col mb-6">
-                    <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-[0.2em] flex items-center gap-2">
-                      <MessageSquare className="w-3 h-3 text-[var(--soft-gold)]" />
-                      {locale === 'tr' ? "Kategorize Edilmiş Taktiksel Konuk Sesi" : "Categorized Tactical Guest Voice"}
-                    </p>
-                    <h4 className="text-sm font-semibold text-[var(--text-primary)] mt-1">
-                      {locale === 'tr' ? "Gerçek konuk değerlendirmelerinden çıkarılan taktiksel içgörüler" : "Tactical insights extracted from real guest reviews"}
-                    </h4>
-                  </div>
+              {/* ── Premium Quantum Tactical Keyword Matrix (Guest Voice) ── */}
+              <div className="mb-10 pb-8 border-b border-[var(--glass-border)] relative">
+                <div className="flex flex-col mb-6">
+                  <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-[0.2em] flex items-center gap-2">
+                    <MessageSquare className="w-3.5 h-3.5 text-[var(--soft-gold)]" />
+                    {locale === 'tr' ? "Kategorize Edilmiş Taktiksel Konuk Sesi" : "Categorized Tactical Guest Voice"}
+                  </p>
+                  <h4 className="text-sm font-semibold text-[var(--text-primary)] mt-1">
+                    {locale === 'tr' ? "Gerçek konuk değerlendirmelerinden çıkarılan taktiksel içgörüler" : "Tactical insights extracted from real guest reviews"}
+                  </h4>
+                </div>
+
+                {groupedMentions.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
                     {groupedMentions.map((group, gIdx) => (
                       <div 
@@ -1236,8 +1195,21 @@ export default function SentimentPage() {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-10 py-12 rounded-2xl bg-[var(--glass-bg)] border border-[var(--glass-border)] text-center relative overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[var(--soft-gold)]/20 to-transparent" />
+                    <MessageSquare className="w-8 h-8 text-[var(--soft-gold)] opacity-40 mb-4" />
+                    <h5 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider mb-2">
+                      {locale === 'tr' ? "Anahtar Kelime Verisi Yetersiz" : "Insufficient Keyword Data"}
+                    </h5>
+                    <p className="text-[11px] text-[var(--text-muted)] max-w-md leading-relaxed">
+                      {locale === 'tr' 
+                        ? "Bu otel için Google NLP anahtar kelime kümelemesi henüz oluşturulmamıştır. Yeterli değerlendirme hacmi sağlandığında, analiz otomatik olarak bu alanda görünecektir." 
+                        : "No keyword mentions have been extracted for this hotel yet. Once sufficient review volume or Google NLP category data is collected, the analysis will appear here automatically."}
+                    </p>
+                  </div>
+                )}
+              </div>
 
               <SentimentBreakdown
                 mentions={guestMentions}
