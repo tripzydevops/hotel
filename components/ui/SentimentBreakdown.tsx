@@ -13,15 +13,11 @@ interface SentimentItem {
 }
 
 import { useI18n } from "@/lib/i18n";
+import { GuestMention } from "@/types";
 
 interface SentimentBreakdownProps {
   items: SentimentItem[];
-  mentions?: Array<{
-    keyword: string;
-    category: string;
-    count: number;
-    sentiment: string;
-  }>;
+  mentions?: GuestMention[];
 }
 
 export const SentimentBreakdown: React.FC<SentimentBreakdownProps> = ({
