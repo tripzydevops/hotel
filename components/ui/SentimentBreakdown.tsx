@@ -83,47 +83,52 @@ export const SentimentBreakdown: React.FC<SentimentBreakdownProps> = ({
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05 }}
-              onClick={() => toggleCategory(item.name)}
-              className="relative group cursor-pointer p-4 -mx-4 rounded-2xl hover:bg-[var(--deep-ocean-accent)]/20 transition-all duration-300 border border-transparent hover:border-[var(--glass-border)]/30"
+              className="relative group p-4 -mx-4 rounded-2xl hover:bg-[var(--deep-ocean-accent)]/10 transition-all duration-300 border border-transparent hover:border-[var(--glass-border)]/30"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex flex-col gap-1">
-                  <h4 className="text-sm font-black text-[var(--text-primary)] group-hover:text-[var(--soft-gold)] transition-colors uppercase tracking-widest">
-                    {item.name}
-                  </h4>
-                  <span className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest opacity-60">
-                    {item.total_mentioned} {locale === 'tr' ? "SİNYAL TESPİTİ" : "SIGNAL DETECTIONS"}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="flex flex-col items-end">
-                    <div className="flex items-center gap-1.5 grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
-                        <ThumbsUp className="w-3 h-3 text-optimal-green" />
-                        <span className="text-xs font-black text-[var(--text-primary)]">{posPercent}%</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all mt-0.5">
-                        <ThumbsDown className="w-3 h-3 text-alert-red" />
-                        <span className="text-[10px] font-black text-[var(--text-muted)]">{negPercent}%</span>
-                    </div>
+              {/* Clickable Header Area */}
+              <div
+                onClick={() => toggleCategory(item.name)}
+                className="cursor-pointer select-none"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex flex-col gap-1">
+                    <h4 className="text-sm font-black text-[var(--text-primary)] group-hover:text-[var(--soft-gold)] transition-colors uppercase tracking-widest">
+                      {item.name}
+                    </h4>
+                    <span className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest opacity-60">
+                      {item.total_mentioned} {locale === 'tr' ? "SİNYAL TESPİTİ" : "SIGNAL DETECTIONS"}
+                    </span>
                   </div>
-                  <motion.div
-                    animate={{ rotate: isExpanded ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="text-[var(--text-muted)] opacity-60 group-hover:opacity-100 group-hover:text-[var(--soft-gold)] transition-colors"
-                  >
-                    <ChevronDown className="w-4 h-4" />
-                  </motion.div>
-                </div>
-              </div>
 
-              {/* Graphical Integrity Line */}
-              <div className="h-1 w-full bg-[var(--deep-ocean-accent)] rounded-full overflow-hidden mb-1 border border-[var(--glass-border)]">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${posPercent}%` }}
-                  className="h-full bg-gradient-to-r from-optimal-green/20 via-optimal-green/40 to-optimal-green/60 group-hover:from-[var(--soft-gold)]/40 group-hover:to-[var(--soft-gold)] transition-all duration-500"
-                />
+                  <div className="flex items-center gap-4">
+                    <div className="flex flex-col items-end">
+                      <div className="flex items-center gap-1.5 grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
+                          <ThumbsUp className="w-3 h-3 text-optimal-green" />
+                          <span className="text-xs font-black text-[var(--text-primary)]">{posPercent}%</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all mt-0.5">
+                          <ThumbsDown className="w-3 h-3 text-alert-red" />
+                          <span className="text-[10px] font-black text-[var(--text-muted)]">{negPercent}%</span>
+                      </div>
+                    </div>
+                    <motion.div
+                      animate={{ rotate: isExpanded ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-[var(--text-muted)] opacity-60 group-hover:opacity-100 group-hover:text-[var(--soft-gold)] transition-colors"
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </motion.div>
+                  </div>
+                </div>
+
+                {/* Graphical Integrity Line */}
+                <div className="h-1 w-full bg-[var(--deep-ocean-accent)] rounded-full overflow-hidden mb-1 border border-[var(--glass-border)]">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${posPercent}%` }}
+                    className="h-full bg-gradient-to-r from-optimal-green/20 via-optimal-green/40 to-optimal-green/60 group-hover:from-[var(--soft-gold)]/40 group-hover:to-[var(--soft-gold)] transition-all duration-500"
+                  />
+                </div>
               </div>
 
               {/* Collapsible details section */}
@@ -135,6 +140,7 @@ export const SentimentBreakdown: React.FC<SentimentBreakdownProps> = ({
                     exit={{ height: 0, opacity: 0, marginTop: 0 }}
                     transition={{ duration: 0.2, ease: "easeInOut" }}
                     className="overflow-hidden"
+                    onClick={(e) => e.stopPropagation()} // Prevent collapses when clicking inside expanded details
                   >
                     {/* Decrypted Review Snippet */}
                     {item.description && (
