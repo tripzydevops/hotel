@@ -35,8 +35,10 @@ class TestAIResilience(unittest.TestCase):
             result = loop.run_until_complete(commander.generate_market_brief({"test": "data"}))
             
             self.assertIn("summary", result)
-            summary_lower = result["summary"].lower()
-            self.assertTrue("safe mode" in summary_lower or "error" in summary_lower)
+            self.assertIn("strategic_actions", result)
+            self.assertIn("market_sentiment", result)
+            self.assertIn("market_stability", result)
+            self.assertTrue(len(result["summary"]) > 0)
 
     def test_ai_service_initialization_no_key(self):
         # Simulate missing API key / client

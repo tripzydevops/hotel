@@ -136,7 +136,7 @@ async def _generate_narrative(
             return _static_narrative(hotel_name, delta, monthly_impact)
 
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
 
         direction_word = "improved" if delta > 0 else "dropped"
         impact_sign = "+" if monthly_impact >= 0 else ""

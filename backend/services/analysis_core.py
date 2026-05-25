@@ -409,7 +409,7 @@ async def run_market_intelligence(
     if not client:
         return run_heuristic_market_fallback(summary, threshold, volatility)
 
-    models_to_try = [model, "gemini-2.5-flash", "gemini-1.5-flash"]
+    models_to_try = [model, "gemini-2.5-flash"]
     seen_models = set()
     models_to_try = [x for x in models_to_try if not (x in seen_models or seen_models.add(x))]
 
@@ -548,7 +548,7 @@ async def synthesize_pricing_dna(
     }}
     """
 
-    models_to_try = [model, "gemini-2.5-flash", "gemini-1.5-flash"]
+    models_to_try = [model, "gemini-2.5-flash"]
     seen_models = set()
     models_to_try = [x for x in models_to_try if not (x in seen_models or seen_models.add(x))]
 
@@ -638,7 +638,7 @@ async def stream_narrative_gen(
             return
 
         # AGENT_FEATURE: Using modern Async Generative models stream and Gemini 3.1
-        models_to_try = ["gemini-3-flash-preview", "gemini-2.5-flash", "gemini-1.5-flash"]
+        models_to_try = ["gemini-3-flash-preview", "gemini-2.5-flash"]
         stream = None
         last_error = None
         for m in models_to_try:

@@ -54,7 +54,7 @@ async def simulate_whatif_scenario(
             return _fallback_result("GEMINI_API_KEY not configured.")
 
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(
             prompt,
             generation_config=genai.GenerationConfig(

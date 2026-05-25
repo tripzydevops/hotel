@@ -91,7 +91,7 @@ class MarketIntelligenceService:
         {json.dumps(context, indent=2)}
         """
 
-        models_to_try = [self.model_name, "gemini-2.5-flash", "gemini-1.5-flash"]
+        models_to_try = [self.model_name, "gemini-2.5-flash"]
         seen_models = set()
         models_to_try = [x for x in models_to_try if not (x in seen_models or seen_models.add(x))]
 
@@ -301,7 +301,7 @@ class MarketIntelligenceService:
         {json.dumps(city_data, indent=2)}
         """
 
-        models_to_try = [self.model_name, "gemini-2.5-flash", "gemini-1.5-flash"]
+        models_to_try = [self.model_name, "gemini-2.5-flash"]
         seen_models = set()
         models_to_try = [x for x in models_to_try if not (x in seen_models or seen_models.add(x))]
         

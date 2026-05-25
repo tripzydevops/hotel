@@ -117,7 +117,7 @@ Output your findings as JSON matching this exact schema:
 """
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(
             prompt,
             generation_config=genai.GenerationConfig(

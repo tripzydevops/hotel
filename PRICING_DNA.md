@@ -9,7 +9,7 @@ The **Agentic Pricing DNA** system is an autonomous intelligence layer that anal
 The pipeline follows a four-stage process:
 
 1. **Data Aggregation**: `aggregate_daily_prices.py` compiles raw `price_logs` into daily snapshots in `price_history_daily`. A critical bugfix on May 5, 2026 corrected the SQL `jsonb` aggregation in `perform_data_maintenance()` (defined in Migration 039) to explicitly verify that the `room_types` field is a JSON array before invoking `jsonb_array_length()`. This ensures robust daily rollup generation and prevents terminal transaction aborts caused by corrupted or non-array records.
-2. **LLM Reasoning**: `update_pricing_dna.py` selects a 14-60 day window of history and feeds it to **Gemini-1.5-Flash**. The LLM generates a 50-word "Strategy Profile" (e.g., _Aggressive Opportunist_).
+2. **LLM Reasoning**: `update_pricing_dna.py` selects a 14-60 day window of history and feeds it to **Gemini-2.5-Flash**. The LLM generates a 50-word "Strategy Profile" (e.g., _Aggressive Opportunist_).
 3. **Semantic Embedding**: The strategic description is embedded into a vector using `models/gemini-embedding-001`.
 4. **Vector Persistence**: The resulting embedding is stored in the `pricing_dna` column (Supabase Vector type).
 
@@ -17,7 +17,7 @@ The pipeline follows a four-stage process:
 
 ### SDK & Model Selection
 
-- **Reasoning**: `models/gemini-flash-latest` via `google-generativeai`.
+- **Reasoning**: `models/gemini-2.5-flash` via `google-generativeai`.
 - **Embeddings**: `models/gemini-embedding-001` via `google-generativeai`.
 - **Fallback logic**: We use the stable `google-generativeai` package because the newer `google-genai` SDK encountered 404 errors for standard models in this environment.
 
