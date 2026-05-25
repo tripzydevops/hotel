@@ -1259,7 +1259,7 @@ export default function SentimentPage() {
               </motion.div>
 
               {/* Right Column: Competitive Weakness */}
-              <div className="lg:col-span-5 flex flex-col gap-6">
+              <div className="lg:col-span-5">
                 <CompetitiveWeakness
                   competitors={visibleCompetitors}
                   t={t}
