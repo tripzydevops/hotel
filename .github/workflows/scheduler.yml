@@ -46,6 +46,9 @@ jobs:
 
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           SERPAPI_API_KEY: ${{ secrets.SERPAPI_API_KEY }}
+          DATAFORSEO_LOGIN: ${{ secrets.DATAFORSEO_LOGIN }}
+          DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD }}
+          DATAFORSEO_POSTBACK_URL: ${{ secrets.DATAFORSEO_POSTBACK_URL || 'https://hotel-gray.vercel.app/api/v1/webhooks/dataforseo' }}
           # [NEW] Backup keys for high-volume rotation
           SERPAPI_API_KEY_2: ${{ secrets.SERPAPI_API_KEY_2 }}
           SERPAPI_API_KEY_3: ${{ secrets.SERPAPI_API_KEY_3 }}
