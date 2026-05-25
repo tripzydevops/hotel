@@ -385,7 +385,7 @@ export default function RateMatrix({
                 Hotel/Source
               </th>
               <th className="py-4 text-[10px] uppercase tracking-widest text-[#F6C344] font-bold bg-[#0A1629]/50 text-center border-b-2 border-[#F6C344] min-w-[100px]">
-                Target Price
+                Direct Price
               </th>
               {/* Dynamic OTA Columns */}
               {displayedOTAs.map((ota) => (
@@ -406,6 +406,7 @@ export default function RateMatrix({
               const compPrice = comp.price_info?.current_price;
               const offers = comp.price_info?.offers || [];
               const isTarget = targetHotel && comp.id === targetHotel.id;
+              const compDirectPrice = parsePrice(comp.price_info?.current_price || 0);
 
               return (
                 <tr
@@ -440,7 +441,7 @@ export default function RateMatrix({
                     </div>
                   </td>
                   <td className="py-5 text-center font-bold text-[var(--overlay-text)] bg-[#0A1629]/30 border-l border-r border-[var(--overlay-border)]">
-                    {formatPrice(targetPrice)}
+                    {formatPrice(compDirectPrice)}
                   </td>
                   {/* Dynamic OTA Cells */}
                   {displayedOTAs.map((ota) => {
@@ -451,7 +452,7 @@ export default function RateMatrix({
                       <td key={ota} className="py-5 text-center">
                         <ParityStatus
                           price={offer?.price}
-                          target={targetPrice}
+                          target={compDirectPrice}
                           formatPrice={formatPrice}
                           marketAvg={otaAverages[ota.toLowerCase()]}
                         />
