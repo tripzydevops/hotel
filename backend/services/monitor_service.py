@@ -597,6 +597,16 @@ async def process_system_scans(insforge: InsForgeClient, specific_task_id: Optio
     Now replaces polling with targeted fetching or recovery logic.
     """
     s_logger = get_scheduler_logger()
+    
+    # Pre-flight credentials check: Prevents misconfigured environments 
+    # (e.g. GitHub Actions without repository secrets) from eagerly fetching, 
+    # failing, and poisoning legitimate pending database tasks.
+    dfs_login = os.environ.get("DATAFORSEO_LOGIN") or os.environ.get("DATAFORSEO_API_KEY")
+    dfs_password = os.environ.get("DATAFORSEO_PASSWORD")
+    if not dfs_login or not dfs_password:
+        s_logger.warning("Task Processor: DataForSEO credentials not available in this environment. Skipping results collection to prevent task poisoning.")
+        return
+
     try:
         completed_ids = []
         if specific_task_id:
