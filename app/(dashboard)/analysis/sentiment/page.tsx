@@ -25,6 +25,7 @@ import { getCurrencySymbol, parsePrice } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useAuth } from "@/hooks/useAuth";
+import { useAnalysisStream } from "@/hooks/useAnalysisStream";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -432,6 +433,7 @@ export default function SentimentPage() {
   const { t, locale } = useI18n();
   const { userId } = useAuth();
   const { data, loading } = useDashboard(userId, t);
+  const { narrative: streamingNarrative } = useAnalysisStream(userId || undefined, "Standard");
   const [timeframe, setTimeframe] = useState<"daily" | "weekly" | "monthly">(
     "weekly",
   );
@@ -750,6 +752,28 @@ export default function SentimentPage() {
       };
     });
   }, [targetHotel, leader, allHotels, selectedRadarSource, sentimentHistory, marketAvgRating, t]);
+
+  const categoryMetrics = useMemo(() => {
+    const categories = ["Cleanliness", "Service", "Location", "Value"];
+    const metrics: Record<string, { myScore: number; leaderScore: number; marketAvg: number }> = {};
+    
+    categories.forEach((cat) => {
+      const myScore = getPlatformCategoryScore(targetHotel, cat, selectedRadarSource);
+      const leaderScore = leader ? getPlatformCategoryScore(leader, cat, selectedRadarSource) : 0;
+      
+      const validScores = allHotels
+        .map(h => getPlatformCategoryScore(h, cat, selectedRadarSource))
+        .filter(score => score > 0);
+      
+      const marketAvg = validScores.length > 0
+        ? validScores.reduce((a, b) => a + b, 0) / validScores.length
+        : marketAvgRating || 3;
+        
+      metrics[cat.toLowerCase()] = { myScore, leaderScore, marketAvg };
+    });
+    
+    return metrics;
+  }, [targetHotel, leader, allHotels, selectedRadarSource, sentimentHistory, marketAvgRating]);
 
   // 6b. Premium Guest Mentions Extraction & Synthesis (KAİZEN)
   const guestMentions = useMemo(() => {
@@ -1165,7 +1189,7 @@ export default function SentimentPage() {
                   sentiment={strategicMap.sentiment}
                   targetRating={strategicMap.targetRating}
                   marketRating={strategicMap.marketRating}
-                  customInsight={data?.market_insight}
+                  customInsight={streamingNarrative || data?.market_insight}
                   compact
                 />
               )}
@@ -1200,30 +1224,30 @@ export default function SentimentPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
                     <CategoryBar
                       category="Cleanliness"
-                      myScore={getCategoryScore(targetHotel, "cleanliness", sentimentHistory[targetHotel.id])}
-                      leaderScore={getCategoryScore(leader, "cleanliness", sentimentHistory[leader?.id])}
-                      marketAvg={marketAvgRating}
+                      myScore={categoryMetrics.cleanliness?.myScore || 0}
+                      leaderScore={categoryMetrics.cleanliness?.leaderScore || 0}
+                      marketAvg={categoryMetrics.cleanliness?.marketAvg || 0}
                       leaderName={leader?.name}
                     />
                     <CategoryBar
                       category="Service"
-                      myScore={getCategoryScore(targetHotel, "service", sentimentHistory[targetHotel.id])}
-                      leaderScore={getCategoryScore(leader, "service", sentimentHistory[leader?.id])}
-                      marketAvg={marketAvgRating}
+                      myScore={categoryMetrics.service?.myScore || 0}
+                      leaderScore={categoryMetrics.service?.leaderScore || 0}
+                      marketAvg={categoryMetrics.service?.marketAvg || 0}
                       leaderName={leader?.name}
                     />
                     <CategoryBar
                       category="Location"
-                      myScore={getCategoryScore(targetHotel, "location", sentimentHistory[targetHotel.id])}
-                      leaderScore={getCategoryScore(leader, "location", sentimentHistory[leader?.id])}
-                      marketAvg={marketAvgRating}
+                      myScore={categoryMetrics.location?.myScore || 0}
+                      leaderScore={categoryMetrics.location?.leaderScore || 0}
+                      marketAvg={categoryMetrics.location?.marketAvg || 0}
                       leaderName={leader?.name}
                     />
                     <CategoryBar
                       category="Value"
-                      myScore={getCategoryScore(targetHotel, "value", sentimentHistory[targetHotel.id])}
-                      leaderScore={getCategoryScore(leader, "value", sentimentHistory[leader?.id])}
-                      marketAvg={marketAvgRating}
+                      myScore={categoryMetrics.value?.myScore || 0}
+                      leaderScore={categoryMetrics.value?.leaderScore || 0}
+                      marketAvg={categoryMetrics.value?.marketAvg || 0}
                       leaderName={leader?.name}
                     />
                   </div>

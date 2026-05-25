@@ -356,28 +356,44 @@ def generate_synthetic_narrative(
     if is_tr:
         dna_blurb = f" '{dna_text}' stratejiniz doğrultusunda," if dna_text else ""
         if price_status == "premium" and sent_status == "superior":
-            return f"[Ticari Durum]\n{hotel_name} bir 'Premium Lider'.{dna_blurb} üstün deneyim sayesinde daha yüksek fiyatları haklı çıkarıyorsunuz."
-        elif price_status == "aligned" and sent_status == "standard":
-            return f"[Operasyonel Durum]\n{hotel_name} 'Pazar Çizgisinde'.{dna_blurb} fiyatlar ve memnuniyet rakiplerle uyumlu."
-        elif price_status == "aggressive" and sent_status == "superior":
-            return f"[Ticari Durum]\nBüyüme Potansiyeli Tespit Edildi.{dna_blurb} agresif fiyatlandırmaya rağmen misafirleriniz sizi seviyor. Daha fazla değer elde edin."
+            return f"[Premium Lider]\n{hotel_name} bir 'Premium Lider'.{dna_blurb} üstün deneyim sayesinde daha yüksek fiyatları haklı çıkarıyorsunuz."
+        elif price_status == "premium" and sent_status == "standard":
+            return f"[Gelir Riski]\n{hotel_name} 'Gelir Riski' taşıyor.{dna_blurb} premium fiyatlar uyguluyorsunuz ancak memnuniyetiniz ortalama seviyede. Fiyatlandırmanızı optimize edin."
         elif price_status == "premium" and sent_status == "at-risk":
-            return f"[Ticari Durum]\nTehlike Bölgesi.{dna_blurb} fiyatlarınız yüksek ancak memnuniyet düşüyor. Operasyonları hemen denetleyin."
+            return f"[Tehlike Bölgesi]\n{hotel_name} 'Tehlike Bölgesi'nde.{dna_blurb} fiyatlarınız yüksek ancak memnuniyet düşüyor. Operasyonları hemen denetleyin."
+        elif price_status == "aligned" and sent_status == "superior":
+            return f"[Yüksek Değer Fırsatı]\n{hotel_name} 'Yüksek Değer Fırsatı' sunuyor.{dna_blurb} hizmetiniz üstün ancak fiyatlarınız pazar ortalamasında. Fiyat artırımı için yeriniz var."
+        elif price_status == "aligned" and sent_status == "standard":
+            return f"[Pazar Çizgisinde]\n{hotel_name} 'Pazar Çizgisinde'.{dna_blurb} fiyatlar ve memnuniyet rakiplerle uyumlu."
+        elif price_status == "aligned" and sent_status == "at-risk":
+            return f"[Operasyonel Gecikme]\n{hotel_name} 'Operasyonel Gecikme' yaşıyor.{dna_blurb} fiyatlarınız pazar seviyesinde ancak memnuniyetiniz düşük. Operasyonları iyileştirin."
+        elif price_status == "aggressive" and sent_status == "superior":
+            return f"[Büyüme Potansiyeli]\n{hotel_name} 'Büyüme Potansiyeli'ne sahip.{dna_blurb} agresif fiyatlandırmaya rağmen misafirleriniz sizi seviyor. Güvenle fiyat artırarak daha fazla değer elde edin."
+        elif price_status == "aggressive" and sent_status == "standard":
+            return f"[Bütçe / Ekonomi]\n{hotel_name} 'Bütçe / Ekonomi' döngüsünde.{dna_blurb} fiyatlarınız agresif ancak memnuniyetiniz ortalama. İndirimlerle hacim yaratıyorsunuz, ancak marj erozyonuna dikkat edin."
         elif price_status == "aggressive" and sent_status == "at-risk":
-            return f"[Ticari Durum]\nBütçe Hacim Döngüsü.{dna_blurb} sadece fiyata dayalı rekabet etmek risklidir. Müşteri kaybı riski yüksek."
-        return f"[Ticari Durum]\n{hotel_name} pazarla uyumlu. ARI: {ari:.1f}, Memnuniyet Endeksi: {sent_index:.1f}."
+            return f"[Bütçe Hacim Döngüsü]\n{hotel_name} 'Bütçe Hacim Döngüsü'nde.{dna_blurb} sadece fiyata dayalı rekabet etmek risklidir. Müşteri kaybı riski yüksek."
+        return f"[Pazar Çizgisinde]\n{hotel_name} pazarla uyumlu. ARI: {ari:.1f}, Memnuniyet Endeksi: {sent_index:.1f}."
     else:
         dna_blurb = f" Guided by your '{dna_text}' strategy," if dna_text else ""
         if price_status == "premium" and sent_status == "superior":
-            return f"[Commercial Health]\n{hotel_name} is a 'Premium King'. {dna_blurb} you are justifying higher rates through superior experience."
-        elif price_status == "aligned" and sent_status == "standard":
-            return f"[Operational Baseline]\n{hotel_name} is at 'Market Baseline'. {dna_blurb} rates and satisfaction are aligned with competitors."
-        elif price_status == "aggressive" and sent_status == "superior":
-            return f"[Commercial Health]\nGrowth Potential Detected. {dna_blurb} guests love you despite aggressive pricing. Capture more value."
+            return f"[Premium King]\n{hotel_name} is a 'Premium King'. {dna_blurb} you are justifying higher rates through superior experience."
+        elif price_status == "premium" and sent_status == "standard":
+            return f"[Yield Risk]\n{hotel_name} carries 'Yield Risk'. {dna_blurb} you are priced premium but delivering only standard guest satisfaction. Optimize your rates."
         elif price_status == "premium" and sent_status == "at-risk":
-            return f"[Commercial Health]\nDanger Zone. {dna_blurb} your rates are high but sentiment is falling. Audit operations immediately."
+            return f"[Danger Zone]\n{hotel_name} is in the 'Danger Zone'. {dna_blurb} your rates are high but sentiment is falling. Audit operations immediately."
+        elif price_status == "aligned" and sent_status == "superior":
+            return f"[Value Opportunity]\n{hotel_name} represents a 'Value Opportunity'. {dna_blurb} your guest satisfaction is superior but you are priced at market average. You have immediate rate headroom."
+        elif price_status == "aligned" and sent_status == "standard":
+            return f"[Market Baseline]\n{hotel_name} is at 'Market Baseline'. {dna_blurb} rates and satisfaction are aligned with competitors."
+        elif price_status == "aligned" and sent_status == "at-risk":
+            return f"[Operational Lag]\n{hotel_name} is experiencing 'Operational Lag'. {dna_blurb} your rates are aligned with the market but sentiment is at risk. Improve operations."
+        elif price_status == "aggressive" and sent_status == "superior":
+            return f"[Growth Potential]\n{hotel_name} has high 'Growth Potential'. {dna_blurb} guests love you despite aggressive pricing. Confidently raise rates to capture more value."
+        elif price_status == "aggressive" and sent_status == "standard":
+            return f"[Budget / Economy]\n{hotel_name} operates in a 'Budget / Economy' posture. {dna_blurb} your rates are aggressive while satisfaction is average. You drive volume via discounts, but watch out for margin erosion."
         elif price_status == "aggressive" and sent_status == "at-risk":
-            return f"[Commercial Health]\nBudget Volume Cycle. {dna_blurb} competing on price alone is risky. Churn risk is high."
+            return f"[Budget Volume Cycle]\n{hotel_name} is stuck in a 'Budget Volume Cycle'. {dna_blurb} competing on price alone with low sentiment is highly risky. Churn risk is high."
         return f"[Commercial Health]\n{hotel_name} is market-aligned. ARI: {ari:.1f}, SentIndex: {sent_index:.1f}."
 
 
