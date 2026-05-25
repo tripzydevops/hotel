@@ -117,6 +117,7 @@ export default function AnalysisPage() {
         params.set("exclude_hotel_ids", excludedHotelIds.join(","));
       if (roomType) params.set("room_type", roomType);
       if (searchQuery) params.set("search_query", searchQuery);
+      if (locale) params.set("locale", locale);
 
       // [IMPROVEMENT] Session Validation
       // Ensure we have a valid token before attempting to connect to the stream.
@@ -231,6 +232,7 @@ export default function AnalysisPage() {
     excludedHotelIds,
     roomType,
     router,
+    locale,
     // data removed to avoid infinite loop
   ]);
 

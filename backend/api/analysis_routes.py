@@ -443,6 +443,7 @@ async def stream_market_intelligence(
     end_date: Optional[date] = None,
     exclude_hotel_ids: Optional[str] = None,
     search_query: Optional[str] = None,
+    locale: str = "en",
     db: Client = Depends(get_supabase_rls),
     admin_db: Client = Depends(get_supabase_admin),
     current_user=Depends(get_current_active_user),
@@ -483,7 +484,7 @@ async def stream_market_intelligence(
             async for chunk in stream_narrative_gen(
                 target_hotel_name=analysis_data.get("hotel_name", "Target"),
                 analysis_results=analysis_data,
-                locale="en",
+                locale=locale,
                 admin_db=admin_db,
             ):
                 yield {"event": "narrative_chunk", "data": json.dumps({"chunk": chunk})}

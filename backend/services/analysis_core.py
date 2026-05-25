@@ -321,20 +321,28 @@ def generate_synthetic_narrative(
     sent_index: Optional[float],
     dna_text: Optional[str],
     hotel_name: str,
+    locale: str = "en",
 ) -> str:
     """
     Generates a high-level strategic verdict based on pricing (ARI) and sentiment.
     """
+    is_tr = locale == "tr"
     if ari is None or sent_index is None:
         missing = []
         if ari is None:
-            missing.append("Average Rate Index")
+            missing.append("Average Rate Index" if not is_tr else "Ortalama Fiyat Endeksi (ARI)")
         if sent_index is None:
-            missing.append("Sentiment Index")
-        return (
-            f"Note: Some market benchmarks ({', '.join(missing)}) are currently unavailable. "
-            "Broadening your tracking list may improve this insight."
-        )
+            missing.append("Sentiment Index" if not is_tr else "Memnuniyet Endeksi")
+        if is_tr:
+            return (
+                f"Not: Bazı pazar kıyaslama verileri ({', '.join(missing)}) şu anda mevcut değil. "
+                "Takip listenizi genişletmek bu analizi iyileştirebilir."
+            )
+        else:
+            return (
+                f"Note: Some market benchmarks ({', '.join(missing)}) are currently unavailable. "
+                "Broadening your tracking list may improve this insight."
+            )
 
     f_ari: float = float(ari) if ari is not None else 100.0
     f_sent: float = float(sent_index) if sent_index is not None else 100.0
@@ -344,20 +352,33 @@ def generate_synthetic_narrative(
     sent_status = (
         "superior" if f_sent >= 105 else "standard" if f_sent >= 95 else "at-risk"
     )
-    dna_blurb = f" Guided by your '{dna_text}' strategy," if dna_text else ""
 
-    if price_status == "premium" and sent_status == "superior":
-        return f"[Commercial Health]\n{hotel_name} is a 'Premium King'. {dna_blurb} you are justifying higher rates through superior experience."
-    elif price_status == "aligned" and sent_status == "standard":
-        return f"[Operational Baseline]\n{hotel_name} is at 'Market Baseline'. {dna_blurb} rates and satisfaction are aligned with competitors."
-    elif price_status == "aggressive" and sent_status == "superior":
-        return f"[Commercial Health]\nGrowth Potential Detected. {dna_blurb} guests love you despite aggressive pricing. Capture more value."
-    elif price_status == "premium" and sent_status == "at-risk":
-        return f"[Commercial Health]\nDanger Zone. {dna_blurb} your rates are high but sentiment is falling. Audit operations immediately."
-    elif price_status == "aggressive" and sent_status == "at-risk":
-        return f"[Commercial Health]\nBudget Volume Cycle. {dna_blurb} competing on price alone is risky. Churn risk is high."
-
-    return f"[Commercial Health]\n{hotel_name} is market-aligned. ARI: {ari:.1f}, SentIndex: {sent_index:.1f}."
+    if is_tr:
+        dna_blurb = f" '{dna_text}' stratejiniz doğrultusunda," if dna_text else ""
+        if price_status == "premium" and sent_status == "superior":
+            return f"[Ticari Durum]\n{hotel_name} bir 'Premium Lider'.{dna_blurb} üstün deneyim sayesinde daha yüksek fiyatları haklı çıkarıyorsunuz."
+        elif price_status == "aligned" and sent_status == "standard":
+            return f"[Operasyonel Durum]\n{hotel_name} 'Pazar Çizgisinde'.{dna_blurb} fiyatlar ve memnuniyet rakiplerle uyumlu."
+        elif price_status == "aggressive" and sent_status == "superior":
+            return f"[Ticari Durum]\nBüyüme Potansiyeli Tespit Edildi.{dna_blurb} agresif fiyatlandırmaya rağmen misafirleriniz sizi seviyor. Daha fazla değer elde edin."
+        elif price_status == "premium" and sent_status == "at-risk":
+            return f"[Ticari Durum]\nTehlike Bölgesi.{dna_blurb} fiyatlarınız yüksek ancak memnuniyet düşüyor. Operasyonları hemen denetleyin."
+        elif price_status == "aggressive" and sent_status == "at-risk":
+            return f"[Ticari Durum]\nBütçe Hacim Döngüsü.{dna_blurb} sadece fiyata dayalı rekabet etmek risklidir. Müşteri kaybı riski yüksek."
+        return f"[Ticari Durum]\n{hotel_name} pazarla uyumlu. ARI: {ari:.1f}, Memnuniyet Endeksi: {sent_index:.1f}."
+    else:
+        dna_blurb = f" Guided by your '{dna_text}' strategy," if dna_text else ""
+        if price_status == "premium" and sent_status == "superior":
+            return f"[Commercial Health]\n{hotel_name} is a 'Premium King'. {dna_blurb} you are justifying higher rates through superior experience."
+        elif price_status == "aligned" and sent_status == "standard":
+            return f"[Operational Baseline]\n{hotel_name} is at 'Market Baseline'. {dna_blurb} rates and satisfaction are aligned with competitors."
+        elif price_status == "aggressive" and sent_status == "superior":
+            return f"[Commercial Health]\nGrowth Potential Detected. {dna_blurb} guests love you despite aggressive pricing. Capture more value."
+        elif price_status == "premium" and sent_status == "at-risk":
+            return f"[Commercial Health]\nDanger Zone. {dna_blurb} your rates are high but sentiment is falling. Audit operations immediately."
+        elif price_status == "aggressive" and sent_status == "at-risk":
+            return f"[Commercial Health]\nBudget Volume Cycle. {dna_blurb} competing on price alone is risky. Churn risk is high."
+        return f"[Commercial Health]\n{hotel_name} is market-aligned. ARI: {ari:.1f}, SentIndex: {sent_index:.1f}."
 
 
 # genai_client is retrieved from centralized get_genai_client()
@@ -633,7 +654,7 @@ async def stream_narrative_gen(
         client = get_genai_client()
         if not client:
             yield generate_synthetic_narrative(
-                ari, sent_index, dna_text, str(hotel_name or "Unknown")
+                ari, sent_index, dna_text, str(hotel_name or "Unknown"), locale=locale
             )
             return
 
@@ -666,7 +687,7 @@ async def stream_narrative_gen(
     except Exception as e:
         logger.error(f"[SSE] AI Narrative failed: {e}")
         yield generate_synthetic_narrative(
-            ari, sent_index, dna_text, str(hotel_name or "Unknown")
+            ari, sent_index, dna_text, str(hotel_name or "Unknown"), locale=locale
         )
 
 
