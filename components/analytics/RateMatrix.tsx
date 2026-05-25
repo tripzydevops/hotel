@@ -36,7 +36,9 @@ export default function RateMatrix({
   const { userId } = useAuth();
   const { handleOpenDetails } = useModalContext();
 
-  const targetPrice = parsePrice(targetHotel?.price_info?.current_price || 0);
+  const targetOffers = targetHotel?.price_info?.offers || [];
+  const targetDirectOffer = targetOffers.find((o) => o.is_direct);
+  const targetPrice = targetDirectOffer ? parsePrice(targetDirectOffer.price || 0) : parsePrice(targetHotel?.price_info?.current_price || 0);
   const currency = targetHotel?.price_info?.currency || "TRY";
 
   // State for selected hotels
@@ -406,7 +408,8 @@ export default function RateMatrix({
               const compPrice = comp.price_info?.current_price;
               const offers = comp.price_info?.offers || [];
               const isTarget = targetHotel && comp.id === targetHotel.id;
-              const compDirectPrice = parsePrice(comp.price_info?.current_price || 0);
+              const directOffer = offers.find((o) => o.is_direct);
+              const compDirectPrice = directOffer ? parsePrice(directOffer.price || 0) : parsePrice(comp.price_info?.current_price || 0);
 
               return (
                 <tr

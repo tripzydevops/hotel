@@ -14,7 +14,9 @@ export default function ParityStats({
   targetHotel,
   competitors = [],
 }: ParityStatsProps) {
-  const targetPrice = parsePrice(targetHotel?.price_info?.current_price || 0);
+  const targetOffers = targetHotel?.price_info?.offers || [];
+  const targetDirectOffer = targetOffers.find((o) => o.is_direct);
+  const targetPrice = targetDirectOffer ? parsePrice(targetDirectOffer.price || 0) : parsePrice(targetHotel?.price_info?.current_price || 0);
 
   // Calculate real metrics
   // Filter for competitors where our price is higher (we are being undercut)

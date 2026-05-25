@@ -88,6 +88,57 @@ def extract_vendor_name(offer: Dict[str, Any]) -> str:
     return "Unknown"
 
 
+def check_is_direct(offer: Dict[str, Any], hotel_name: str) -> bool:
+    """
+    Determines if an offer is a direct brand website offer based on vendor name and keywords.
+    """
+    if not offer or not isinstance(offer, dict):
+        return False
+    
+    # 1. Already marked as direct
+    if offer.get("is_direct") is True:
+        return True
+        
+    # 2. Check source/vendor/site fields for direct indicators
+    for key in ("source", "vendor", "site", "ota_name", "name"):
+        val = offer.get(key)
+        if val and isinstance(val, str):
+            val_low = val.lower().strip()
+            # If the source is specifically labeled "Direct", "Official Website", etc.
+            if any(kw in val_low for kw in ["direct", "official", "own website"]):
+                return True
+                
+    # 3. Check if the vendor matches the hotel's own name
+    if hotel_name:
+        import re
+        
+        def tr_to_en(text: str) -> str:
+            mapping = {
+                "ı": "i", "ğ": "g", "ü": "u", "ş": "s", "ö": "o", "ç": "c",
+                "İ": "i", "Ğ": "g", "Ü": "u", "Ş": "s", "Ö": "o", "Ç": "c"
+            }
+            for k, v in mapping.items():
+                text = text.replace(k, v)
+            return text.lower()
+        
+        # Normalize both names to lowercase clean alphanumeric characters for a safe match
+        hotel_norm = tr_to_en(normalize_vendor_name(hotel_name)).strip()
+        hotel_clean = tr_to_en(re.sub(r"[^\w\s]", "", hotel_name)).strip()
+        
+        for key in ("source", "vendor", "site", "ota_name", "name"):
+            val = offer.get(key)
+            if val and isinstance(val, str):
+                v_norm = tr_to_en(normalize_vendor_name(val)).strip()
+                v_clean = tr_to_en(re.sub(r"[^\w\s]", "", val)).strip()
+                
+                # If they normalize to the same brand or one matches the other clean string
+                if (hotel_norm in v_norm or v_norm in hotel_norm or 
+                    hotel_clean in v_clean or v_clean in hotel_clean):
+                    return True
+                    
+    return False
+
+
 
 def is_standard_room_type(room_name: str) -> bool:
     """
@@ -504,7 +555,7 @@ def _process_hotel_prices(h: dict, hid: str, prices: list, display_currency: str
                     "price": p_val,
                     "currency": display_currency,
                     "url": of.get("url") or of.get("link"),
-                    "is_direct": of.get("is_direct", False),
+                    "is_direct": check_is_direct(of, h.get("name")),
                     "room_type": of.get("room_type") or of.get("room_name") or of.get("room")
                 })
 
@@ -574,7 +625,7 @@ def _process_hotel_prices(h: dict, hid: str, prices: list, display_currency: str
                     "price": p_val,
                     "currency": display_currency,
                     "url": of.get("url") or of.get("link"),
-                    "is_direct": of.get("is_direct", False),
+                    "is_direct": check_is_direct(of, h.get("name")),
                     "room_type": of.get("room_type") or of.get("room_name") or of.get("room")
                 })
 
