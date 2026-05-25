@@ -88,35 +88,32 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
   return (
     <div className="mt-8">
       <div className="flex items-center gap-3 mb-6">
-        <ShieldAlert className="w-6 h-6 text-red-400" />
+        <ShieldAlert className="w-6 h-6 text-red-500" />
         <div>
-          <h3 className="text-xl font-bold text-[var(--overlay-text)]">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-[var(--overlay-text)]">
             {t("sentiment.competitiveVulnerabilities")}
           </h3>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
             {t("sentiment.vulnerabilityDesc")}
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-5">
         {competitors.map((comp, idx) => {
           const weaknesses = getWeaknesses(comp);
-          // Removed: if (weaknesses.length === 0) return null; 
-          // Logic update: Show "Secure" card if no weaknesses found.
-
           const isSecure = weaknesses.length === 0;
 
           // Determine Opportunity Level
           let opportunityLevel = "Low";
-          let opportunityColor = "text-gray-400";
+          let opportunityColor = "text-slate-500 dark:text-slate-400";
 
           if (weaknesses.length >= 2) {
             opportunityLevel = "High";
-            opportunityColor = "text-green-400";
+            opportunityColor = "text-emerald-600 dark:text-emerald-400";
           } else if (weaknesses.length === 1) {
             opportunityLevel = "Medium";
-            opportunityColor = "text-yellow-400";
+            opportunityColor = "text-amber-600 dark:text-amber-400";
           }
 
           return (
@@ -125,75 +122,84 @@ export const CompetitiveWeakness: React.FC<CompetitiveWeaknessProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.1 }}
-              className={`bg-[#15294A] rounded-xl p-4 border transition-all group relative overflow-hidden flex flex-col h-full ${isSecure ? 'border-green-500/10 hover:border-green-500/30' : 'border-red-500/10 hover:border-red-500/30'}`}
+              className={`rounded-xl p-5 border transition-all duration-300 group relative overflow-hidden flex flex-col h-full ${
+                isSecure
+                  ? "bg-slate-900/20 dark:bg-slate-900/40 border-emerald-500/20 hover:border-emerald-500/40 shadow-md shadow-emerald-500/[0.02]"
+                  : "bg-slate-900/20 dark:bg-slate-900/40 border-rose-500/20 hover:border-rose-500/40 shadow-md shadow-rose-500/[0.02]"
+              }`}
             >
               {!isSecure ? (
-                <div className="absolute top-0 right-0 px-2 py-0.5 bg-red-500/10 text-red-400/50 text-[7px] font-black uppercase tracking-widest rounded-bl border-l border-b border-red-500/10">
+                <div className="absolute top-0 right-0 px-2.5 py-1 bg-rose-500/10 text-rose-600 dark:text-rose-300 text-[9px] font-black uppercase tracking-wider rounded-bl border-l border-b border-rose-500/20">
                   {t("sentiment.threatDetected") || "THREAT DETECTED"}
                 </div>
               ) : (
-                <div className="absolute top-0 right-0 px-2 py-0.5 bg-green-500/10 text-green-400/50 text-[7px] font-black uppercase tracking-widest rounded-bl border-l border-b border-green-500/10">
+                <div className="absolute top-0 right-0 px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 text-[9px] font-black uppercase tracking-wider rounded-bl border-l border-b border-emerald-500/20">
                   {t("sentiment.secure") || "SECURE"}
                 </div>
               )}
 
-              <div className="flex items-center gap-2.5 mb-4 mt-3">
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${isSecure ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-                  {isSecure ? <ShieldAlert className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
+              <div className="flex items-center gap-3 mb-5 mt-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                  isSecure ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
+                }`}>
+                  {isSecure ? <ShieldAlert className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h4 className="text-xs font-bold text-[var(--overlay-text)] leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-tight truncate" title={comp.name}>
                     {comp.name}
                   </h4>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
                       {t("sentiment.opportunity")}:
                     </span>
-                    <span className={`text-[8px] font-bold ${opportunityColor}`}>
+                    <span className={`text-[10px] font-black ${opportunityColor}`}>
                       {t(`sentiment.${opportunityLevel.toLowerCase()}`) || opportunityLevel}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-2.5 flex-1">
+              <div className="space-y-3 flex-1 flex flex-col justify-between">
                 {isSecure ? (
                   /* Secure State: No vulnerabilities found */
-                  <div className="h-full flex flex-col items-center justify-center opacity-50 py-4">
-                    <ShieldAlert className="w-8 h-8 text-green-500/50 mb-2 grayscale" />
-                    <p className="text-[10px] text-center text-gray-500 font-medium">
+                  <div className="flex-1 flex flex-col items-center justify-center py-6">
+                    <ShieldAlert className="w-9 h-9 text-emerald-500/60 dark:text-emerald-400/50 mb-2" />
+                    <p className="text-[11px] text-center text-slate-500 dark:text-slate-300 font-medium">
                       {t("sentiment.noVulnerabilities") || "No critical vulnerabilities detected."}
                     </p>
                   </div>
                 ) : (
-                  weaknesses.map((w, wIdx) => (
-                    <div
-                      key={wIdx}
-                      className="p-2 rounded-lg bg-black/20 border border-[var(--overlay-border)] group-hover:border-red-500/10 transition-colors"
-                    >
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] font-bold text-gray-300">
-                          {w.category}
-                        </span>
-                        {w.rating > 0 && (
-                          <span className="text-[9px] font-black text-red-400">
-                            {w.rating.toFixed(1)}/5.0
+                  <div className="space-y-3">
+                    {weaknesses.map((w, wIdx) => (
+                      <div
+                        key={wIdx}
+                        className="p-3 rounded-lg bg-slate-950/20 dark:bg-black/35 border border-slate-200 dark:border-[var(--overlay-border)] group-hover:border-rose-500/20 transition-all duration-300"
+                      >
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200">
+                            {w.category}
                           </span>
+                          {w.rating > 0 && (
+                            <span className="text-[11px] font-black text-rose-600 dark:text-rose-400">
+                              {w.rating.toFixed(1)}/5.0
+                            </span>
+                          )}
+                        </div>
+                        {w.keyword && (
+                          <div className="flex items-start gap-1.5 mt-1">
+                            <TrendingDown className="w-3.5 h-3.5 text-rose-500/70 mt-0.5 flex-shrink-0" />
+                            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-normal" title={w.keyword}>
+                              {t("sentiment.guestComplaint") || "Guest Insight"}:{" "}
+                              <span className="text-rose-700 dark:text-rose-200/90 font-medium italic">
+                                "{w.keyword}"
+                              </span>
+                            </p>
+                          </div>
                         )}
                       </div>
-                      {w.keyword && (
-                        <div className="flex items-start gap-1">
-                          <TrendingDown className="w-2.5 h-2.5 text-red-500/50 mt-1" />
-                          <p className="text-[10px] text-gray-400 leading-normal" title={w.keyword}>
-                            {t("sentiment.guestComplaint") || "Guest Insight"}:{" "}
-                            <span className="text-red-200/90 font-medium italic">
-                              "{w.keyword}"
-                            </span>
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )))}
+                    ))}
+                  </div>
+                )}
               </div>
             </motion.div>
           );

@@ -158,6 +158,23 @@ export default function AnalysisPage() {
         }
       });
 
+      eventSource.addEventListener("error", (e: any) => {
+        try {
+          const errData = JSON.parse(e.data);
+          setLoading(false);
+          setError({
+            title: t("analysis.errors.analysisError.title"),
+            message: errData.detail || t("analysis.errors.analysisError.message"),
+            action: {
+              label: t("common.retry"),
+              onClick: () => window.location.reload(),
+            },
+          });
+        } catch (err) {
+          console.error("Failed to parse error event:", err);
+        }
+      });
+
       eventSource.addEventListener("narrative_chunk", (e: any) => {
         try {
           const { chunk } = JSON.parse(e.data);
@@ -791,6 +808,16 @@ export default function AnalysisPage() {
           </div>
         </div>
       </main>
+
+      {error && (
+        <ErrorModal
+          isOpen={true}
+          title={error.title}
+          message={error.message}
+          action={error.action}
+          onClose={() => setError(null)}
+        />
+      )}
     </div>
   );
 }

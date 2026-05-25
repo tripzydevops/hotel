@@ -243,12 +243,12 @@ const CategoryBar = ({
     <div className="flex flex-col">
       {/* Header: Category name + Score */}
       <div className="flex justify-between items-end mb-3">
-        <span className="text-sm font-bold text-slate-800 dark:text-gray-400">{localizedCategory}</span>
+        <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{localizedCategory}</span>
         <div className="flex items-baseline gap-1.5">
           <span className="text-xl font-black text-slate-900 dark:text-white">
             {safeMyScore > 0 ? safeMyScore.toFixed(2) : "N/A"}
           </span>
-          <span className="text-[10px] text-gray-600 font-semibold">/ 5.0</span>
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">/ 5.0</span>
         </div>
       </div>
 
@@ -272,7 +272,7 @@ const CategoryBar = ({
       {/* Comparison rows: Leader + Market Average */}
       <div className="mt-2.5 space-y-1.5">
         <div className="flex items-center gap-3">
-          <span className="text-[11px] text-slate-800 dark:text-gray-500 w-24 truncate font-medium">
+          <span className="text-[11px] text-slate-800 dark:text-slate-300 w-24 truncate font-medium">
             {leaderName || t("sentiment.leader")}
           </span>
           <div className="flex-1 h-[4px] bg-[var(--bg-accent)] rounded-full overflow-hidden">
@@ -283,12 +283,12 @@ const CategoryBar = ({
               className="h-full bg-gradient-to-r from-amber-500/80 to-amber-400/60 rounded-full"
             />
           </div>
-          <span className="text-[11px] text-amber-400/80 font-bold w-8 text-right">
+          <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold w-8 text-right">
             {safeLeaderScore > 0 ? safeLeaderScore.toFixed(2) : "0.00"}
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[11px] text-slate-800 dark:text-gray-500 w-24 font-medium">
+          <span className="text-[11px] text-slate-800 dark:text-slate-300 w-24 font-medium">
             {t("sentiment.avgComp")}
           </span>
           <div className="flex-1 h-[4px] bg-[var(--bg-accent)] rounded-full overflow-hidden">
@@ -299,7 +299,7 @@ const CategoryBar = ({
               className="h-full bg-gradient-to-r from-gray-500/60 to-gray-400/40 rounded-full"
             />
           </div>
-          <span className="text-[11px] text-gray-400 w-8 text-right">
+          <span className="text-[11px] text-slate-600 dark:text-slate-300 w-8 text-right font-bold">
             {safeMarketAvg > 0 ? safeMarketAvg.toFixed(2) : "0.00"}
           </span>
         </div>
