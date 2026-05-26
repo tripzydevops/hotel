@@ -46,21 +46,21 @@ async def calculate_sentiment_revenue_impact(
 
         recent_res = (
             db.table("sentiment_history")
-            .select("rating, created_at")
+            .select("rating, recorded_at")
             .eq("hotel_id", hotel_id)
-            .gte("created_at", cutoff_recent)
-            .order("created_at", desc=True)
+            .gte("recorded_at", cutoff_recent)
+            .order("recorded_at", desc=True)
             .limit(10)
             .execute()
         )
 
         past_res = (
             db.table("sentiment_history")
-            .select("rating, created_at")
+            .select("rating, recorded_at")
             .eq("hotel_id", hotel_id)
-            .gte("created_at", cutoff_past)
-            .lte("created_at", cutoff_past_end)
-            .order("created_at", desc=True)
+            .gte("recorded_at", cutoff_past)
+            .lte("recorded_at", cutoff_past_end)
+            .order("recorded_at", desc=True)
             .limit(10)
             .execute()
         )

@@ -247,7 +247,7 @@ async def get_sentiment_history(
             db.table("sentiment_history")
             .select("*")
             .eq("hotel_id", hotel_id)
-            .order("created_at", desc=True)
+            .order("recorded_at", desc=True)
             .limit(days)
             .execute()
         )

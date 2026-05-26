@@ -125,6 +125,38 @@ class DataForSEOProvider(HotelDataProvider):
 
         return loc
 
+    def _clean_search_keyword(self, name: str, location: str) -> str:
+        """
+        Builds a clean, deduplicated ASCII search keyword for Google Hotels/Google Search.
+
+        Transformations:
+        1. Normalizes Turkish characters to ASCII equivalents to prevent DataForSEO/Google
+           from dropping/corrupting non-ASCII characters in search queries.
+        2. Deduplicates city/location terms that are already present in the hotel name
+           to prevent query term pollution (e.g. "Hilton Garden Inn Balikesir Balikesir, Turkey").
+        """
+        if not name:
+            return ""
+
+        name_norm = self._normalize_location(name)
+        loc_norm = self._normalize_location(location or "")
+
+        # Split location parts by comma to identify the city part (typically the first item)
+        loc_parts = [p.strip() for p in loc_norm.split(",") if p.strip()]
+        city_part = loc_parts[0] if loc_parts else ""
+
+        if city_part and city_part.lower() in name_norm.lower():
+            # City is already part of the hotel name (e.g., "Hilton Garden Inn Balikesir" contains "Balikesir")
+            # Only append country/region if available, to avoid duplication
+            remaining_parts = loc_parts[1:]
+            if remaining_parts:
+                return f"{name_norm}, {', '.join(remaining_parts)}"
+            else:
+                return name_norm
+        else:
+            # If city is not part of the name, concatenate name and location with a space
+            return f"{name_norm} {loc_norm}"
+
     async def _vault_log(
         self, db: Any, session_id: str, endpoint: str, data: Any
     ) -> None:
@@ -919,7 +951,7 @@ class DataForSEOProvider(HotelDataProvider):
                 {
                     "location_name": self._normalize_location(location),
                     "language_code": "en",
-                    "keyword": hotel_name,
+                    "keyword": self._clean_search_keyword(hotel_name, location),
                     "check_in": check_in.strftime("%Y-%m-%d") if hasattr(check_in, "strftime") else check_in,
                     "check_out": check_out.strftime("%Y-%m-%d") if hasattr(check_out, "strftime") else check_out,
                     "currency": currency,
@@ -1257,8 +1289,10 @@ class DataForSEOProvider(HotelDataProvider):
             # [FIX 2026-05-19] hotel_searches/task_post does NOT accept 'hotel_identifier'.
             # That field is a RETURN value from search results, not an input parameter.
             # Use 'keyword' to search for the specific hotel by name + location.
+            # [FIX 2026-05-26] Use a clean, deduplicated ASCII keyword to prevent
+            # term duplication and character dropping by DataForSEO's backend.
             price_task = {
-                "keyword": f"{hotel['name']} {hotel['location']}",
+                "keyword": self._clean_search_keyword(hotel["name"], hotel.get("location")),
                 "location_name": normalized_loc,
                 "language_name": "English",
                 "check_in": check_in,
