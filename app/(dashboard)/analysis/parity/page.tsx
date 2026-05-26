@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 import ParityStats from "@/components/analytics/ParityStats";
 import RateMatrix from "@/components/analytics/RateMatrix";
-import ViolatingChannels from "@/components/analytics/ViolatingChannels";
 import { motion } from "framer-motion";
 import { api } from "@/lib/api";
 import { useState } from "react";
@@ -108,17 +107,6 @@ export default function ParityPage() {
             />
           </motion.div>
 
-          {/* Violating Channels */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <ViolatingChannels
-              targetHotel={data?.target_hotel}
-              competitors={data?.competitors || []}
-            />
-          </motion.div>
         </div>
       )}
     </div>
