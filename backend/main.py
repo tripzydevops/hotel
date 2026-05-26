@@ -93,8 +93,16 @@ async def unified_middleware(request: Request, call_next):
     elif path.startswith("/api/auth"):
         logger.info(f"No auth header on sensitive path: {path}")
 
-    origin = request.headers.get("origin")
-    if origin and response:
+    origin = request.headers.get("origin", "")
+    ALLOWED_ORIGINS = [
+        "https://hotelplustr.com",
+        "https://pa5riyqv.eu-central.insforge.app",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+    is_allowed = origin in ALLOWED_ORIGINS
+
+    if origin and is_allowed and response:
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
         response.headers["Access-Control-Allow-Methods"] = (

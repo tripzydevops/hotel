@@ -159,7 +159,7 @@ async def discover_ghost_competitors(
 
         # 4. Run pgvector similarity search — exclude the hotel itself
         rpc_response = db.rpc(
-            "match_hotels",
+            "match_hotels_simple",
             {
                 "query_embedding": hotel_embedding,
                 "match_threshold": 0.4,   # lower threshold = more suggestions
@@ -189,15 +189,5 @@ async def discover_ghost_competitors(
 # Scheduled for removal in a future cleanup pass.
 # ---------------------------------------------------------------------------
 
-async def get_hotel_recommendations(user_id: str, limit: int = 5) -> List[Dict]:
-    """
-    DEPRECATED: B2C function — was matching users to hotels based on lifestyle
-    embeddings.  No longer relevant for HotelPlus (B2B platform).
-
-    For B2B competitor discovery, use discover_ghost_competitors(hotel_id) instead.
-    """
-    logger.warning(
-        "get_hotel_recommendations() is deprecated. "
-        "Use discover_ghost_competitors(hotel_id) for B2B competitor discovery."
-    )
-    return []
+# get_hotel_recommendations has been removed as of the May 2026 B2B hardening cycle.
+# For B2B competitor discovery, use discover_ghost_competitors(hotel_id) instead.
