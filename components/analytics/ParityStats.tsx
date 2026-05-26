@@ -18,26 +18,30 @@ export default function ParityStats({
   const targetDirectOffer = targetOffers.find((o) => o.is_direct);
   const targetPrice = targetDirectOffer ? parsePrice(targetDirectOffer.price || 0) : parsePrice(targetHotel?.price_info?.current_price || 0);
 
-  // Calculate real metrics
-  // Filter for competitors where our price is higher (we are being undercut)
-  const undercuts = competitors.filter(
-    (c) =>
-      c.price_info?.current_price && parsePrice(c.price_info.current_price) < targetPrice,
+  // ─── Rate Parity Metrics ────────────────────────────────────────────
+  // Compare YOUR direct price against YOUR OTA channel prices.
+  // A "violation" is when an OTA sells YOUR rooms cheaper than your direct website.
+  // This is true rate parity leakage — revenue lost to cheaper OTA listings.
+
+  const otaOffers = targetOffers.filter((o) => !o.is_direct && o.price);
+  const undercuttingOtas = otaOffers.filter(
+    (o) => parsePrice(o.price || 0) < targetPrice && targetPrice > 0,
   );
 
-  const activeDiscrepancies = undercuts.length;
+  const activeDiscrepancies = undercuttingOtas.length;
 
-  // Parity Score: Percentage of competitors NOT undercutting us
+  // Parity Score: Percentage of OTA channels NOT undercutting our direct price
   const parityScore =
-    competitors.length > 0
+    otaOffers.length > 0
       ? Math.round(
-          ((competitors.length - undercuts.length) / competitors.length) * 100,
+          ((otaOffers.length - undercuttingOtas.length) / otaOffers.length) * 100,
         )
       : 100;
 
-  // Monthly Revenue Leakage: (Target Price - OTA Price) * 25 nights
-  const monthlyLeakage = undercuts.reduce((acc, c) => {
-    const diff = targetPrice - parsePrice(c.price_info?.current_price || 0);
+  // Monthly Revenue Leakage: Σ (Direct Price - OTA Price) × 25 nights/month
+  // Only counts OTA channels selling YOUR rooms below your direct price.
+  const monthlyLeakage = undercuttingOtas.reduce((acc, o) => {
+    const diff = targetPrice - parsePrice(o.price || 0);
     return acc + (diff * 25);
   }, 0);
 

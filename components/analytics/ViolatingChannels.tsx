@@ -26,25 +26,26 @@ export default function ViolatingChannels({
   const targetPrice = targetDirectOffer ? parsePrice(targetDirectOffer.price || 0) : parsePrice(targetHotel?.price_info?.current_price || 0);
   const hotelId = targetHotel?.id || "";
 
-  // Filter real violations
-  const violations = competitors
-    .filter(
-      (c) =>
-        c.price_info?.current_price && parsePrice(c.price_info.current_price) < targetPrice,
-    )
-    .map((c) => {
-      const price = parsePrice(c.price_info!.current_price);
+  // ─── Rate Parity Violations ──────────────────────────────────────────
+  // A violation is when one of YOUR OTA channel prices is lower than your direct price.
+  // This is real revenue leakage — guests booking through a cheaper OTA instead of direct.
+  const otaOffers = targetOffers.filter((o) => !o.is_direct && o.price);
+  const violations = otaOffers
+    .filter((o) => parsePrice(o.price || 0) < targetPrice && targetPrice > 0)
+    .map((o) => {
+      const price = parsePrice(o.price || 0);
       const diffPercent = ((targetPrice - price) / targetPrice) * 100;
+      const vendorName = normalizeVendor(o.vendor || o.source || o.site || "Other");
       return {
-        id: c.id,
-        name: c.name,
-        vendor: normalizeVendor(c.price_info?.vendor || c.price_info?.source || "Other"),
+        id: `${hotelId}-${vendorName}`,
+        name: vendorName,
+        vendor: vendorName,
         current_price: price,
         target_price: targetPrice,
-        currency: c.price_info?.currency || "TRY",
+        currency: o.currency || targetHotel?.price_info?.currency || "TRY",
         diff: `-${Number(diffPercent).toFixed(1)}%`,
         severity: diffPercent > 5 ? "high" : "low",
-        desc: `Undercut detected at ${new Intl.NumberFormat("tr-TR", { style: "currency", currency: c.price_info?.currency || "TRY" }).format(price)}.`,
+        desc: `Your rooms listed at ${new Intl.NumberFormat("tr-TR", { style: "currency", currency: o.currency || targetHotel?.price_info?.currency || "TRY" }).format(price)} — ${new Intl.NumberFormat("tr-TR", { style: "currency", currency: o.currency || targetHotel?.price_info?.currency || "TRY" }).format(targetPrice - price)}/night below your direct price.`,
         last: "Just Now",
       };
     });
