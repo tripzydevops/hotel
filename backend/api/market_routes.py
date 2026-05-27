@@ -48,18 +48,44 @@ async def trigger_tga_scrape(db: Client = Depends(get_supabase_rls)):
 @router.post("/scrape/all", response_model=SuccessResponse)
 async def trigger_full_market_sync(db: Client = Depends(get_supabase_rls)):
     """
-    Runs both TOBB and TGA scrapers in sequence.
+    Runs both TOBB and TGA scrapers, as well as PredictHQ, Ticketmaster, and Eventbrite integrations.
     """
     from backend.services.market.tga_scraper import TGAScraper
     from backend.services.market.tobb_scraper import TOBBScraper
+    from backend.services.market.predicthq_service import PredictHQService
+    from backend.services.market.ticketmaster_service import TicketmasterService
+    from backend.services.market.eventbrite_service import EventbriteService
 
     tobb = TOBBScraper(db)
     tga = TGAScraper(db)
+    phq = PredictHQService(db)
+    tm = TicketmasterService(db)
+    eb = EventbriteService(db)
 
     tobb_res = await tobb.scrape_to_supabase()
     tga_res = await tga.scrape_to_supabase()
 
-    return {"tobb": tobb_res, "tga": tga_res}
+    # We trigger these for key hubs
+    premium_res = {}
+    for city in ["Istanbul", "Antalya", "Ankara"]:
+        phq_res = await phq.fetch_and_sync_events(city)
+        tm_res = await tm.fetch_and_sync_events(city)
+        eb_res = await eb.fetch_and_sync_events(city)
+        premium_res[city] = {
+            "predicthq": phq_res,
+            "ticketmaster": tm_res,
+            "eventbrite": eb_res
+        }
+
+    return {
+        "status": "success",
+        "message": "Full market sync completed",
+        "data": {
+            "tobb": tobb_res,
+            "tga": tga_res,
+            "premium_integrations": premium_res
+        }
+    }
 
 
 @router.post("/scrape/clear", response_model=SuccessResponse)

@@ -61,6 +61,31 @@ async def run_market_sync_if_needed(db: Client):
             await tobb.scrape_to_supabase()
             await tga.scrape_to_supabase()
 
+            # Trigger premium signal integrations (PredictHQ, Ticketmaster, Eventbrite)
+            from backend.services.market.predicthq_service import PredictHQService
+            from backend.services.market.ticketmaster_service import TicketmasterService
+            from backend.services.market.eventbrite_service import EventbriteService
+
+            # Default to tracking major hubs in Turkey (Istanbul, Antalya, Ankara)
+            for city in ["Istanbul", "Antalya", "Ankara"]:
+                try:
+                    phq = PredictHQService(db)
+                    await phq.fetch_and_sync_events(city)
+                except Exception as e:
+                    logger.error(f"[MARKET SYNC] PredictHQ sync failed for {city}: {e}")
+
+                try:
+                    tm = TicketmasterService(db)
+                    await tm.fetch_and_sync_events(city)
+                except Exception as e:
+                    logger.error(f"[MARKET SYNC] Ticketmaster sync failed for {city}: {e}")
+
+                try:
+                    eb = EventbriteService(db)
+                    await eb.fetch_and_sync_events(city)
+                except Exception as e:
+                    logger.error(f"[MARKET SYNC] Eventbrite sync failed for {city}: {e}")
+
             logger.info(
                 "[MARKET SYNC] Bi-weekly automation cycle completed successfully."
             )
