@@ -1,0 +1,3291 @@
+[
+  {
+    "name": "Gsc 2026 Küresel Omurilik Kongresi 2026",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-05-27",
+    "end_date": "2026-05-30",
+    "description": "Omurga Cerrahisi Ve Sağlık Hizmetleri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Komatek 2026 18. Uluslararası  İş Ve İnşaat, Makine, Teknoloji Ve Aletleri İhtisas Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-06-03",
+    "end_date": "2026-06-06",
+    "description": "İş Ve İnşaat Makine, Teknolojileri Ve Aletleri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "24. Uluslararası İstanbul Perakende Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-06-03",
+    "end_date": "2026-06-04",
+    "description": "Mağaza, Market, Restoran,Alışveriş Merkezleri ,E-Ticaret Ve İhracata Yönelik Ürün Ve Hizmetler Ve Alışveriş Merkezi Yatırımcıları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "13.Uluslararası İstanbul  Av Silah Ve Doğa Sporları Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-06-03",
+    "end_date": "2026-06-06",
+    "description": "Av, Silah, Savunma Sanayi, Balıkçılık Ve Doğa Sporları",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Bilecik Tarım Ve Hayvancılık Fuarı",
+    "type": "fair",
+    "city": "Bilecik",
+    "start_date": "2026-06-03",
+    "end_date": "2026-06-06",
+    "description": "Tarım, Tarımsal Mekanizasyon, Hayvancılık Teknolojileri, Gıda Ve Yem",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "23 Uluslararası Dossodossi Moda Gösteri Fuarı",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-06-03",
+    "end_date": "2026-06-06",
+    "description": "Tekstil Konfeksiyon Ürünleri Ve Kumaş Fuarı",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Antalya 3. Çağdaş Sanat Fuarı",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-06-04",
+    "end_date": "2026-06-07",
+    "description": "Çağdaş Ve Modern Sanat Eserlerinin Sergilenmesi",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Motobiex'26 Ankara 2. Motosiklet, Bisiklet Endüstrisi Ve Aksesuarları Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-06-04",
+    "end_date": "2026-06-07",
+    "description": "Motosikletler, Bisikletler, Elektrikli Araçlar, Yedek Parça, Aksesuarlar, Tuning Ve Servisler",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "1.Sorgun Tarım Hayvancılık Ve Gıda Fuarı",
+    "type": "fair",
+    "city": "Yozgat",
+    "start_date": "2026-06-04",
+    "end_date": "2026-06-07",
+    "description": "Tarım Gıda Hayvancılık Teknolojileri Ve Endüstrileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Samsun Jewellery Show",
+    "type": "fair",
+    "city": "Samsun",
+    "start_date": "2026-06-05",
+    "end_date": "2026-06-07",
+    "description": "Altın, Pırlanta, Gümüş, Mazleme Ve Saat Fuarı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Itm 2026 Uluslararası  Tekstil Makineleri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-06-09",
+    "end_date": "2026-06-13",
+    "description": "Tekstil, İplik, Dokuma, Örgü, Boya, Terbiye, Baskı, Dijital Baskı, Çorap Makineleri, Yan Sanayileri Ve Kimyasalları",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Hıghtex 2026 Uluslararası Teknik Tekstiller Ve Nonwoven  Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-06-09",
+    "end_date": "2026-06-13",
+    "description": "Teknik Tekstiller, Nonwovenlar,Konfeksiyon Makineleri Ve Yan Sanayii",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "4. Konya Enerji Zirvesi Ve Fuarı",
+    "type": "fair",
+    "city": "Konya",
+    "start_date": "2026-06-09",
+    "end_date": "2026-06-11",
+    "description": "Güneş Enerjisi,Rüzgar Enerjisi,Doğalgaz,Elektrikli Arabalar, Depolar",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Wın Eurasia 2026",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-06-10",
+    "end_date": "2026-06-13",
+    "description": "Otomasyon, Hidrolik, Elektrik, Elektronik, Enerji Otomasyonu, İmalat Makinaları, Kaynak",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Paper Eurasıa - Kağıt, Oluklu Mukavva, Hijyenik Kağıt, Matbaa, Kağıt Ambalaj Ürünleri Ve Makineleri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-06-10",
+    "end_date": "2026-06-12",
+    "description": "Kağıt, Oluklu Mukavva, Hijyenik Kağıt, Matbaa, Ambalaj Ürünleri, Makineleri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Worldef E-Ticaret Hizmetleri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-06-11",
+    "end_date": "2026-06-13",
+    "description": "E-Ticaret Ve E-İhracat",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Sigorta İzmir – 1. Sigorta Paydaşları İş Birliği Fuar Ve Zirvesi",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-06-11",
+    "end_date": "2026-06-13",
+    "description": "Sigortacılık Hizmetleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "1.Karapınar Tarım ,Gıda Ve Hayvancılık Fuarı",
+    "type": "fair",
+    "city": "Konya",
+    "start_date": "2026-06-12",
+    "end_date": "2026-06-15",
+    "description": "Tarım Ekipmanları,Tarım Ürünleri,Mekanizasyon,Tarımsal Gıda",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Karadeniz Tarım Hayvancılık Gıda Ve Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Sinop",
+    "start_date": "2026-06-15",
+    "end_date": "2026-06-21",
+    "description": "Tarım, Hayvancılık,Tohum, Gıda Meyvecilik, Sulama Ve Seracılık, Traktör Ve Ekipmanları, Depolama Sistemleri, Soğutma, Havalandırma",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "mahalli i̇htisas"
+    }
+  },
+  {
+    "name": "Norhtexpo Sinop Yapı İnşaat Prefabrik Ev Gayrimenkul Mobilya Ev Gereçleri Yaşam Tekstil Fuarı",
+    "type": "fair",
+    "city": "Sinop",
+    "start_date": "2026-06-15",
+    "end_date": "2026-06-21",
+    "description": "Yapı İnşaat Mobilya Ev Gereçleri Giyim Tekstil Gayrimenkul Doğalürünler",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "mahalli i̇htisas"
+    }
+  },
+  {
+    "name": "Busworld Türkiye 2026",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-06-17",
+    "end_date": "2026-06-19",
+    "description": "Otobüs Endüstrisi Ve Yan Sanayi",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "2. Afyonkarahisar Blok Mermer Fuarı",
+    "type": "fair",
+    "city": "Afyon",
+    "start_date": "2026-06-17",
+    "end_date": "2026-06-20",
+    "description": "Blok Mermer, Mermer Ve Doğal Taş",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Powder & Dosıng Expo 2026",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-06-17",
+    "end_date": "2026-06-19",
+    "description": "Toz, Katı, Dökme Hammaddelerin İşlenmesi Ve Dozajlamasına Yönelik Teknoloji Ve Ekipmanlar Fuarı",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Paıntistanbul 2026",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-06-17",
+    "end_date": "2026-06-19",
+    "description": "Boya, Boya Ham Maddeleri, Yapı Kimyasalları Ve Yapıştırıcı Ham Maddeleri, Laboratuvar Ve Üretim Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "İslam Sanatları Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-06-17",
+    "end_date": "2026-06-21",
+    "description": "İslam Sanatları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Sigorta Sektörü İş Birliği Fuarı Ve Kongresi",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-06-17",
+    "end_date": "2026-06-19",
+    "description": "Sigorta Sektöründe İşbirliğini Geliştirme",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "İdma 11. Uluslararası Un, Yem, İrmik, Pirinç, Mısır, Bulgur, Değirmen Makineleri Ve Bakliyat, Makarna, Bisküvi Teknolojileri  Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-06-25",
+    "end_date": "2026-06-27",
+    "description": "Un, Yem, İrmik, Pirinç, Mısır, Bulgur, Değirmen Makineleri Ve Bakliyat, Makarna, Bisküvi Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "İstanbul Turizm Ve Seyahat Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-06-26",
+    "end_date": "2026-06-27",
+    "description": "Hac Ve Umre Turizm Konaklama Fuarı",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Gaziantep Jewellery Show",
+    "type": "fair",
+    "city": "Gaziantep",
+    "start_date": "2026-06-26",
+    "end_date": "2026-06-28",
+    "description": "Altın, Pırlanta, Gümüş, Malzeme Ve Saat",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Cf İstanbul Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-07-02",
+    "end_date": "2026-07-04",
+    "description": "Yapı Malzemeleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Edıs",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-07-05",
+    "end_date": "2026-07-05",
+    "description": "Universite Tanıtımı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "18. Umre & Turizm Fuarı 2026",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-07-06",
+    "end_date": "2026-07-07",
+    "description": "Umre Turizmine Yönelik Otel, Havayolu, Acenta, Servis,.. Vb. Sektörlerinin Buluşması",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Parfüm Expo Fuarı 2026",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-07-08",
+    "end_date": "2026-07-10",
+    "description": "Parfüm,Kimya Sanayi,Ambalaj Ve Paketleme,Güzellik Ve Bakım,Kuaför,Kozmetik,Makyaj,Uçucu Yağlar,",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Umre Ve Turizm Profesyoneller Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-07-11",
+    "end_date": "2026-07-12",
+    "description": "Umre Ve Turizm",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Ankara Üniversite Tercih Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-07-22",
+    "end_date": "2026-07-23",
+    "description": "Eğitim , Üniversite Tanıtımı, Üniversite Tercih",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Bursa Üniversite Tercih Fuarı",
+    "type": "fair",
+    "city": "Bursa",
+    "start_date": "2026-07-22",
+    "end_date": "2026-07-22",
+    "description": "Eğitim , Üniversite Tanıtımı, Üniversite Tercih",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "2.Gaziantep Üniversite Tercih Fuarı",
+    "type": "fair",
+    "city": "Gaziantep",
+    "start_date": "2026-07-22",
+    "end_date": "2026-07-22",
+    "description": "Eğitim , Yüksek Öğretim Ve Üniversite Tercihleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "İzmir Üniversite Tercih Fuarı",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-07-23",
+    "end_date": "2026-07-24",
+    "description": "Eğitim , Üniversite Tanıtımı, Üniversite Tercih",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "8. Bursa Üniversite Tercih Fuarı",
+    "type": "fair",
+    "city": "Bursa",
+    "start_date": "2026-07-23",
+    "end_date": "2026-07-23",
+    "description": "Eğitim , Yüksek Öğretim Ve Üniversite",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Üniversite Tercih Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-07-24",
+    "end_date": "2026-07-26",
+    "description": "Eğitim , Üniversite Tanıtımı, Üniversite Tercih ,",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "8. Adana Üniversite Tercih Fuarı",
+    "type": "fair",
+    "city": "Adana",
+    "start_date": "2026-07-24",
+    "end_date": "2026-07-24",
+    "description": "Eğitim , Yüksek Öğretim Ve Üniversite Tercihleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "11. Ankara Üniversite Tercih Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-07-25",
+    "end_date": "2026-07-26",
+    "description": "Eğitim , Yüksek Öğretim Ve Üniversite Tercihleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Gaziantep Üniversite Tercih Fuarı",
+    "type": "fair",
+    "city": "Gaziantep",
+    "start_date": "2026-07-27",
+    "end_date": "2026-07-27",
+    "description": "Eğitim , Üniversite Tanıtımı, Üniversite Tercih",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "10.İzmir Üniversite Tercih Fuarı",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-07-27",
+    "end_date": "2026-07-28",
+    "description": "Eğitim , Yüksek Öğretim Ve Üniversite Tercihleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Konya Üniversite Tercih Fuarı",
+    "type": "fair",
+    "city": "Konya",
+    "start_date": "2026-07-28",
+    "end_date": "2026-07-28",
+    "description": "Eğitim , Üniversite Tanıtımı, Üniversite Tercih",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "9. Antalya Üniversite Tercih Fuarı",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-07-30",
+    "end_date": "2026-07-30",
+    "description": "Eğitim , Yüksek Öğretim Ve Üniversite Tercihleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "9. Euro Animalia Trakya Avrupa Hayvancılık Süt Ve Süt Ürünleri Edüstrisi, İş Makinaları Fuarı",
+    "type": "fair",
+    "city": "Tekirdağ",
+    "start_date": "2026-08-10",
+    "end_date": "2026-08-15",
+    "description": "Hayvancılık Ekipmanları, Süt Teknolojileri, Kümes Hayvanları, Mekanizasyon, Hayvan Barınakları, İş Makinaları",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Çorlu 19.Tarımtech Trakya Avrupa Hayvancılık Sanayi Ve Gıda Fuarı",
+    "type": "fair",
+    "city": "Tekirdağ",
+    "start_date": "2026-08-10",
+    "end_date": "2026-08-15",
+    "description": "Tarım Hayvancılık, Tohum, Gıda, Tohum, Meyvecilik, Sulama Teknolojileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Ifco İstanbul Fashion Connection Hazır Giyim Ve Moda Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-08-19",
+    "end_date": "2026-08-21",
+    "description": "Hazır Giyim, Moda, Konfeksiyon, Deri Ve Linexpo İç Giyim",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "F İstanbul Gıda İçecek Ürünleri Ve Üretim Teknolojileri; Bisküvi, Çikolata, Şekerli Ürünler Ve Üretim Teknolojileri; Kuru & Sert Kabuklu Meyveler & Atıştırmalik Ürünler Ve Üretim Teknolojileri, Gıda Ambalaj Endüstrisi Ve Katkı Maddeleri; Market Ve Mağaza ",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-08-26",
+    "end_date": "2026-08-29",
+    "description": "Temel Gıda, İçecek, Şekerleme, Kuruyemiş, Makine, Katkı, Ambalaj, Mağaza Donanımları",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "World Sports İstanbul - Uluslararası Fitness Ekipmanları, Spor Teknolojileri, Gıda, Giyim Ve Wellness Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-08-27",
+    "end_date": "2026-08-30",
+    "description": "Spor Ekipmanları, Teknolojileri, Gıda, Giyim Ve Wellness",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Comvex  -  Ticari Araçlar  Ve  Yan Sanayileri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-01",
+    "end_date": "2026-09-04",
+    "description": "Ticari Araçlar  Ve Yan Sanayi",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Yaş Sebze Meyve, Depolama, Lojistik, Su Ürünleri, Teknolojileri  Ve Balıkçılık Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-01",
+    "end_date": "2026-09-04",
+    "description": "Yaş Sebze Meyve,  Su Ürünleri Balıkçılık, Depolama, Lojistik",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Foodist  2026  İstanbul Gıda Ve İçecek Ürünleri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-01",
+    "end_date": "2026-09-04",
+    "description": "Gıda Ve İçecek Ürünleri, Su Ürünleri, Yaş Meyve Ve Sebze, Private Label Ürünler, Gıda Depolama Raf Sistemleri, Soğuk Zincir Ve Gıda Lojistiği",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Beauty Eurasia 2026 - 21. Uluslararası Kozmetik, Güzellik, Kuaför, Ambalaj, Hammadde, Hijyen Ve Private Label Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-02",
+    "end_date": "2026-09-04",
+    "description": "Kozmetik, Güzellik, Parfüm, Kuaför, Temizlik, Ambalaj & Paketleme Ve Hammadde",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Akşehir Tarım, Hayvancılık Ve Yem Fuarı",
+    "type": "fair",
+    "city": "Konya",
+    "start_date": "2026-09-03",
+    "end_date": "2026-09-06",
+    "description": "Tarım, Hayvancılık Ve Makine ,Gıda",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Sivas 11.Tarım Ve Hayvancılık Ve Gıda  Fuarı",
+    "type": "fair",
+    "city": "Sivas",
+    "start_date": "2026-09-03",
+    "end_date": "2026-09-06",
+    "description": "Tarım, Gıda, Hayvancılık Teknolojileri Ve Endüstrileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Yozgat 16.Tarım, Gıda Ve Hayvancılık Fuarı",
+    "type": "fair",
+    "city": "Yozgat",
+    "start_date": "2026-09-03",
+    "end_date": "2026-09-06",
+    "description": "Tarım, Gıda Ve Hayvancılık",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "95. İzmir Enternasyonal Fuarı",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-09-05",
+    "end_date": "2026-09-13",
+    "description": "Genel Ticaret",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal genel"
+    }
+  },
+  {
+    "name": "İnterfresh Eurasia / Interfood Eurasia Meyve,Sebze,Gıda,Gıda Ürünleri ,Gıda Teknolojileri Ambalaj,Tarım Teknolojileri,Depolama Ve   Lojistik Fuarı",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-09-08",
+    "end_date": "2026-09-10",
+    "description": "Sebze,Meyve, Gıda,Ambalaj,Lojistik, Tarım Ekipmanları,Depolama ,",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Eskişehir Tarım Fuarı  7. Tarım, Hayvancılık Ve Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Eskisehir",
+    "start_date": "2026-09-08",
+    "end_date": "2026-09-12",
+    "description": "Tarım, Hayvancılık Ve Teknolojileri, Tarımsal Mekanizasyon",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "We-Cycle 3. Çevre Ve Geri Dönüşüm Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-09-08",
+    "end_date": "2026-09-10",
+    "description": "Çevre Teknolojileri,Geri Dönüşüm,Sıfır Atık Ve Atık Yönetimi",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Texhibition İstanbul Kumaş, Denim, Tekstil Aksesuarları Ve İplik Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-09",
+    "end_date": "2026-09-11",
+    "description": "Kumaş, Denim, Tekstil Aksesuarları Ve İplik",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Promosyon Show İstanbul Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-09",
+    "end_date": "2026-09-12",
+    "description": "Promosyon Pazarlama, Reklamcılık, Tasarım",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Zuchex 36. Uluslararası Ev Ve Mutfak Eşyaları Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-09",
+    "end_date": "2026-09-12",
+    "description": "Züccaciye, Porselen, Seramik, Ev Elektroniği, Elektrikli Ev Eşyaları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "17. Perakende Zirvesi 2026, Yerel Zincirler Buluşuyor Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-09",
+    "end_date": "2026-09-10",
+    "description": "Market Donanımları Ve Zincir Marketlerde Satılan Ürünler",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Aff - Üretim Tesisleri Tedarik Fuarı",
+    "type": "fair",
+    "city": "Gaziantep",
+    "start_date": "2026-09-09",
+    "end_date": "2026-09-12",
+    "description": "Üretim Tesisleri Tedarik Fuarı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Kapex Kapı Fuarı",
+    "type": "fair",
+    "city": "Kayseri",
+    "start_date": "2026-09-09",
+    "end_date": "2026-09-12",
+    "description": "Çelik, Ahşap, Cam, Alimünyum, Plastik Ve Her Türlü Kapı Üretimi",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Gaziantep Enerji Ve İklimlendirme Fuarı",
+    "type": "fair",
+    "city": "Gaziantep",
+    "start_date": "2026-09-09",
+    "end_date": "2026-09-12",
+    "description": "Enerji, Isıtma, Soğutma, Havalandırma Ve Doğalgaz Sistemleri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Psb Anatolıa 2026",
+    "type": "fair",
+    "city": "Sakarya",
+    "start_date": "2026-09-09",
+    "end_date": "2026-09-12",
+    "description": "Peyzaj, Süs Bitkileri Bahçe Sanatları Ve Ekipmanları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Çerkezköy Endüstriyel Fuarı (Çef)",
+    "type": "fair",
+    "city": "Tekirdağ",
+    "start_date": "2026-09-09",
+    "end_date": "2026-09-11",
+    "description": "Makina , Kozmetik Üretim , Yan Sanayi",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Agrotec 2026 29. Uluslararası Tarım Ve Tarım Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-09-10",
+    "end_date": "2026-09-13",
+    "description": "Tarım Makine Ve Teknolojileri, Hayvancılık Süt Ve Yem, Tohum Fidan",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Vı.Marmaraka  Kamp Karavan Ve Doğa Sporları Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-10",
+    "end_date": "2026-09-13",
+    "description": "Karavan Ve Karavan Malzemeleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Başkent Optik Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-09-11",
+    "end_date": "2026-09-13",
+    "description": "Optik Ürünleri Ve Malzemeleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "mahalli i̇htisas"
+    }
+  },
+  {
+    "name": "Electricity Eurasia - Elektrik Ve Elektrik Ekipmanları Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-16",
+    "end_date": "2026-09-18",
+    "description": "Elektrik Üretimi, İletimi Ve Dağıtım Sistemlari, Elektrik, Elektronik, Aydınlatma, Kablo, Otomasyon, Elektrik Ekipmanları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Iccı - Uluslararası Enerji Ve Çevre Fuarı Ve Konferansı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-16",
+    "end_date": "2026-09-18",
+    "description": "Enerji Üretimi, İletimi Depolama Ve Dağıtımı",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Ibıa Expo - 5. Uluslararası Yatak Yan Sanayi Ve Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-16",
+    "end_date": "2026-09-19",
+    "description": "Yatak Yan Sanayi Ve Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Metal Expo Eurasıa İstanbul – 8. Uluslararası Demir, Demir Dışı Metaller, Çelik, Boru, Profil, Paslanmaz Çelik, Alaşımlı Metal Dövme Teknolojileri Ve Ürünleri Fuarı.",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-16",
+    "end_date": "2026-09-18",
+    "description": "Demir, Çelik, Metal, Makine, Aksam Satış  Ve Üretim Prosesleri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Akhisar Tarım Ve Zeytincilik Fuarı",
+    "type": "fair",
+    "city": "Manisa",
+    "start_date": "2026-09-16",
+    "end_date": "2026-09-19",
+    "description": "Tarım, Zeytincilik, Hayvancılık, Tohum, Fidan, Gübre, Sulama, Süt Ekipmanları",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "mahalli i̇htisas"
+    }
+  },
+  {
+    "name": "Intermob 2026    28.Uluslararası Mobilya Yan Sanayi, Aksesuarları Orman Ürünleri Ve Ahşap Teknolojisi Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-17",
+    "end_date": "2026-09-20",
+    "description": "Ahşap Orman Ürünleri Ve Malzemeler, Mobilya Aksesuarları, Oturma Grubu Ve Yatak Üretim Malzemeleri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Uşak 11. Ege Tarım Ve Hayvancılık, Süt Teknolojileri, Çiftlik Ekipmanları, Tarım Makineleri, Sera Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Uşak",
+    "start_date": "2026-09-17",
+    "end_date": "2026-09-20",
+    "description": "Tarım, Hayvancılık, Makine Teknolojileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "İnterfresh Eurasia / Interfood Eurasia Meyve,Sebze,Gıda,Gıda Ürünleri ,Gıda Teknolojileri Ambalaj,Tarım Teknolojileri,Depolama Ve   Lojistik Fuarı",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-09-17",
+    "end_date": "2026-09-19",
+    "description": "Sebze,Meyve, Gıda,Ambalaj,Lojistik, Tarım Ekipmanları,Depolama ,",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Fastener Expo Eurasia \nAvrasya Endüstriyel Bağlantı Ve Sabitleme Elemanları Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-17",
+    "end_date": "2026-09-20",
+    "description": "Endüstriyel Bağlantı Ve Sabitleme Elemanları, Üretim Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Iv.Expo Sport Uluslararası Spor Fuarı",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-09-17",
+    "end_date": "2026-09-20",
+    "description": "Spor, Egzersiz Ve Sağlıklı Yaşam Ekipmanları",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Expo 3D Istanbul - Eklemeli İmalat, Tasarım Ve Üretim Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-17",
+    "end_date": "2026-09-19",
+    "description": "Eklemeli İmalat Teknolojileri, Dizayn Ve Üretim Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Platform Günleri",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-17",
+    "end_date": "2026-09-19",
+    "description": "Personel Yükseltici Platform Sektörünün Türkiye'deki Zirvesi; Üretici Firmalar, Distribütörler, Kiralama Firmaları, Finans Kuruluşları, Destek Ürün Ve Hizmet Sağlayıcıları Ve Nihai Kullanıcılar, İstanbul’Un Prestijli Organizasyonlara Ev Sahipliği Yapan Autodrom İstanbul’Da Bir Araya Gelecek.",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "6.Antalya Estetik Güzellik Kişisel Bakım Kozmetik Fuarı",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-09-18",
+    "end_date": "2026-09-20",
+    "description": "Güzellik&Bakım,Kozmetik,Spa &Sağlık Ve  Estetik",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "4. Oyfest Oyuncak Ve Çocuk Gereçleri Fuarı",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-09-20",
+    "end_date": "2026-09-22",
+    "description": "Bebek, Çocuk Ve Yetişkin Oyuncakları, Hobi Ve Yaşam Tarzı Ürünleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Vitahealth Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-21",
+    "end_date": "2026-09-26",
+    "description": "Gıda Takviyeleri, Sağlıklı Yaşam Tedavileri, Sağlık Turizmi, Tıbbi Cihazlar, Wellness",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Vitahealth Sağlık Turizm Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-21",
+    "end_date": "2026-09-26",
+    "description": "Sağlık Turizmi, Sağlık Hizmetleri, Wellness, Tedaviler,",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Contemporary İstanbul Çağdaş Sanat Hizmet Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-22",
+    "end_date": "2026-09-27",
+    "description": "Çağdaş Ve Güncel Sanat",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Bandırma Tarım, Hayvancılık Ve Ekipmanları Fuarı",
+    "type": "fair",
+    "city": "Balikesir",
+    "start_date": "2026-09-22",
+    "end_date": "2026-09-24",
+    "description": "Tarım Makineleri , Canlı Hayvan Ve Hayvancılık Teknolojileri Ve Yem",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Müsiad Expo 2026 Uluslararası Müsiad Ticaret Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-23",
+    "end_date": "2026-09-26",
+    "description": "İnşaat, Mobilya, Tekstil Ve Hazır Giyim, Gıda Ürünleri, Makine Ekipmanları",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "21. Trakya Lüleburgaz Tarımtech Tarım, Hayvancılık, Sanayi Ve Gıda Fuarı",
+    "type": "fair",
+    "city": "Kirklareli",
+    "start_date": "2026-09-23",
+    "end_date": "2026-09-26",
+    "description": "Tarım, Hayvancılık,Tohum, Meyvecilik, Sulama Ve Seracılık, Traktör Ve Ekipmanları, Depolama Sistemleri, Soğutma, Havalandırma",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Flora Garden 5.Peyzaj Ve Bahçe Mobilyaları Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-09-23",
+    "end_date": "2026-09-26",
+    "description": "Bahçe, Peyzaj, Bahçe Mobilyaları, Balkon Ve Kış Bahçesi Mobilyaları, İç Ve Dış Mekan Süs Bitkileri, Çiçekçilik, Fidancılık, Egzotik Ağaçlar",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Su-Tek 4.Su Ve Su Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-09-23",
+    "end_date": "2026-09-26",
+    "description": "Su Yapı Elemanları, Baraj Ve Hes Teknolojileri,Enerji",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Cıtytech 15.Çevre, Şehircilik Ve Belediye Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-09-23",
+    "end_date": "2026-09-26",
+    "description": "Çevre, Şehircilik Ve Belediye Ekipmanları, Geri Dönüşüm Teknolojileri, Yenilenebilir Enerji",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Sıgn İstanbul 27. Uluslararası Endüstriyel Reklam Ve Dijital Baskı Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-23",
+    "end_date": "2026-09-26",
+    "description": "Baskı, Reklamcılık, Bayilik, Promosyon, Tasarım",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Fdı Furnıshıngs And Desıgn Istanbul (Mobilya Tasarım Fuarı)",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-24",
+    "end_date": "2026-09-26",
+    "description": "Ev Ofis Mobilyaları, Dekorasyon Üniteleri, Aksesuarlar,Tasarım",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Future Fısh Eurasıa",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-09-24",
+    "end_date": "2026-09-26",
+    "description": "Uluslararası Su Ürünleri İhracat Ve İşleme, Akuakültür Ve Balıkçılık Fuarı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "İstanbul Turizm Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-24",
+    "end_date": "2026-09-25",
+    "description": "Turizm",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Dinar Tarım Hayvancılık Makinaları, Teknolojileri Ve Yem Fuarı",
+    "type": "fair",
+    "city": "Afyon",
+    "start_date": "2026-09-24",
+    "end_date": "2026-09-27",
+    "description": "Tarım, Tarımsal Mekanizasyon, Seracılık, Hayvancılık Teknolojileri, Gıda Ve Yem",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "3. Balıkesir Tarım Ve Hayvancılık Fuarı",
+    "type": "fair",
+    "city": "Balikesir",
+    "start_date": "2026-09-24",
+    "end_date": "2026-09-27",
+    "description": "İklime Uygun Tarım",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Diyarbakır 10. Kitap Fuarı",
+    "type": "fair",
+    "city": "Diyarbakir",
+    "start_date": "2026-09-26",
+    "end_date": "2026-10-04",
+    "description": "Kitap Ve Süreli Yayınlar",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Qs Discover Master Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-26",
+    "end_date": "2026-09-26",
+    "description": "Yurtdışında Yüksek Lisans Eğitimi",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "İngiltere Eğitim Günleri Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-09-26",
+    "end_date": "2026-09-26",
+    "description": "İngiltere Eğitim Kurumları Ve Kariyer Fuarı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Maktek Avrasya 2026 -  9. Uluslararası Takım Tezgahları, Metal Sac İşleme Makineleri, Tutucular -Kesici Takımlar, Kalite Kontrol, Ölçüm Sistemleri, Cad/Cam, Plm, Yazılımları, Ve Üretim Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-28",
+    "end_date": "2026-10-03",
+    "description": "Takım Tezgahları, Metal İşleme Makineleri, Kaynak, Kesme, Delme Teknolojileri, Kalite Kontrol, Test Ve Ölçüm Cihazları",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "İngiltere Eğitim Günleri Fuarı",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-09-29",
+    "end_date": "2026-09-29",
+    "description": "İngiltere Eğitim Kurumları Ve Kariyer Fuarı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Atech",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-30",
+    "end_date": "2026-10-03",
+    "description": "Akıllı Bina Teknolojileri, Elektrik, Elektronik Ve Aydınlatma Sistemleri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Ijs - İstanbul Jewelry Show 60. İstanbul Uluslararası Mücevher, Altın, Gümüş, Değerli Taş Ve Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-09-30",
+    "end_date": "2026-10-03",
+    "description": "Mücevher, Altın, Gümüş, Değerli Taş, Teknolojileri, İlgili Yan Sanayi",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Craftistanbul 7.Uluslararası Yöresel Ve Geleneksel El Sanatları Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-01",
+    "end_date": "2026-10-04",
+    "description": "Yöresel, Geleneksel El Sanatları Ve Tasarım",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Komtrans Ticari Araçlar Fuarı",
+    "type": "fair",
+    "city": "Bursa",
+    "start_date": "2026-10-01",
+    "end_date": "2026-10-03",
+    "description": "Ticari Araçlar Ve Tedarik Sanayii",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Pal Expocare Yaşlı Bakım Ve Engelsiz Yaşam Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-10-01",
+    "end_date": "2026-10-03",
+    "description": "Yaşlı Bakım, Sağlıklı Yaşalma, Engellilere Yönelik Ürün, Hizmet Ve Teknolojiler",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Bursa Food Poınt Gıda Ürünleri Ve Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Bursa",
+    "start_date": "2026-10-01",
+    "end_date": "2026-10-03",
+    "description": "Gıda Ürünleri Ve Teknolojileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "mahalli i̇htisas"
+    }
+  },
+  {
+    "name": "Turfood/ 7.Bursa Gıda Fuarı",
+    "type": "fair",
+    "city": "Bursa",
+    "start_date": "2026-10-01",
+    "end_date": "2026-10-03",
+    "description": "Horeca, Gıda Ürünleri Ve Teknolojileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "mahalli i̇htisas"
+    }
+  },
+  {
+    "name": "Türk Dişhekimleri Birliği Expodental 2026",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-01",
+    "end_date": "2026-10-04",
+    "description": "Diş Hekimliği Ve Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "16. Biga Tarım, Hayvancılık Sanayi Ve Gıda Fuarı",
+    "type": "fair",
+    "city": "Çanakkale",
+    "start_date": "2026-10-02",
+    "end_date": "2026-10-04",
+    "description": "Tarım, Seracılık, Hayvancılık Gıda, Sanayi Ürünleri Ve Teknolojileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "16.Antalya Kitap Fuarı",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-10-02",
+    "end_date": "2026-10-11",
+    "description": "Kitap Fuarı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Studyexpo Yurtdışı Eğitim Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-03",
+    "end_date": "2026-10-03",
+    "description": "Yurtdışı Eğitim Fuarı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "İngiltere Eğitim Günleri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-03",
+    "end_date": "2026-10-03",
+    "description": "İngiltere Eğitim Kurumları Ve Kariyer Fuarı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "İstanbul Çocuk Kitapları Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-03",
+    "end_date": "2026-10-11",
+    "description": "Çocuk Kitapları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "mahalli i̇htisas"
+    }
+  },
+  {
+    "name": "Studyexpo Yurtdışı Eğitim Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-04",
+    "end_date": "2026-10-04",
+    "description": "Yurtdışı Eğitim Fuarı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "İngiltere Eğitim Günleri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-04",
+    "end_date": "2026-10-04",
+    "description": "İngiltere Eğitim Kurumları Ve Kariyer Fuarı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Studyexpo Yurtdışı Eğitim Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-10-06",
+    "end_date": "2026-10-06",
+    "description": "Yurtdışı Eğitim Fuarı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Logistech \"5. Lojistik, Depolama Ve Teknolojileri Fuarı\"",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-10-07",
+    "end_date": "2026-10-09",
+    "description": "Lojistik, Depolama Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Data Center Eurasia",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-07",
+    "end_date": "2026-10-10",
+    "description": "2.Veri Merkezi, Altyapı Ve Dijital Teknolojiler Fuarı",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "6. Uluslararası Mobısad Imex Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-07",
+    "end_date": "2026-10-10",
+    "description": "Mobil İletişim Tüketici Elektroniği Ve Yeni Teknolojiler Fuarı",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Isaf Smartex Fuarı - 15.Uluslararası Akıllı Şehirler, Binalar, Ulaşım, Yönetim Ve Yaşam Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-07",
+    "end_date": "2026-10-10",
+    "description": "Akıllı Şehirler, Binalar, Ulaşım, Yönetim Ve Yaşam",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Isaf International Fuarı - 30.Uluslararası Güvenlik, Ülke Güvenliği, Siber Güvenlik, Yangın, İsg Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-07",
+    "end_date": "2026-10-10",
+    "description": "Güvenlik, Ülke Güvenliği, Siber Güvenlik, Yangın, İsg",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Petzoo Eurasia 12. Uluslararası Evcil Hayvan Ürün Malzeme Ve Aksesuar Tedarikçileri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-07",
+    "end_date": "2026-10-10",
+    "description": "Evcil Hayvan Ürün Malzeme Ve Aksesuarları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "3. Motta Ege Motorlu Taşıtlar Fuarı",
+    "type": "fair",
+    "city": "Denizli",
+    "start_date": "2026-10-07",
+    "end_date": "2026-10-11",
+    "description": "Otomobil, Ticari Araç, Motorsiklet, Elektrikli Bisiklet, Traktör, Otomotiv Yan Sanayi",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Anamob Anadolu Mobilya",
+    "type": "fair",
+    "city": "Kayseri",
+    "start_date": "2026-10-07",
+    "end_date": "2026-10-11",
+    "description": "4. Anamob Anadolu Mobilya",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Mobidictum Conference 2026",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-07",
+    "end_date": "2026-10-08",
+    "description": "Oyun Sektöründeki İş İlişkilerinin Kurulması Ve Geliştirilmesi",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "5. Peyzaj İstanbul Fuarı 2026",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-07",
+    "end_date": "2026-10-10",
+    "description": "Peyzaj, Peyzaj Malzemeleri, Süs Bitkileri, Park Ve Bahçeler",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Aymod Uluslararası Ayakkabı Moda Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-07",
+    "end_date": "2026-10-10",
+    "description": "Ayakkabılar, Çantalar, Kemerler, Cüzdanlar, Kurum, Mümessilikler Ve Dergiler",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "3.Jojo Caravanport  - Hobbyport Antalya Karavan, Karavan Ekipmanları Kamp Tiny House Outdoor - Modüler Evler Otomotiv Ve Otomotiv Yan Ürünieri Fuarı",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-10-07",
+    "end_date": "2026-10-11",
+    "description": "Karavan, Karavan Yan Sanayi, Karavan Ekipmanları Kamp Tiny House Outdoor - Modüler Evler Otomotiv Ve Otomotiv Yan Ürünieri Fuarı",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Avrasya Teknoloji Haftası",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-08",
+    "end_date": "2026-10-09",
+    "description": "Yapay Zeka, Fintek, E-Mobilite, Telekomünikasyon, Iot",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Şanlıurfa Gıda Yöresel Ürünler Hediyelik Eşya Ve El Sanatları Fuarı",
+    "type": "fair",
+    "city": "Sanliurfa",
+    "start_date": "2026-10-09",
+    "end_date": "2026-10-18",
+    "description": "Şanlıurfa Gıda Yöresel Ürünler Tekstil Hediyelik Eşya Ve El Sanatları Fuarı",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Nobel Çukurova Mobilya Fuarı",
+    "type": "fair",
+    "city": "Adana",
+    "start_date": "2026-10-09",
+    "end_date": "2026-10-13",
+    "description": "Mobilya Ve Dekorasyon Ürünleri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Vef Yurt Dışı Eğitim Fuarı",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-10-12",
+    "end_date": "2026-10-12",
+    "description": "Yurt Dışı Eğitim Danışmanlığı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Avrasya Ambalaj 2026- İstanbul 31.Uluslararası Ambalaj Endüstrisi Fuarı (Printpack&Converting-Ambalaj Baskı Teknolojileri, Oluklu Mukavva-Kağıt-Karton Ambalaj Üretim Teknolojileri Özel Bölümü) /Foodtech Eurasia Gıda İçecek Üretim Ve İşleme Teknolojileri Ö",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-13",
+    "end_date": "2026-10-16",
+    "description": "Ambalaj Ürünleri, Makineleri, İçecek Ve Sıvı Gıda Teknolojileri, Baskı Teknolojiler, Oluklu Mukavva Karton, Gıda İçecek Üretim Ve İşleme Teknolojileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "(Modef Expo 2026) 55.Uluslararası Mobilya Ve Dekorasyon Fuarı",
+    "type": "fair",
+    "city": "Bursa",
+    "start_date": "2026-10-13",
+    "end_date": "2026-10-17",
+    "description": "Mobilya Ve Dekorasyon",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Sıvılaştırılmış Gaz Haftası 2026",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-13",
+    "end_date": "2026-10-15",
+    "description": "Küresel Sıvılaştırılmış Ve Petrol Gazı  Enerji Endüstrisi Çözümleri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Ibaktech 15. Uluslararası Ekmek, Pasta Makinalari, Dondurma, Çikolata Ve Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-14",
+    "end_date": "2026-10-17",
+    "description": "Ekmek, Pasta Makinaları, Dondurma, Çikolata Ve Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Agrogreen Bursa 2. Tarım, Hayvancılık, Süt, Sera Teknolojileri, Tohum Fide Fidan Ve Canlı Hayvan Fuarı",
+    "type": "fair",
+    "city": "Bursa",
+    "start_date": "2026-10-14",
+    "end_date": "2026-10-17",
+    "description": "Canlı Hayvan, Tarım, Hayvancılık, Tarım Makineleri, Et, Süt, Sera Teknolojileri, Yem, Tohum",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "10. Bıotecnıca Uluslararası Biyoteknoloji, Yaşam Bilimleri Ve Endüstrileri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-14",
+    "end_date": "2026-10-16",
+    "description": "Biyoproses, Biyoanalitik, Biyoenformasyon, Endüstriyel Biyoteknoloji, Ar-Ge",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "9. Analytech Uluslararası Analiz Ve Labaratuvar Teknolojileri, Ekipmanları Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-14",
+    "end_date": "2026-10-16",
+    "description": "Analiz Ve Labaratuvar Teknolojileri, Kimyasallar, Kalite Kontrol Ölçümleme",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "9. Cleanroom Uluslararası Temizoda Teknolojisi, Bakım Ve Donanımları Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-14",
+    "end_date": "2026-10-16",
+    "description": "Temizoda Teknolojisi, Bakımı Ve Donanımları",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "7. Pharmanext Uluslararası İlaç Endüstrisi, Teknolojileri Ve Bileşenleri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-14",
+    "end_date": "2026-10-16",
+    "description": "İlaç, İlaç Bileşenleri, Paketleme Ve Üretim Ekipmanları, Kontrat Hizmetleri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "İmeak Deniz Ticaret Odası Bodrum Boat Show",
+    "type": "fair",
+    "city": "Mugla",
+    "start_date": "2026-10-14",
+    "end_date": "2026-10-18",
+    "description": "Tekne, Tekne Ekipmanları Ve Aksesuarları Fuarı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Ida Türkiye - Savunma Ve Havacılıkta Endüstriyel İşbirliği Günleri Ve Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-10-14",
+    "end_date": "2026-10-16",
+    "description": "Savunma Ve Askeri Ve Sivil Havacılık Teknolojileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Bayim Olur Musun? 24. Franchising Ve Markalı Bayilik Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-15",
+    "end_date": "2026-10-18",
+    "description": "Bayilik Ve Franchise Veren Markalar, Yatırımcılar, Fırsatlar",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "12. Magrotex'26 Uluslararası Mardin Tarım Ekipmanları Gıda Ve Hayvancılık Fuarı",
+    "type": "fair",
+    "city": "Mardin",
+    "start_date": "2026-10-15",
+    "end_date": "2026-10-18",
+    "description": "Tarım Gıda Ve Hayvancılık Endüstrisi Ve Teknolojileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Poultry Show Avrasya Tavukculuk Teknolojılerı Ekipmanları Fuarı Ve Kongresı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-10-15",
+    "end_date": "2026-10-18",
+    "description": "Tavukçuluk Teknolojilerı Ekipmanları",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "mahalli i̇htisas"
+    }
+  },
+  {
+    "name": "Vef Yurt Dışı Eğitim Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-16",
+    "end_date": "2026-10-17",
+    "description": "Yurt Dışı Eğitim Danışmanlığı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Akare Yurtdışı Eğitim Fuarları",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-17",
+    "end_date": "2026-10-18",
+    "description": "Yurtdışı Eğitim Alternatifleri Ve İmkanları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Bosphorus Boat Show",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-17",
+    "end_date": "2026-10-25",
+    "description": "Tekne, Tekne Ekipman Ve Aksesuaraları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "4. Çivril Tarım, Hayvancılık Makinaları Teknolojileri Ve Yem Fuarı",
+    "type": "fair",
+    "city": "Denizli",
+    "start_date": "2026-10-17",
+    "end_date": "2026-10-20",
+    "description": "Tarım, Tarımsal Mekanizasyon, Seracılık Ve Hayvancılık Teknolojileri, Gıda, Yem",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Denizli Kitap Fuarı",
+    "type": "fair",
+    "city": "Denizli",
+    "start_date": "2026-10-17",
+    "end_date": "2026-10-25",
+    "description": "Kitap, Süreli Yayın",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Akare Yurtdışı Eğitim Fuarları",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-19",
+    "end_date": "2026-10-19",
+    "description": "Yurtdışı Eğitim Alternatifleri Ve İmkanları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Ieft Yurt Dışı Eğitim Fuar Ve Seminerleri",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-10-20",
+    "end_date": "2026-10-20",
+    "description": "Yurt Dışı Eğitim Fuar Ve Seminerleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Akare Yurtdışı Eğitim Fuarları",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-10-21",
+    "end_date": "2026-10-21",
+    "description": "Yurtdışı Eğitim Alternatifleri Ve İmkanları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Artnouva  3.Sanat Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-10-21",
+    "end_date": "2026-10-25",
+    "description": "Sanat Ve Sanatsal Ürünler",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Turkcomposıte  2026 Kompozit Sanayi Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-21",
+    "end_date": "2026-10-23",
+    "description": "Kompozit Hammaddeleri, Ara Ve Yarı Mamulleri, Kompozit Ürünler, Prosesler Ve Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Nobel Master Shoes - Ayakkabı & Çanta Moda Fuarı",
+    "type": "fair",
+    "city": "Konya",
+    "start_date": "2026-10-21",
+    "end_date": "2026-10-24",
+    "description": "Ayakkabı Ve Çanta, Moda",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Fashion Prime 9. Tekstil, Hazır Giyim Tedarikçileri Ve Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-10-21",
+    "end_date": "2026-10-23",
+    "description": "Tekstil, Hazır Giyim Tedarikçileri Ve Teknolojileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Maden-Tek 2026, Maden Endüstrisi Teknoloji Günleri",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-10-22",
+    "end_date": "2026-10-24",
+    "description": "Madencilik, Maden Teknolojileri, Teknoloji, Akıllı Madencilik, Jeoloji, Jeofizik, Yapay Zeka",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Ankiros 17. Uluslararası Demir-Çelik, Döküm, Demirdışı Metalürji Teknolojileri, Makine Ve Ürünleri İhtisas Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-22",
+    "end_date": "2026-10-24",
+    "description": "Demir-Çelik, Döküm Ve Demirdışı Metaller Teknolojileri, Mikina Ve Ekipmanları",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Woodtech 2026 - 39.Uluslararası Ağaç İşleme Makineleri, Kesici Takımlar, El Aletleri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-22",
+    "end_date": "2026-10-25",
+    "description": "Ağaç İşleme Makineleri, Mobilya İmal  Makine Ve Tezgahları, Kesici Takımlar, El Aletleri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Ieft Yurt Dışı Eğitim Fuar Ve Seminerleri",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-10-22",
+    "end_date": "2026-10-22",
+    "description": "Yurt Dışı Eğitim Fuar Ve Seminerleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "1.Düzce Tarım, Hayvancılık Ve Sanayi Fuarı",
+    "type": "fair",
+    "city": "Düzce",
+    "start_date": "2026-10-22",
+    "end_date": "2026-10-25",
+    "description": "Tarım, Hayvancılık Ve Makine ,Gıda",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Adana Otomotiv Ve Mobilite Fuarı",
+    "type": "fair",
+    "city": "Adana",
+    "start_date": "2026-10-22",
+    "end_date": "2026-10-25",
+    "description": "Otomotiv , Mobilite , Motorsiklet Ve Aksesuarları",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Ceviz Türkiye Fuarı-3.Çorum Ceviz Yetiştiriciliği Teknolojileri Tarım Alet Ekipmanları Ve Pazarlaması Fuarı",
+    "type": "fair",
+    "city": "Çorum",
+    "start_date": "2026-10-22",
+    "end_date": "2026-10-25",
+    "description": "Ceviz Yetiştiriciliği Teknolojileri Tarım Alet Ekipmanları Ve Pazarlaması",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Broadcastex-Radyo & Televizyon, Dijital Yayıncılık Ekipmanları Ve Film Prodüksiyon, Ses & Işık Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-22",
+    "end_date": "2026-10-25",
+    "description": "Radyo & Televizyon, Dijital Yayıncılık Ekipmanları Ve Film Prodüksiyon, Ses & Işık Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Akare Yurtdışı Eğitim Fuarları",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-10-23",
+    "end_date": "2026-10-23",
+    "description": "Yurtdışı Eğitim Alternatifleri Ve İmkanları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Ieft Yurt Dışı Eğitim Fuar Ve Seminerleri",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-24",
+    "end_date": "2026-10-25",
+    "description": "Yurt Dışı Eğitim Fuar Ve Seminerleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Ieft Yurt Dışı Eğitim Fuar Ve Seminerleri",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-26",
+    "end_date": "2026-10-26",
+    "description": "Yurt Dışı Eğitim Fuar Ve Seminerleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Uluslararası Antalya Turizm Fuarı",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-10-26",
+    "end_date": "2026-10-28",
+    "description": "Turizm,Seyahat,Ticaret",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Ibıa Expo - 6. Uluslararası Yatak Yan Sanayi Ve Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-28",
+    "end_date": "2026-10-31",
+    "description": "Yatak Yan Sanayi Ve Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Denizli Tarım Fuarı",
+    "type": "fair",
+    "city": "Denizli",
+    "start_date": "2026-10-28",
+    "end_date": "2026-11-02",
+    "description": "Tarım, Tarım Teknolojileri, Seracılık, Hayvancılık, Tohum, Fidan, Gübre, Sulama Teknolojileri, Süt Endüstrisi",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "mahalli i̇htisas"
+    }
+  },
+  {
+    "name": "İstanbul Maraton Ve Spor Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-29",
+    "end_date": "2026-10-31",
+    "description": "Spor Ürünleri Ve Spor Malzemeleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "5.Ankara Beautylıfe Expo Estetik Güzellik Kozmetik Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-10-30",
+    "end_date": "2026-11-01",
+    "description": "Güzellik&Bakım,Kozmetik,Spa &Sağlık Ve  Estetik",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Promogıft Istanbul 2026, Kurumsal Tanıtım Ve Reklam Ürünleri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-10-31",
+    "end_date": "2026-11-03",
+    "description": "Kurumsal Tanıtım Ve Reklam Ürünleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Unıcera - İstanbul Seramik, Banyo, Mutfak Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-02",
+    "end_date": "2026-11-06",
+    "description": "Seramik , Banyo, Mutfak Ekipmanları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Evlilik Fuarı",
+    "type": "fair",
+    "city": "Denizli",
+    "start_date": "2026-11-02",
+    "end_date": "2026-11-10",
+    "description": "Evlilik Öncesi Ve Sonrası Hazırlıkları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Kalite Ankara 2026",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-11-04",
+    "end_date": "2026-11-07",
+    "description": "1. Kontrol, Havacılık Ve Uzay Teknolojileri,Otomotiv Test Ekipmanları, Metroloji Ve Endüstriyel Yazılım Fuarı",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "2. Motta İzmir Motorlu Taşıtlar Fuarı",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-11-04",
+    "end_date": "2026-11-08",
+    "description": "Motorlu Taşıtlar Fuarı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Europort İstanbul",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-04",
+    "end_date": "2026-11-06",
+    "description": "Denizcilik Sektörü, Gemi İnşa Ve Yan Sanayi",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Adana Tarım – Sera&Bahçe Fuarı   19. Tarım, Sera-Bahçe, Hayvancılık, Tavukçuluk Ve Süt Endüstrisi Fuarı",
+    "type": "fair",
+    "city": "Adana",
+    "start_date": "2026-11-04",
+    "end_date": "2026-11-08",
+    "description": "Tarım, Sera-Bahçe, Hayvancılık, Tavukçuluk Ve Süt Endüstrisi Tarımsal Mekanizasyon",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Sakarya 8. Tarım Hayvancılık Makineleri Teknolojileri Ve Yem Fuarı",
+    "type": "fair",
+    "city": "Sakarya",
+    "start_date": "2026-11-05",
+    "end_date": "2026-11-08",
+    "description": "Canlı Hayvan, Hayvancılık, Tarım Makineleri, Et, Süt Teknolojileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Manisa 20.Uluslararası Tarım Gıda Ve Hayvancılık Fuarı",
+    "type": "fair",
+    "city": "Manisa",
+    "start_date": "2026-11-05",
+    "end_date": "2026-11-08",
+    "description": "Tarım, Gıda, Hayvancılık",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Gönen 14.Tarım Hayvancılık Gıda Sanayi Ve Otomotiv Fuarı",
+    "type": "fair",
+    "city": "Balikesir",
+    "start_date": "2026-11-05",
+    "end_date": "2026-11-08",
+    "description": "Tarım Hayvancılık, Tohum, Meyvecilik, Gıda,Sulama Teknolojileri, Otomotiv Ve Sanayi",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Eıf 2026 15. Enerji Dönüşümü Fuarı",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-11-05",
+    "end_date": "2026-11-07",
+    "description": "Enerji Sektörünün Buluşması",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Orta Doğu Gıda Ve Gıda Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Gaziantep",
+    "start_date": "2026-11-05",
+    "end_date": "2026-11-07",
+    "description": "Gıda, Gıda İşleme, İçecek Ve Teknolojileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Hostech By Tusıd  İstanbul Uluslararası  Otel, Restoran, Kafe Gastronomi, Unlu Mamuller Ve Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-10",
+    "end_date": "2026-11-14",
+    "description": "Mutfak Ve Catering Donanımı, Masaüstü Ekipmanları, Oda Banyo Ekipmanları, Çamaşırhane Ekipmanları, Otel Tekstili, Mobilya Ve Dekorasyon End, Spor-Havuz-Spor Ve Rekreasyon Endüstrisi, Kafe Gastronomi, Unlu Mamuller",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Uluslararası Logitrans Transport Lojistik Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-11",
+    "end_date": "2026-11-13",
+    "description": "Taşımacılık, Lojistik, İntermodal Uygulamalar, Depolama, Telematik",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Aysaf 2026 Ayakkabı Yan Sanayi Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-11",
+    "end_date": "2026-11-14",
+    "description": "Ayakkabı Komponentleri, Deri, Aksesuarlar, Kimyasallar, Makine Ve Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Foam Eurasia 2026",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-11",
+    "end_date": "2026-11-13",
+    "description": "Özel Ve Teknik Endüstriyel Köpükler  Ve Proses Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Pu Expo İstanbul 2026",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-11",
+    "end_date": "2026-11-13",
+    "description": "Poliüretan Endüstrisi, Poliüretan Hammaddeleri, Sistem Evleri, Poliürea Ve Proses Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "21. Göller Bölgesi Tarım Ve Hayvancılık Fuarı",
+    "type": "fair",
+    "city": "Isparta",
+    "start_date": "2026-11-12",
+    "end_date": "2026-11-15",
+    "description": "Tarım Ve Hayvancılık",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "İgef'26 - 3.Uluslararası İç Güvenlik Ekipmanları Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-11-12",
+    "end_date": "2026-11-14",
+    "description": "İç Güvenlik, Polis, Özel Güvenlik, Jandarma  Ekipmanları Ve Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "5. Ev Charge Show - Elektrikli Araç Şarj Teknolojileri Ve Ekipmanları Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-12",
+    "end_date": "2026-11-14",
+    "description": "Elektrikli Araçları Şarj Etmek İçin Üniteler",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Trend Ev Fuarı",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-11-15",
+    "end_date": "2026-11-18",
+    "description": "Ev Gereçleri, Züccaciye, Ev Tekstil Malzemeleri,Plastik Ev Gereçleri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Mezopotamya Gurme Ve Yöresel Lezzetler Fuarı",
+    "type": "fair",
+    "city": "Diyarbakir",
+    "start_date": "2026-11-17",
+    "end_date": "2026-11-22",
+    "description": "Gıda, İçecek, Yöresel Ürünler, Gıda Teknolojileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "10. Uluslararası İstanbul Hırdavat Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-18",
+    "end_date": "2026-11-21",
+    "description": "Hırdavat, İş Sağlığı, İş Güvenliği Ürünleri Ve Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Uluslararası Sılmo Istanbul Optık Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-18",
+    "end_date": "2026-11-21",
+    "description": "Optik Ve Oftalmolojik Ürünler,Yedek Parçalar,Endüstri Makinaları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Travel Expo Ankara 9. Uluslararası Turizm Ve Seyahat Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-11-19",
+    "end_date": "2026-11-21",
+    "description": "Turizm",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Yanexpo Ahşap, Metal, Plastik Üretim Yan Sanayileri Teknolojileri Ve Aksesuarları Fuarı",
+    "type": "fair",
+    "city": "Kayseri",
+    "start_date": "2026-11-19",
+    "end_date": "2026-11-22",
+    "description": "Ahşap, Metal Ve Plastik Üretim Yan Sanayi",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Anatex Anadolu Döşemelik Kumaş, Deri Ve Üretim Teknolojileri",
+    "type": "fair",
+    "city": "Kayseri",
+    "start_date": "2026-11-19",
+    "end_date": "2026-11-22",
+    "description": "Döşemelik Kumaş, Deri Ve Üretim Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Souvenır Expo Türkiye Turistik Hediyelik Ve Hatıra Eşya Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-19",
+    "end_date": "2026-11-22",
+    "description": "Turistik Hediyelik Ürünler Ve Hatıra Eşyalar",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Anamak  Anadolu Ağaç İşleme Makineleri, Kesici Takımlar, El Aletleri",
+    "type": "fair",
+    "city": "Kayseri",
+    "start_date": "2026-11-19",
+    "end_date": "2026-11-22",
+    "description": "Ahşap İşleme Makineleri Ve Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Start Beauty Çukurova Expo-Adana Estetik Kozmetik Ve Güzellik Fuarı",
+    "type": "fair",
+    "city": "Adana",
+    "start_date": "2026-11-20",
+    "end_date": "2026-11-22",
+    "description": "Güzellik Ve Bakım, Saç, Kozmetik, Spa & Wellness Ve Parfümeri, Estetik.",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Avrasya Pencere& Avrasya Kapı 2026 - 27. Uluslararası Pencere, Kapı, Panjur, Cephe Sistemleri Ve Aksesuarları, Profil Üretim Teknolojileri Ve Makineleri, Yalıtım Malzemeleri, Hammadde Ve Tamamlayıcı Ürünler Fuarı(Alüminyum Profil, Cephe Sistemleri Ve Akse",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-21",
+    "end_date": "2026-11-24",
+    "description": "Pencere,Kapı, Panjur,Cephe Ve Profil,Üretim Makineleri, Aksesuar, Yalıtım M, Hammadde",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Avrasya Cam 2026 - 16. Uluslararası Cam Ürünleri Ve Uygulamaları, Üretim-İşleme Teknolojileri Ve Makineleri, Tamamlayıcı Ürün Ve Kimyasalları Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-21",
+    "end_date": "2026-11-24",
+    "description": "Cam Ürünleri, Uygulamaları, Üretim İşleme Teknolojileri Ve Makineleri, Tamamlayıcı Ürün Ve Kimyasalları",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Growtech. Antalya 2026, 25.Uluslararası Sera, Tarım Teknolojileri Ve Hayvancılık Ekipmanları Fuarı",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-11-24",
+    "end_date": "2026-11-27",
+    "description": "Sera, Tarımteknolojileri Ve Hayvancılık Ekipmanları",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "İzmir Brıdal Week",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-11-24",
+    "end_date": "2026-11-26",
+    "description": "Gelinlik Damatlık Abiye Giyim",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Nov Naturel Organıc Vegan Ürünler Ve Hizmetler Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-25",
+    "end_date": "2026-11-28",
+    "description": "Gıda ,Gıda Ambalaj ,Kozmetik , Tekstil ,Tarım ,Akılı Tarım Teknolojileri , Sağlık",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Prıvate Label Expo",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-25",
+    "end_date": "2026-11-28",
+    "description": "Gıda ,Kozmetik ,Giyim,Aksesuar,Tekstil,Evcil Hayvanlar Ürünleri,Ambalaj,Etiket Ve Ambalaj Ve Paketleme Makineleri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Sefpex-Seafood And Processing Expo",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-25",
+    "end_date": "2026-11-28",
+    "description": "Balıkçılık,Su Ürünleri,Lojistik,Depolama,Ambalaj Balıkçılık,İşleme,Su Ürünleri Yetiştiriciliği,Su Ürünleri Yetiştiriciliği,Balık Tutma&İşleme,Ürün Dağıtımı,Derin İşlenmiş Ürünler,Taşımacılık İstifleme",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Egpex Eurasia Emlak Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-25",
+    "end_date": "2026-11-28",
+    "description": "Gayrimenkul, Finans, Sigorta, Yatırım, İnşaat Ve Vatandaşlık",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "11 .Turkchem Eurasıa Uluslararası Kimya Sanayi Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-25",
+    "end_date": "2026-11-27",
+    "description": "Özel Spesifik Kimyasallar, Genel Kimyasallar, Petrokimyasallar, Laboratuvari Ölçüm Cihazları, Proses Ve Otomasyon Endüstrisi, Paketleme, Geri Dönüşüm Ve Çevre",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "7.Interdye & Textıle Prıntıng Eurasıa",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-25",
+    "end_date": "2026-11-27",
+    "description": "6.Uluslararası Boyarmadde, Pigmentler, Tekstil Kimyasalları, Dijital Tekstil Baskı, Boyama Ve Baskı Teknolojileri Fuarı",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Meexx Makine Ve Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Bursa",
+    "start_date": "2026-11-25",
+    "end_date": "2026-11-28",
+    "description": "Makine Ve Makine Teknolojileri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Ethexpo Eurasia Turizm Ve Sağlık Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-25",
+    "end_date": "2026-11-28",
+    "description": "Turizm,Sağlık Turizmi,Medikal Alternatif Turizm,Tıbbi Cihaz İlaç",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Uluslararası Helal Ekspo / Dünya Helal Zirvesi",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-25",
+    "end_date": "2026-11-28",
+    "description": "Helal Gıda ,Gıda Paketleme , Catering Ekipmanları, İlaç Ve Kozmetik Ürünleri , Tekstil Ürünleri Ve Tekstil Teknolojileri , Yiyecek Ve İçecek Ürünleri ,Ambalaj , Doğal Ve Organik Ürünler ,",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "İstanbul Filtre Endüstrisi, Teknolojileri Ve Yan Sanayi Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-26",
+    "end_date": "2026-11-28",
+    "description": "Filtre Ürünlerinin Sergilenmesi, Üretim Teknolojilerinin Tanıtılması, Tedarikçilerin Ürünlerini Tanıtması",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Lıght+Intellıgent Buıldıng Istanbul",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-26",
+    "end_date": "2026-11-28",
+    "description": "Aydınlatma Ve Akıllı Bina Otomasyon Teknolojileri Fuarı",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Elf Teknoloji Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-11-26",
+    "end_date": "2026-11-28",
+    "description": "Ev Elektroniği Elektrikli Ev Eşyaları Güvenlik Ve Yangın Sistemleri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Gafshoes 38. Uluslararası Ayakkabı, Terlik Ve Yan Sanayi Yaz Fuarı",
+    "type": "fair",
+    "city": "Gaziantep",
+    "start_date": "2026-12-01",
+    "end_date": "2026-12-04",
+    "description": "Ayakkabı, Terlik Ve Yan Sanayi",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "5.Yöresel Ürünler Ve Hediyelik Eşya Fuarı 2025",
+    "type": "fair",
+    "city": "Adana",
+    "start_date": "2026-12-01",
+    "end_date": "2026-12-06",
+    "description": "Yöresel Ürünler Ve Hediyelik Eşya Fuarı",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Plast  Eurasia  İstanbul    35.Uluslararası  Plastik Endüstrisi Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-12-02",
+    "end_date": "2026-12-05",
+    "description": "Plastik Makineleri, Hammaddeler, Kalıp, Isı, Kontrol Cihazları, Hidrolik-Pnömatik",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Cbme Türkiye, 44.Uluslararası İstanbul Anne Bebek Çocuk Ürünleri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-12-02",
+    "end_date": "2026-12-05",
+    "description": "Anne, Bebek Ve Çocuk Ürünleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Pack&Plast Fair Türkiye 4.Uluslararası Ambalajlama, Paketleme Plastik Endüstri Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-12-02",
+    "end_date": "2026-12-05",
+    "description": "Ambalajlama, Paketleme, Plastik Endüstri Ve Teknolojileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Horeca Fair 7. Uluslararası Otel, Restoran, Kafe, Fırın Ekipmanları, Unlu Mamuller, Dondurma, Pastacılık Teknolojileri Ve Ev Dışı Tüketim Fuarı",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-12-02",
+    "end_date": "2026-12-05",
+    "description": "Otel, Restaurant, Kafe, Fırın, Çamaşırhane Ekipmanları, Ağırlama, Konaklama Teknolojileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Ttı İzmir  \"20. Uluslararası Turizm Ticaret  Fuar Ve Kongresi\"",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-12-02",
+    "end_date": "2026-12-04",
+    "description": "Turizm Ticaret Fuar Ve Kongresi",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "7. İaaf İstanbul Sanat Ve Antika Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-12-03",
+    "end_date": "2026-12-06",
+    "description": "Sanat Eserleri Antika Eşyalar",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Kırklareli 6. Tarım Hayvancılık Gıda Sanayi Ve Otomotiv Fuarı",
+    "type": "fair",
+    "city": "Kirklareli",
+    "start_date": "2026-12-03",
+    "end_date": "2026-12-06",
+    "description": "Tarım, Hayvancılık, Gıda, Tohum, Ürün Ve Hizmetleri Traktör Biçerdöver Ve Ekipmanları, Otomobil Ve Araç Gereçler, Gıda Ürünleri, Hayvancılık Ekipmanları, Tarım, Gıda, Süt Tekno",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Denyapı 2026",
+    "type": "fair",
+    "city": "Denizli",
+    "start_date": "2026-12-03",
+    "end_date": "2026-12-06",
+    "description": "2. Denizli İnşaat Ve Teknolojileri Fuarı",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "İmeef-İstanbul Müzik Endüstrileri Ve Ekipmanları Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-12-03",
+    "end_date": "2026-12-06",
+    "description": "Müzik Endüstrileri, Ekipmanları Ve Ses & Işık Sistemleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "24.Ankara Kitap Fuarı",
+    "type": "fair",
+    "city": "Ankara",
+    "start_date": "2026-12-04",
+    "end_date": "2026-12-13",
+    "description": "Kitap Ve Süreli Yayınlar",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Afrıka Prıme Gıda Fuarı",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-12-05",
+    "end_date": "2026-12-07",
+    "description": "Gıda Ve İçecek Ürünleri, Su Ürünleri, Yaş Meyve Ve Sebze, Private Label Ürünler",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "İstanbul Yerel Marketler Buluşması Ve Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-12-09",
+    "end_date": "2026-12-10",
+    "description": "Yerli Üretici Ve Perakendecilerin İş Geliştirmelerini Sağlamak",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "12.Şanlıurfa Gıda Tarım Ve Hayvancılık Fuarı",
+    "type": "fair",
+    "city": "Sanliurfa",
+    "start_date": "2026-12-09",
+    "end_date": "2026-12-12",
+    "description": "Tarım Ekipmanları, Tohumculuk, Hayvancılık",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "mahalli i̇htisas"
+    }
+  },
+  {
+    "name": "Tdk Deri Ve Kürk Moda Şov",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-12-10",
+    "end_date": "2026-12-13",
+    "description": "Deri Konfeksiyon Ürünleri",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Hoteltech Antalya - Otel Teknik Ekipman Ve Malzemeleri İhtisas Fuarı",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-12-10",
+    "end_date": "2026-12-12",
+    "description": "Otel Teknik Ekipman Ve Malzemeleri",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "İstanbul 43. Uluslararası  Kitap Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-12-12",
+    "end_date": "2026-12-20",
+    "description": "Kitap, Süreli Yayın",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Yenikapı Boat Show, 4.Deniz Araçları Ekipmanları Ve Aksesuarları Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-12-12",
+    "end_date": "2026-12-20",
+    "description": "Deniz Araçları Ekipmanları Ve Aksesuarları",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Worldfood İstanbul 2026 - 34. Uluslararası Gıda Ürünleri Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Istanbul",
+    "start_date": "2026-12-15",
+    "end_date": "2026-12-18",
+    "description": "Gıda Ürünleri İşleme Teknolojileri, Makineleri, Paketleme & Ambalaj",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "uluslararası i̇htisas"
+    }
+  },
+  {
+    "name": "Candy Expo",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-12-16",
+    "end_date": "2026-12-20",
+    "description": "Çikolata, Şekerleme, Kuruyemiş, Atıştırmalık Ürünler Ve Soft İçecekler",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal genel"
+    }
+  },
+  {
+    "name": "Franchıse İzmir Expo",
+    "type": "fair",
+    "city": "Izmir",
+    "start_date": "2026-12-17",
+    "end_date": "2026-12-19",
+    "description": "Bayilik Vermek İsteyen İşletmelerle Yatrımcı Ve Girişimcileri Buluşturmak",
+    "compression_score": 4,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  },
+  {
+    "name": "Ehatech Expo,Yenilenebilir Enerji,Elektrikli Ve Hibrit Araçlar,Şarj İstasyonları Ve Batarya Teknolojileri Fuarı",
+    "type": "fair",
+    "city": "Antalya",
+    "start_date": "2026-12-17",
+    "end_date": "2026-12-20",
+    "description": "Yenilenebilir Enerji,Elektrikli Hibrit Araçlar,Şarj İstasyonları,Batarya Teknolojileri",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Denizli 2026",
+    "type": "fair",
+    "city": "Denizli",
+    "start_date": "2026-12-23",
+    "end_date": "2026-12-27",
+    "description": "Mobilya, Yatak Baza, Dekorasyon, Gelinlik, Makine, İmalat",
+    "compression_score": 5,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "ulusal i̇htisas"
+    }
+  },
+  {
+    "name": "Denizli Tarım Gıda Sera Ve Hayvancılık Fuarı",
+    "type": "fair",
+    "city": "Denizli",
+    "start_date": "2026-12-26",
+    "end_date": "2026-12-28",
+    "description": "Tarım, Tarım Teknolojileri, Seracılık, Hayvancılık, Tohum, Fidan, Gübre, Sulama Teknolojileri, Süt Endüstrisi",
+    "compression_score": 6,
+    "metadata": {
+      "source": "TOBB",
+      "fair_type": "i̇htisas"
+    }
+  }
+]

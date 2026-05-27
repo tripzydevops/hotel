@@ -526,13 +526,13 @@ async def trigger_all_overdue_logic() -> Dict[str, Any]:
         }
     except ImportError as e:
         logger.error(f"Failed to import scheduler: {e}")
-        return {"error": "Scheduler module not available"}
+        raise HTTPException(status_code=500, detail="Scheduler module not available")
     except PostgRESTError as e:
         logger.error(f"PostgREST error triggering overdue scans: {e}", exc_info=True)
-        return {"error": f"Database error: {e}"}
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
     except (RuntimeError, ConnectionError) as e:
         logger.error(f"Runtime error triggering overdue scans: {e}", exc_info=True)
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 async def get_admin_settings_logic(db: Client) -> AdminSettings:

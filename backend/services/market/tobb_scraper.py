@@ -1,168 +1,287 @@
+"""
+TOBB Fair Calendar Scraper — Direct HTML Table Parser.
+Extracts trade fair data from https://fuarlar.tobb.org.tr/FuarTakvimi
+using direct HTTP + BeautifulSoup. No Firecrawl, no Gemini AI required.
+"""
+import re
+from datetime import date, datetime
 from typing import Any, Dict, List
+
+import httpx
+from bs4 import BeautifulSoup
 
 from backend.utils.logger import get_logger
 from supabase import Client
 
 logger = get_logger(__name__)
 
+# ── Compression Score Heuristics ─────────────────────────────────────────
+# International fairs generate significantly more hotel demand than local ones.
+FAIR_TYPE_SCORES = {
+    "uluslararası ihtisas": 8,      # International specialized
+    "uluslararası genel": 7,         # International general
+    "ulusal ihtisas": 5,             # National specialized
+    "ulusal genel": 4,               # National general
+    "yöresel ihtisas": 3,            # Regional specialized
+    "yöresel genel": 2,              # Regional general
+}
+
+# High-impact subjects that drive hotel bookings
+HIGH_IMPACT_KEYWORDS = [
+    "turizm", "otel", "gıda", "inşaat", "enerji", "otomotiv",
+    "tekstil", "sağlık", "teknoloji", "savunma", "tarım",
+    "mobilya", "mücevher", "kozmetik", "ambalaj",
+]
+
+# Turkish city name normalization map
+CITY_NORMALIZE = {
+    "İSTANBUL": "Istanbul",
+    "İstanbul": "Istanbul",
+    "ISTANBUL": "Istanbul",
+    "ANTALYA": "Antalya",
+    "İZMİR": "Izmir",
+    "IZMIR": "Izmir",
+    "ANKARA": "Ankara",
+    "MUĞLA": "Mugla",
+    "MUGLA": "Mugla",
+    "BURSA": "Bursa",
+    "MERSİN": "Mersin",
+    "MERSIN": "Mersin",
+    "GAZİANTEP": "Gaziantep",
+    "GAZIANTEP": "Gaziantep",
+    "KOCAELİ": "Kocaeli",
+    "KOCAELI": "Kocaeli",
+    "KONYA": "Konya",
+    "ADANA": "Adana",
+    "ESKİŞEHİR": "Eskisehir",
+    "ESKISEHIR": "Eskisehir",
+    "KAYSERİ": "Kayseri",
+    "KAYSERI": "Kayseri",
+    "TRABZON": "Trabzon",
+    "DENİZLİ": "Denizli",
+    "DENIZLI": "Denizli",
+    "SAKARYA": "Sakarya",
+    "BALIKESİR": "Balikesir",
+    "BALIKESIR": "Balikesir",
+    "DİYARBAKIR": "Diyarbakir",
+    "DIYARBAKIR": "Diyarbakir",
+    "ŞANLIURFA": "Sanliurfa",
+    "SANLIURFA": "Sanliurfa",
+    "MALATYA": "Malatya",
+    "SAMSUN": "Samsun",
+    "VAN": "Van",
+    "EDİRNE": "Edirne",
+    "EDIRNE": "Edirne",
+    "AFYONKARAHİSAR": "Afyon",
+}
+
 
 class TOBBScraper:
     """
-    Automates the extraction of the Turkish Fair Calendar from TOBB.
-    Target: https://fuarlar.tobb.org.tr/FuarTakvimi
+    Extracts the Turkish Fair Calendar from TOBB using direct HTTP + BeautifulSoup.
+    Parses the HTML table directly — no JS rendering or AI needed.
     """
 
     URL = "https://fuarlar.tobb.org.tr/FuarTakvimi"
-    RELEVANT_CITIES = ["İSTANBUL", "ANTALYA", "İZMİR", "MUĞLA", "ANKARA"]
 
     def __init__(self, db: Client):
         self.db = db
 
-    async def scrape_to_insforge(self):
+    async def scrape_to_supabase(self) -> Dict[str, Any]:
         """
-        [Stealth Mode] Main orchestration for TOBB scraping.
+        Main entry point. Fetches the TOBB fair calendar page,
+        parses the HTML table, and upserts events into Supabase.
         """
-        logger.info("[TOBBScraper] Starting scrape via Firecrawl CLI...")
+        logger.info("[TOBBScraper] Starting direct HTTP scrape...")
         try:
-            import asyncio
+            # 1. Fetch the page
+            async with httpx.AsyncClient(timeout=30, follow_redirects=True) as http:
+                resp = await http.get(self.URL, headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                })
 
-            # Since the TOBB table is heavily JS-rendered, we use scrape with a wait-for
-            # Alternatively, we could use 'agent' but 'scrape' is faster if it works.
-            process = await asyncio.create_subprocess_exec(
-                "npx",
-                "-y",
-                "firecrawl-cli@1.8.0",
-                "scrape",
-                self.URL,
-                "--wait-for",
-                "5000",
-                "-f",
-                "markdown",
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
+            if resp.status_code != 200:
+                logger.error(f"[TOBBScraper] HTTP {resp.status_code}")
+                return {"status": "error", "message": f"HTTP {resp.status_code}"}
 
-            try:
-                stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=60.0)
-            except asyncio.TimeoutError:
-                process.kill()
-                logger.error("[TOBBScraper] Firecrawl CLI timed out after 60 seconds.")
-                return {
-                    "status": "error",
-                    "message": "Firecrawl timed out.",
-                }
+            logger.info(f"[TOBBScraper] Fetched {len(resp.text)} chars of HTML")
 
-            if process.returncode != 0:
-                logger.error(f"[TOBBScraper] Firecrawl CLI failed: {stderr.decode()}")
-                return {
-                    "status": "error",
-                    "message": f"Firecrawl failed: {stderr.decode()}",
-                }
+            # 2. Parse the HTML table
+            events = self._parse_fair_table(resp.text)
+            logger.info(f"[TOBBScraper] Parsed {len(events)} fairs from table")
 
-            content = stdout.decode()
+            # 3. Filter for future events only
+            today = date.today()
+            future_events = [e for e in events if e.get("end_date") and e["end_date"] >= str(today)]
+            logger.info(f"[TOBBScraper] {len(future_events)} upcoming fairs (from {today})")
 
-            if not content or len(content) < 500:
-                logger.warning(
-                    f"[TOBBScraper] Content too short: {len(content)} chars."
-                )
-                return {
-                    "status": "error",
-                    "message": "Failed to extract meaningful content from TOBB.",
-                }
-
-            logger.info(
-                f"[TOBBScraper] Extracted {len(content)} characters. Using AI to parse markdown table..."
-            )
-
-            # 2. Extract structured JSON using Gemini 3
-            # We reuse the logic from TGA but with a TOBB-specific focus
-            events = await self._extract_events_with_ai(content)
-
-            # 3. Store in Supabase
-            processed_count = 0
-            for event in events:
+            # 4. Upsert into Supabase
+            processed = 0
+            errors = 0
+            for event in future_events:
                 try:
-                    # Enrich with compression score (AI suggested or default)
-                    if "compression_score" not in event:
-                        event["compression_score"] = 5  # Default for Fairs
-
-                    event["type"] = "fair"
-                    event["metadata"] = event.get("metadata", {})
-                    event["metadata"]["source"] = "TOBB"
-
-                    # Ensure city normalization (Safety check)
-                    raw_city = event.get("city", "Unknown")
-                    event["city"] = (
-                        raw_city.replace("İ", "I").replace("ı", "i").capitalize()
-                    )
-
                     self.db.table("market_events").upsert(
                         event, on_conflict="name, start_date"
                     ).execute()
-                    processed_count += 1
+                    processed += 1
                 except Exception as e:
-                    logger.warning(
-                        f"[TOBBScraper] Upsert failed for {event.get('name')}: {e}"
-                    )
+                    errors += 1
+                    logger.warning(f"[TOBBScraper] Upsert failed for {event.get('name')}: {e}")
 
-            return {"status": "success", "processed": processed_count}
+            result = {
+                "status": "success",
+                "total_parsed": len(events),
+                "future_events": len(future_events),
+                "processed": processed,
+                "errors": errors,
+            }
+            logger.info(f"[TOBBScraper] Done: {result}")
+            return result
 
         except Exception as e:
-            logger.error(f"[TOBBScraper] TOBB Scraping failed: {e}")
+            logger.error(f"[TOBBScraper] Scraping failed: {e}")
             return {"status": "error", "message": str(e)}
 
-    async def _extract_events_with_ai(self, content: str) -> List[Dict[str, Any]]:
-        """
-        Uses Gemini 3 to parse raw TOBB markdown/table content into structured market events.
-        """
-        from backend.services.analysis_service import get_genai_client
+    # Keep old method name as alias for backward compatibility
+    scrape_to_insforge = scrape_to_supabase
 
-        client = get_genai_client()
-        if not client:
-            logger.error("[TOBBScraper] GenAI client not available.")
+    def _parse_fair_table(self, html: str) -> List[Dict[str, Any]]:
+        """
+        Parses the TOBB fair calendar HTML table into structured event dicts.
+        Table columns (Turkish):
+          0: Sıra No (Row #)
+          1: Başlangıç Tar. (Start Date — DD.MM.YYYY)
+          2: Bitiş Tar. (End Date — DD.MM.YYYY)
+          3: Fuarın Adı (Fair Name)
+          4: Konusu (Subject)
+          5: Başlıca Ürün Hizmet Grupları (Main Products)
+          6: Türü (Type: Uluslararası/Ulusal/Yöresel + İhtisas/Genel)
+          7: Fuar Yeri (Venue)
+          8: Şehir (City)
+          9: Düzenleyici (Organizer)
+        """
+        soup = BeautifulSoup(html, "html.parser")
+        table = soup.find("table")
+        if not table:
+            logger.error("[TOBBScraper] No table found in HTML")
             return []
 
-        instructions = [
-            "You are an expert in Turkish Trade Intelligence. Extract a list of upcoming trade fairs from the provided markdown content (which contains a rendered table).",
-            "",
-            "INSTRUCTIONS:",
-            "1. Identify: Fuar Adı (Event Name), Şehir (City), Başlangıç Tarihi (Start), Bitiş Tarihi (End).",
-            "2. Date Normalization: Convert DD.MM.YYYY to ISO YYYY-MM-DD.",
-            "3. Focus on major cities: Istanbul, Antalya, Izmir, Bodrum, Mugla, Ankara.",
-            "4. Assign a 'compression_score' (1-10) based on the likely impact on hotel occupancy (large international fairs = 8-10, local ones = 4-6).",
-            "",
-            "OUTPUT FORMAT: JSON array of objects with keys:",
-            "- name: string",
-            "- city: string (MUST BE English Title Case, e.g., 'Istanbul', 'Antalya'. Do NOT use all caps or Turkish characters like 'İ')",
-            "- start_date: string (ISO YYYY-MM-DD)",
-            "- end_date: string (ISO YYYY-MM-DD)",
-            "- description: string (Subject of the fair)",
-            "- compression_score: integer",
-            "",
-            "CONTENT:",
-            content[:15000],
-        ]
+        rows = table.find_all("tr")
+        events = []
 
-        prompt = "\n".join(instructions)
+        for row in rows[1:]:  # Skip header row
+            cells = [td.get_text(strip=True) for td in row.find_all("td")]
+            if len(cells) < 9:
+                continue
 
-        try:
-            response = client.models.generate_content(
-                model="gemini-3-flash-preview", contents=prompt
-            )
+            # Skip empty rows
+            if not cells[1] or not cells[3]:
+                continue
 
-            if response and response.text:
-                import json
+            try:
+                start_date = self._parse_date(cells[1])
+                end_date = self._parse_date(cells[2])
+                name = cells[3].strip()
+                subject = cells[4].strip()
+                fair_type = cells[6].strip().lower() if len(cells) > 6 else ""
+                raw_city = cells[8].strip() if len(cells) > 8 else "Unknown"
 
-                raw_text = response.text
-                if "```json" in raw_text:
-                    raw_text = raw_text.split("```json")[1].split("```")[0].strip()
-                elif "```" in raw_text:
-                    raw_text = raw_text.split("```")[1].split("```")[0].strip()
+                # Normalize city name to English
+                city = self._normalize_city(raw_city)
 
-                data = json.loads(raw_text)
-                return data if isinstance(data, list) else [data]
-        except Exception as e:
-            logger.error(f"[TOBBScraper] AI extraction failed: {e}")
-            return []
+                # Calculate compression score from fair type and subject
+                compression = self._calculate_compression(fair_type, subject, name)
 
-        return []
+                # Calculate fair duration in days
+                duration = 1
+                if start_date and end_date:
+                    try:
+                        d1 = datetime.strptime(start_date, "%Y-%m-%d")
+                        d2 = datetime.strptime(end_date, "%Y-%m-%d")
+                        duration = max((d2 - d1).days, 1)
+                    except ValueError:
+                        pass
+
+                event = {
+                    "name": name[:255],  # Truncate to fit DB column
+                    "type": "fair",
+                    "city": city,
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "description": subject[:500] if subject else None,
+                    "compression_score": compression,
+                    "metadata": {
+                        "source": "TOBB",
+                        "fair_type": fair_type,
+                        "venue": cells[7].strip() if len(cells) > 7 else None,
+                        "organizer": cells[9].strip() if len(cells) > 9 else None,
+                        "duration_days": duration,
+                    },
+                }
+                events.append(event)
+
+            except Exception as e:
+                logger.debug(f"[TOBBScraper] Skipping row: {e}")
+                continue
+
+        return events
+
+    def _parse_date(self, date_str: str) -> str:
+        """Converts DD.MM.YYYY to ISO YYYY-MM-DD."""
+        if not date_str:
+            return ""
+        # Handle DD.MM.YYYY format
+        match = re.match(r"(\d{2})\.(\d{2})\.(\d{4})", date_str.strip())
+        if match:
+            return f"{match.group(3)}-{match.group(2)}-{match.group(1)}"
+        return date_str
+
+    def _normalize_city(self, raw_city: str) -> str:
+        """Normalizes Turkish city names to English title case."""
+        city = raw_city.strip()
+        # Direct lookup
+        if city in CITY_NORMALIZE:
+            return CITY_NORMALIZE[city]
+        # Uppercase lookup
+        if city.upper() in CITY_NORMALIZE:
+            return CITY_NORMALIZE[city.upper()]
+        # Fallback: basic transliteration
+        return (
+            city.replace("İ", "I")
+            .replace("ı", "i")
+            .replace("ş", "s")
+            .replace("Ş", "S")
+            .replace("ğ", "g")
+            .replace("Ğ", "G")
+            .replace("ü", "u")
+            .replace("Ü", "U")
+            .replace("ö", "o")
+            .replace("Ö", "O")
+            .replace("ç", "c")
+            .replace("Ç", "C")
+            .title()
+        )
+
+    def _calculate_compression(self, fair_type: str, subject: str, name: str) -> int:
+        """
+        Calculates a demand compression score (1-10) based on fair type and subject.
+        International specialized fairs with high-impact subjects score highest.
+        """
+        # Base score from fair type
+        base = 4  # Default
+        for key, score in FAIR_TYPE_SCORES.items():
+            if key in fair_type:
+                base = score
+                break
+
+        # Boost for high-impact subjects
+        combined = (subject + " " + name).lower()
+        boost = 0
+        for keyword in HIGH_IMPACT_KEYWORDS:
+            if keyword in combined:
+                boost += 1
+
+        # Cap boost at +2
+        boost = min(boost, 2)
+
+        return min(base + boost, 10)

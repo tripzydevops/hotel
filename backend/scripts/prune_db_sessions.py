@@ -44,5 +44,26 @@ def prune_scan_sessions():
     except Exception as e:
         print(f"[Pruning] Error during deletion: {e}")
 
+def prune_user_signals():
+    """
+    Connects to Supabase, calculates a 90-day cutoff, and issues a
+    bulk delete command for the `user_signals` table to prevent telemetry bloat.
+    """
+    supabase = get_supabase()
+    
+    # Calculate cutoff date: Current UTC Time minus 90 days
+    cutoff_date = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
+    print(f"[Pruning] Finding user_signals older than {cutoff_date}...")
+    
+    try:
+        # Execute the deletion for telemetry signals older than 90 days
+        response = supabase.table("user_signals").delete().lt("created_at", cutoff_date).execute()
+        
+        deleted_count = len(response.data) if response.data is not None else "Unknown number of"
+        print(f"[Pruning] Successfully deleted {deleted_count} old user signals.")
+    except Exception as e:
+        print(f"[Pruning] Error during user signals deletion: {e}")
+
 if __name__ == "__main__":
     prune_scan_sessions()
+    prune_user_signals()

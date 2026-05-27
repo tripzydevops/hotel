@@ -333,7 +333,7 @@ async def cleanup_empty_scans_logic(db: Client) -> Dict[str, Any]:
         }
     except PostgRESTError as e:
         logger.error(f"PostgREST error cleaning up empty scans: {e}", exc_info=True)
-        return {"status": "error", "error": f"Database error: {e}"}
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
 
 async def get_admin_batches_logic(db: Client, limit: int = 50) -> List[Dict[str, Any]]:
@@ -401,10 +401,10 @@ async def get_admin_batch_details_logic(db: Client, batch_id: str) -> Dict[str, 
         return {"batch": batch, "tasks": cast(List[Dict[str, Any]], tasks_res.data or [])}
     except PostgRESTError as e:
         logger.error(f"PostgREST error fetching batch details for {batch_id}: {e}", exc_info=True)
-        return {"error": f"Database error: {e}"}
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
     except (KeyError, TypeError) as e:
-        logger.warning(f"Data error in batch details for {batch_id}: {e}")
-        return {"error": f"Data processing error: {e}"}
+        logger.error(f"Data error in batch details for {batch_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Data processing error: {e}")
 
 
 async def rescan_batch_task_logic(db: Client, task_id: str) -> Dict[str, Any]:
@@ -428,4 +428,4 @@ async def rescan_batch_task_logic(db: Client, task_id: str) -> Dict[str, Any]:
         return {"status": "success", "message": "Task reset to pending for retry."}
     except PostgRESTError as e:
         logger.error(f"PostgREST error resetting task {task_id}: {e}", exc_info=True)
-        return {"error": f"Database error: {e}"}
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")

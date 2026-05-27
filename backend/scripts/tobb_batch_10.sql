@@ -1,0 +1,5 @@
+INSERT INTO public.market_events (name, type, city, start_date, end_date, description, compression_score, metadata) VALUES
+('Ehatech Expo,Yenilenebilir Enerji,Elektrikli Ve Hibrit Araçlar,Şarj İstasyonları Ve Batarya Teknolojileri Fuarı', 'fair', 'Antalya', '2026-12-17', '2026-12-20', 'Yenilenebilir Enerji,Elektrikli Hibrit Araçlar,Şarj İstasyonları,Batarya Teknolojileri', 6, '{"source": "TOBB", "fair_type": "ulusal i\u0307htisas"}'::jsonb),
+('Denizli 2026', 'fair', 'Denizli', '2026-12-23', '2026-12-27', 'Mobilya, Yatak Baza, Dekorasyon, Gelinlik, Makine, İmalat', 5, '{"source": "TOBB", "fair_type": "ulusal i\u0307htisas"}'::jsonb),
+('Denizli Tarım Gıda Sera Ve Hayvancılık Fuarı', 'fair', 'Denizli', '2026-12-26', '2026-12-28', 'Tarım, Tarım Teknolojileri, Seracılık, Hayvancılık, Tohum, Fidan, Gübre, Sulama Teknolojileri, Süt Endüstrisi', 6, '{"source": "TOBB", "fair_type": "i\u0307htisas"}'::jsonb)
+ON CONFLICT (name, start_date) DO UPDATE SET city=EXCLUDED.city, end_date=EXCLUDED.end_date, compression_score=EXCLUDED.compression_score, metadata=EXCLUDED.metadata;

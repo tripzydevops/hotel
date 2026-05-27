@@ -257,10 +257,10 @@ async def sync_hotel_directory_logic(db: Client) -> Dict[str, Any]:
         }
     except PostgRESTError as e:
         logger.error(f"PostgREST error during directory sync: {e}", exc_info=True)
-        return {"status": "error", "message": f"Database error: {e}"}
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
     except KeyError as e:
         logger.error(f"Missing required field during directory sync: {e}", exc_info=True)
-        return {"status": "error", "message": f"Missing field: {e}"}
+        raise HTTPException(status_code=400, detail=f"Missing field: {e}")
 
 
 async def sync_user_profiles_logic(db: Client) -> Dict[str, Any]:
@@ -310,10 +310,10 @@ async def sync_user_profiles_logic(db: Client) -> Dict[str, Any]:
         }
     except PostgRESTError as e:
         logger.error(f"PostgREST error during profile sync: {e}", exc_info=True)
-        return {"status": "error", "message": f"Database error: {e}"}
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
     except KeyError as e:
         logger.error(f"Missing required field during profile sync: {e}", exc_info=True)
-        return {"status": "error", "message": f"Missing field: {e}"}
+        raise HTTPException(status_code=400, detail=f"Missing field: {e}")
 
 
 async def sync_all_logic(db: Client) -> Dict[str, Any]:
@@ -348,7 +348,7 @@ async def cleanup_test_data_logic(db: Client) -> Dict[str, Any]:
         return {"status": "success", "deleted_count": len(hotel_ids)}
     except PostgRESTError as e:
         logger.error(f"PostgREST error during cleanup: {e}", exc_info=True)
-        return {"status": "error", "message": f"Database error: {e}"}
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
     except KeyError as e:
         logger.error(f"Data access error during cleanup: {e}", exc_info=True)
-        return {"status": "error", "message": f"Missing field: {e}"}
+        raise HTTPException(status_code=400, detail=f"Missing field: {e}")
