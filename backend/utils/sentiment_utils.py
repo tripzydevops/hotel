@@ -201,7 +201,7 @@ def normalize_sentiment(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]
         pos = int(item.get("positive") or 0)
         neg = int(item.get("negative") or 0)
         neu = int(item.get("neutral") or 0)
-        total = int(item.get("total_mentioned") or 0)
+        total = int(item.get("total_mentioned") or item.get("total") or (pos + neg + neu) or 0)
 
         for pillar, keywords in _PILLAR_MAPPINGS.items():
             if any(kw in name for kw in keywords):
@@ -376,7 +376,7 @@ def generate_mentions(breakdown: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         pos = int(item.get("positive") or 0)
         neg = int(item.get("negative") or 0)
         neu = int(item.get("neutral") or 0)
-        total = int(item.get("total_mentioned") or 0)
+        total = int(item.get("total_mentioned") or item.get("total") or (pos + neg + neu) or 0)
 
         if total == 0:
             continue
@@ -539,7 +539,7 @@ def merge_sentiment_breakdowns(
                 "positive": int(item.get("positive") or 0),
                 "negative": int(item.get("negative") or 0),
                 "neutral": int(item.get("neutral") or 0),
-                "total_mentioned": int(item.get("total_mentioned") or 0),
+                "total_mentioned": int(item.get("total_mentioned") or item.get("total") or 0),
                 "rating": float(item.get("rating") or 0),
             }
         else:
@@ -564,7 +564,7 @@ def merge_sentiment_breakdowns(
             entry["positive"] += int(item.get("positive") or 0)
             entry["negative"] += int(item.get("negative") or 0)
             entry["neutral"] += int(item.get("neutral") or 0)
-            entry["total_mentioned"] += int(item.get("total_mentioned") or 0)
+            entry["total_mentioned"] += int(item.get("total_mentioned") or item.get("total") or 0)
 
             # Smart Content Merge — prefer newer descriptions
             # since they reflect the latest scan's AI-generated summaries.
@@ -590,7 +590,7 @@ def merge_sentiment_breakdowns(
                 "positive": int(item.get("positive") or 0),
                 "negative": int(item.get("negative") or 0),
                 "neutral": int(item.get("neutral") or 0),
-                "total_mentioned": int(item.get("total_mentioned") or 0),
+                "total_mentioned": int(item.get("total_mentioned") or item.get("total") or 0),
                 "rating": float(item.get("rating") or 0),
                 "description": item.get("description"),
                 "summary": item.get("summary"),

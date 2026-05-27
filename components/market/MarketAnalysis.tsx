@@ -285,9 +285,13 @@ const MarketAnalysis: React.FC<MarketAnalysisProps> = ({ targetHotel, competitor
                           <div className="flex justify-between items-center mb-2">
                             <span className="text-xs font-black uppercase tracking-widest text-[var(--overlay-text)]">{item.pillar}</span>
                             <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
-                              diff > 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
+                              diff > 0.01
+                                ? 'bg-green-500/10 text-green-400'
+                                : diff < -0.01
+                                  ? 'bg-red-500/10 text-red-400'
+                                  : 'bg-slate-500/10 text-slate-400'
                             }`}>
-                              {diff > 0 ? '+' : ''}{diff.toFixed(1)} vs Market
+                              {diff > 0.01 ? '+' : ''}{diff.toFixed(1)} vs Market
                             </span>
                           </div>
                           <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden flex">
