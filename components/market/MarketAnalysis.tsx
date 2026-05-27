@@ -18,19 +18,24 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
 };
 
 function getCategoryScore(hotel: any, category: string): number {
-  if (!hotel?.sentiment_breakdown) return 0;
+  if (!hotel) return 0;
   const target = category.toLowerCase();
   const aliases = CATEGORY_ALIASES[target] || [];
 
-  const item = hotel.sentiment_breakdown.find((s: any) => {
-    const name = (s.name || s.category || "").toLowerCase().trim();
-    if (name === target) return true;
-    return aliases.some((alias) => name.includes(alias));
-  });
+  if (hotel.sentiment_breakdown && hotel.sentiment_breakdown.length > 0) {
+    const item = hotel.sentiment_breakdown.find((s: any) => {
+      const name = (s.name || s.category || "").toLowerCase().trim();
+      if (name === target) return true;
+      return aliases.some((alias) => name.includes(alias));
+    });
 
-  if (item) return Number(item.score || item.value || 0);
+    if (item) {
+      const val = item.rating !== undefined ? item.rating : (item.score || item.value || 0);
+      return Number(val);
+    }
+  }
 
-  if (hotel.guest_mentions?.length > 0) {
+  if (hotel.guest_mentions && hotel.guest_mentions.length > 0) {
     const relevant = hotel.guest_mentions.filter((m: any) => {
       const text = (m.keyword || m.text || "").toLowerCase();
       return aliases.some((alias) => text.includes(alias));
