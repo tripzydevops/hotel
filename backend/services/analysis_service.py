@@ -540,7 +540,7 @@ async def get_market_intelligence_data(
 
     # Python post-processing (recommendation, synthetic narrative, audit checklist, legacy compatibility aliases)
     ari = data.get("ari")
-    sent_index = data.get("sentiment_index")
+    sent_index = data.get("sentiment_index") or data.get("sent_index")
     target_price = data.get("target_price")
     pricing_dna = data.get("pricing_dna")
     hotel_name = data.get("hotel_name") or "Target"
@@ -565,6 +565,8 @@ async def get_market_intelligence_data(
     data["audit_checklist"] = checklist
     data["hotels"] = data.get("all_hotels", [])
     data["transformed_hotels"] = data.get("all_hotels", [])
+    data["sentiment_index"] = sent_index
+    data["sent_index"] = sent_index
 
     return data
 

@@ -873,47 +873,7 @@ export default function ReportsPage() {
     [allHotels]
   );
 
-  // Strategic Map computation
-  const strategicMap = useMemo(() => {
-    if (!targetHotel || !analysis) return null;
-    const myPrice = parsePrice(targetHotel.price_info?.current_price || 0);
-    const myRating = Number(targetHotel.rating) || 0;
-    const validCompetitors = competitors.filter(
-      (c: any) => c.price_info?.current_price
-    );
 
-    const avgMarketPrice =
-      validCompetitors.length > 0
-        ? validCompetitors.reduce(
-          (sum: number, c: any) =>
-            sum + parsePrice(c.price_info?.current_price || 0),
-          0
-        ) / validCompetitors.length
-        : myPrice;
-
-    const ari = avgMarketPrice > 0 ? (myPrice / avgMarketPrice) * 100 : 100;
-    const sentimentIndex =
-      marketAvgRating > 0 ? (myRating / marketAvgRating) * 100 : 100;
-
-    const x = Math.min(Math.max(sentimentIndex - 100, -50), 50);
-    const y = Math.min(Math.max(ari - 100, -50), 50);
-
-    let label = "Standard";
-    if (x > 2 && y > 2) label = "Premium King";
-    else if (x > 2 && y < -2) label = "Value Leader";
-    else if (x < -2 && y < -2) label = "Budget / Economy";
-    else if (x < -2 && y > 2) label = "Danger Zone";
-
-    return {
-      x,
-      y,
-      label,
-      ari,
-      sentiment: sentimentIndex,
-      targetRating: myRating,
-      marketRating: marketAvgRating,
-    };
-  }, [targetHotel, competitors, marketAvgRating, analysis]);
 
   const handleExport = async (format: string) => {
     if (!userId) return;
@@ -1459,7 +1419,7 @@ export default function ReportsPage() {
         {/* ═══════════════════════════════════════════════ */}
         {/* ── SECTION 2: STRATEGIC MAP ──                 */}
         {/* ═══════════════════════════════════════════════ */}
-        {strategicMap && (
+        {targetHotel && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1483,13 +1443,13 @@ export default function ReportsPage() {
               </p>
             </div>
             <AdvisorQuadrant
-              x={strategicMap.x}
-              y={strategicMap.y}
-              label={strategicMap.label}
-              ari={strategicMap.ari}
-              sentiment={strategicMap.sentiment}
-              targetRating={strategicMap.targetRating}
-              marketRating={strategicMap.marketRating}
+              x={analysis?.sentiment_index ? Math.min(Math.max(analysis.sentiment_index - 100, -50), 50) : 0}
+              y={analysis?.ari ? Math.min(Math.max(analysis.ari - 100, -50), 50) : 0}
+              label={analysis?.quadrant_label || "Standard"}
+              ari={analysis?.ari}
+              sentiment={analysis?.sentiment_index}
+              targetRating={analysis?.target_rating || targetHotel?.rating}
+              marketRating={analysis?.market_rating || marketAvgRating}
               compact
             />
           </motion.div>

@@ -4,12 +4,18 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Loader2, RefreshCw, Info, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMarketForecast } from "@/hooks/useMarketForecast";
+import { useMarketEvents } from "@/hooks/useMarketEvents";
+import { useAuth } from "@/hooks/useAuth";
+import { useAnalysisStream } from "@/hooks/useAnalysisStream";
 import { api } from "@/lib/api";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { CompressionCalendar } from "@/components/market/CompressionCalendar";
 import { IntensityBubbleChart } from "@/components/market/IntensityBubbleChart";
 import { OpportunityMatrix } from "@/components/market/OpportunityMatrix";
 import { GlobalEventCalendar } from "@/components/market/GlobalEventCalendar";
+import { PricingEventOverlayChart } from "@/components/market/PricingEventOverlayChart";
+import { CategorizedAgendaTimeline } from "@/components/market/CategorizedAgendaTimeline";
+import { DemandRadarChart } from "@/components/market/DemandRadarChart";
 import { BentoTile } from "@/components/ui/BentoGrid";
 
 export default function MarketIntelligencePage() {
@@ -19,7 +25,13 @@ export default function MarketIntelligencePage() {
     const [loadingCities, setLoadingCities] = useState(true);
     const [selectedDayIdx, setSelectedDayIdx] = useState(0);
     
+    // User Authentication & Pricing Streams
+    const { userId } = useAuth();
+    const { data: analysisData } = useAnalysisStream(userId);
+
+    // Dynamic Database Signal Feeds
     const { data, metadata, loading, error } = useMarketForecast(city, days);
+    const { events, loading: eventsLoading } = useMarketEvents(city);
 
     useEffect(() => {
         async function fetchCities() {
@@ -175,7 +187,7 @@ export default function MarketIntelligencePage() {
                 </div>
             )}
 
-            {/* Strategic Executive Summary (Moved from Sidebar) */}
+            {/* Strategic Executive Summary */}
             <AnimatePresence mode="wait">
                 {currentDay && (
                     <motion.div
@@ -237,8 +249,16 @@ export default function MarketIntelligencePage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="grid grid-cols-1 lg:grid-cols-3 gap-8"
                 >
-                    {/* Left Column: Compression Pulse */}
+                    {/* Left Column: Pricing Overlay, Compression Pulse, Intensity Scatter */}
                     <div className="lg:col-span-2 space-y-8">
+                        {/* Premium Pricing vs Event Overlay Line Graph (NEW!) */}
+                        <PricingEventOverlayChart 
+                            city={city} 
+                            events={events} 
+                            forecastData={data} 
+                            dailyPrices={analysisData?.daily_prices || []} 
+                        />
+
                         <CompressionCalendar 
                             data={data} 
                             selectedDate={currentDay?.date}
@@ -247,6 +267,7 @@ export default function MarketIntelligencePage() {
                                 if (idx !== -1) setSelectedDayIdx(idx);
                             }}
                         />
+
                         <div className="relative">
                             <IntensityBubbleChart data={data} />
                             <div className="absolute top-6 right-6">
@@ -270,32 +291,44 @@ export default function MarketIntelligencePage() {
                         </div>
                     </div>
 
-                    {/* Right: Focused Recommendations (The "Action") */}
-                <div className="space-y-6">
-                    <div className="lg:col-span-1 space-y-8 mb-8">
+                    {/* Right Column: Strategic Matrix & Categorized Agenda Feed (NEW!) */}
+                    <div className="space-y-6 lg:col-span-1">
                         <OpportunityMatrix 
                             city={city} 
                             intensity={metadata?.market_stats?.avg_tga_intensity ?? 0}
                             priceGap={2.5} 
                         />
-                    </div>
+                        
+                        {/* Categorized Agenda Timeline Widget (NEW!) */}
+                        <CategorizedAgendaTimeline 
+                            city={city} 
+                            events={events} 
+                            loading={eventsLoading} 
+                        />
                     </div>
                 </motion.div>
             )}
 
-            {/* Global Context & Recommendations Row */}
+            {/* Global Context, Radar Chart & Recommendations Row */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
                 className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-8"
             >
-                {/* Left: Global Event Calendar (The "Context") */}
-                <div className="lg:col-span-2">
+                {/* Left: Dual Radar Breakdown & Global Calendar */}
+                <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Radar Demand Distribution Widget (NEW!) */}
+                    <DemandRadarChart 
+                        city={city} 
+                        events={events} 
+                        loading={eventsLoading} 
+                    />
+                    
                     <GlobalEventCalendar />
                 </div>
 
-                {/* Right: Focused Recommendations (The "Action") */}
+                {/* Right: Risk Action Panel */}
                 <div className="space-y-6">
                     <div className="p-8 rounded-[2.5rem] bg-gradient-to-br from-[#F6C344]/10 to-transparent border border-[#F6C344]/20 backdrop-blur-md shadow-2xl relative overflow-hidden group h-full flex flex-col">
                         {/* Background Pulse */}
@@ -351,3 +384,4 @@ export default function MarketIntelligencePage() {
         </div>
     );
 }
+
