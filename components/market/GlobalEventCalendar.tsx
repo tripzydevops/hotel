@@ -66,15 +66,15 @@ export function GlobalEventCalendar() {
   });
 
   return (
-    <div className="card-blur rounded-[2.5rem] p-8 bg-gradient-to-br from-[#0A1629]/80 to-[#050B18] border border-[var(--overlay-border)] shadow-2xl relative overflow-hidden group">
+    <div className="card-blur rounded-[2rem] p-6 bg-gradient-to-br from-[#0A1629]/80 to-[#050B18] border border-[var(--overlay-border)] shadow-2xl relative overflow-hidden group">
       {/* Background Accent */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-[#F6C344]/5 rounded-full blur-3xl -z-10 transform translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
 
-      <div className="flex items-center justify-between mb-8 relative z-10">
+      <div className="flex items-center justify-between mb-5 relative z-10">
         <div>
-          <h2 className="text-xl font-black text-[var(--overlay-text)] uppercase tracking-widest flex items-center gap-3">
+          <h2 className="text-sm font-black text-[var(--overlay-text)] uppercase tracking-[0.15em] flex items-center gap-3">
             <div className="p-2 rounded-xl bg-[#F6C344]/10 border border-[#F6C344]/20 shadow-[0_0_15px_rgba(246,195,68,0.1)]">
-                <CalendarDays className="w-5 h-5 text-[#F6C344]" />
+                <CalendarDays className="w-4 h-4 text-[#F6C344]" />
             </div>
             Global Market Calendar
           </h2>
@@ -103,16 +103,19 @@ export function GlobalEventCalendar() {
         </div>
       </div>
 
-      {/* Compact Monthly Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 relative z-10 max-h-[600px] overflow-y-auto pr-2 scrollbar-custom">
+      {/* Horizontal Scrollable Monthly Grid */}
+      <div 
+        ref={scrollContainerRef}
+        className="flex gap-5 overflow-x-auto pb-2 scrollbar-custom relative z-10 snap-x snap-mandatory"
+      >
         {Object.entries(groupedEvents).map(([month, monthEvents]) => (
-          <div key={month} className="flex flex-col bg-white/[0.02] rounded-2xl p-4 border border-[var(--overlay-border)]">
+          <div key={month} className="flex flex-col bg-white/[0.02] rounded-2xl p-4 border border-[var(--overlay-border)] min-w-[280px] max-w-[320px] shrink-0 snap-start">
             <h3 className="text-[11px] font-black text-[#F6C344] uppercase tracking-[0.2em] mb-4 flex items-center justify-between">
               <span>{month}</span>
               <span className="text-[9px] text-slate-500 font-bold">{monthEvents.length} Events</span>
             </h3>
             
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1 scrollbar-thin">
               {monthEvents.map((event, idx) => {
                 const isFair = event.type === 'fair';
                 const accentColor = isFair ? "#A855F7" : "#F97316";

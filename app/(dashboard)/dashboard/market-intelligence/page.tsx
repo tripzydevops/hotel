@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Loader2, RefreshCw, Info, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Loader2, RefreshCw, Info } from "lucide-react";
 import { useMarketForecast } from "@/hooks/useMarketForecast";
 import { useMarketEvents } from "@/hooks/useMarketEvents";
 import { useAuth } from "@/hooks/useAuth";
@@ -309,69 +309,60 @@ export default function MarketIntelligencePage() {
                 </motion.div>
             )}
 
-            {/* Global Context, Radar Chart & Recommendations Row */}
+            {/* Demand Radar & Market Risk Row */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6"
+                className="grid grid-cols-1 lg:grid-cols-3 gap-6"
             >
-                {/* Left: Dual Radar Breakdown & Global Calendar */}
-                <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Radar Demand Distribution Widget (NEW!) */}
+                {/* Left: Radar Demand Distribution */}
+                <div className="lg:col-span-1">
                     <DemandRadarChart 
                         city={city} 
                         events={events} 
                         loading={eventsLoading} 
                     />
-                    
-                    <GlobalEventCalendar />
                 </div>
 
                 {/* Right: Risk Action Panel */}
-                <div className="space-y-6">
+                <div className="lg:col-span-2">
                     <div className="p-8 rounded-[2.5rem] bg-gradient-to-br from-[#F6C344]/10 to-transparent border border-[#F6C344]/20 backdrop-blur-md shadow-2xl relative overflow-hidden group h-full flex flex-col">
                         {/* Background Pulse */}
                         <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#F6C344]/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
                         
-                        <div className="flex items-center justify-between mb-8 relative z-10">
+                        <div className="flex items-center justify-between mb-6 relative z-10">
                             <h4 className="text-[10px] font-black text-[#F6C344] uppercase tracking-[0.3em]">Market Risk Analysis</h4>
-                            <div className="flex items-center gap-2">
-                                <button className="p-1.5 rounded-lg bg-white/5 border border-[var(--overlay-border)] hover:bg-white/10 transition-colors">
-                                    <ChevronLeft className="w-3.5 h-3.5 text-[#F6C344]" />
-                                </button>
-                                <button className="p-1.5 rounded-lg bg-white/5 border border-[var(--overlay-border)] hover:bg-white/10 transition-colors">
-                                    <ChevronRight className="w-3.5 h-3.5 text-[#F6C344]" />
-                                </button>
-                            </div>
                         </div>
 
-                        <div className="flex-1 space-y-8 relative z-10">
-                            <div className="space-y-1">
-                                <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Recommended Action</span>
-                                <div className="text-3xl font-black text-[var(--overlay-text)] tracking-tight">
-                                    {(metadata?.market_stats?.avg_tga_intensity ?? 0) > 3 ? 'Aggressive ADR' : 'Hold Rates'}
+                        <div className="flex-1 flex flex-col md:flex-row md:items-center gap-8 relative z-10">
+                            <div className="flex-1 space-y-4">
+                                <div className="space-y-1">
+                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Recommended Action</span>
+                                    <div className="text-3xl font-black text-[var(--overlay-text)] tracking-tight">
+                                        {(metadata?.market_stats?.avg_tga_intensity ?? 0) > 3 ? 'Aggressive ADR' : 'Hold Rates'}
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 border-t border-[var(--overlay-border)]">
+                                    <p className="text-xs text-[var(--text-muted)] leading-relaxed italic">
+                                        &quot;Significant variance in regional performance detected. Maintaining current parity while monitoring Izmir Food Fest compression.&quot;
+                                    </p>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="p-4 rounded-2xl bg-white/5 border border-[var(--overlay-border)]">
+                            <div className="flex flex-row md:flex-col gap-4 shrink-0">
+                                <div className="p-4 rounded-2xl bg-white/5 border border-[var(--overlay-border)] min-w-[100px] text-center">
                                     <span className="text-[9px] text-slate-500 uppercase font-black block mb-1">Confidence</span>
-                                    <span className="text-sm font-black text-emerald-400">92%</span>
+                                    <span className="text-lg font-black text-emerald-400">92%</span>
                                 </div>
-                                <div className="p-4 rounded-2xl bg-white/5 border border-[var(--overlay-border)]">
+                                <div className="p-4 rounded-2xl bg-white/5 border border-[var(--overlay-border)] min-w-[100px] text-center">
                                     <span className="text-[9px] text-slate-500 uppercase font-black block mb-1">Impact</span>
-                                    <span className="text-sm font-black text-blue-400">High</span>
+                                    <span className="text-lg font-black text-blue-400">High</span>
                                 </div>
                             </div>
 
-                            <div className="pt-6 border-t border-[var(--overlay-border)]">
-                                <p className="text-xs text-[var(--text-muted)] leading-relaxed italic">
-                                    "Significant variance in regional performance detected. Maintaining current parity while monitoring Izmir Food Fest compression."
-                                </p>
-                            </div>
-
-                            <button className="w-full py-4 rounded-2xl bg-[#F6C344] text-[#050B18] font-black text-xs uppercase tracking-widest hover:shadow-[0_0_20px_rgba(246,195,68,0.4)] transition-all active:scale-95 mt-auto">
+                            <button className="px-8 py-4 rounded-2xl bg-[#F6C344] text-[#050B18] font-black text-xs uppercase tracking-widest hover:shadow-[0_0_20px_rgba(246,195,68,0.4)] transition-all active:scale-95 shrink-0 md:self-center">
                                 Apply Strategy
                             </button>
                         </div>
@@ -379,9 +370,17 @@ export default function MarketIntelligencePage() {
                 </div>
             </motion.div>
 
+            {/* Global Market Calendar — Full Width, Prominent Placement */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+            >
+                <GlobalEventCalendar />
+            </motion.div>
+
             {/* Bottom Spacing */}
             <div className="h-12" />
         </div>
     );
 }
-
