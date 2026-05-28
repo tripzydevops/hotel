@@ -26,8 +26,8 @@ export const OpportunityMatrix: React.FC<OpportunityMatrixProps> = ({ city, inte
     ];
 
     return (
-        <div className="p-6 bg-[var(--deep-ocean-card)] border border-[var(--glass-border)] rounded-xl backdrop-blur-sm shadow-xl flex flex-col h-full ring-1 ring-[var(--glass-border)]">
-            <div className="flex items-center justify-between mb-8">
+        <div className="p-4 bg-[var(--deep-ocean-card)] border border-[var(--glass-border)] rounded-xl backdrop-blur-sm shadow-xl flex flex-col ring-1 ring-[var(--glass-border)]">
+            <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                     <h3 className="text-lg font-semibold text-[var(--text-primary)]">Strategic Opportunity Matrix</h3>
                     <Tooltip 
@@ -50,12 +50,12 @@ export const OpportunityMatrix: React.FC<OpportunityMatrixProps> = ({ city, inte
                 <span className="text-[10px] text-[var(--text-muted)] uppercase font-bold tracking-widest bg-[var(--deep-ocean-accent)]/20 px-2 py-0.5 rounded">{city}</span>
             </div>
 
-            <div className="relative flex-1 aspect-square w-full max-w-[320px] mx-auto grid grid-cols-2 grid-rows-2 border border-[var(--glass-border)]">
+            <div className="relative w-full max-w-[250px] mx-auto grid grid-cols-2 grid-rows-2 border border-[var(--glass-border)]" style={{ aspectRatio: '1' }}>
                 <div className="absolute -left-12 top-1/2 -translate-y-1/2 -rotate-90 text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">
                     Promotion Intensity (TGA) &uarr;
                 </div>
                 {/* X-Axis Label */}
-                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">
+                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-widest whitespace-nowrap">
                     Price Gap vs Competitors &rarr;
                 </div>
 

@@ -259,38 +259,39 @@ export const PricingEventOverlayChart: React.FC<PricingEventOverlayChartProps> =
                                 if (active && payload && payload.length) {
                                     const dataPoint = payload[0].payload;
                                     return (
-                                        <div className="p-3.5 space-y-2 max-w-[220px]">
-                                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">
+                                        <div className="p-4 space-y-2.5 min-w-[200px] max-w-[260px]">
+                                            <div className="text-xs font-black text-slate-400 uppercase tracking-wider leading-none">
                                                 {format(parseISO(dataPoint.date), "EEEE, MMM d")}
                                             </div>
                                             
-                                            <div className="space-y-1.5">
-                                                <div className="flex justify-between items-center text-xs font-bold">
-                                                    <span className="text-[#D4AF37]">Target ADR:</span>
-                                                    <span className="text-white font-black">{currencySymbol}{dataPoint.targetPrice}</span>
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center gap-4">
+                                                    <span className="text-sm font-bold text-[#D4AF37]">Target ADR:</span>
+                                                    <span className="text-base font-black text-white">{currencySymbol}{dataPoint.targetPrice.toLocaleString()}</span>
                                                 </div>
-                                                <div className="flex justify-between items-center text-xs font-bold">
-                                                    <span className="text-[#3B82F6]">Compset Avg:</span>
-                                                    <span className="text-white font-black">{currencySymbol}{dataPoint.compAverage}</span>
+                                                <div className="flex justify-between items-center gap-4">
+                                                    <span className="text-sm font-bold text-[#3B82F6]">Compset Avg:</span>
+                                                    <span className="text-base font-black text-white">{currencySymbol}{dataPoint.compAverage.toLocaleString()}</span>
                                                 </div>
-                                                <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
-                                                    <span>Compression Index:</span>
-                                                    <span className={`font-black ${dataPoint.compressionScore >= 8 ? 'text-red-400' : dataPoint.compressionScore >= 5 ? 'text-orange-400' : 'text-blue-400'}`}>
-                                                        {dataPoint.compressionScore} / 10
+                                                <div className="flex justify-between items-center gap-4 pt-1 border-t border-white/5">
+                                                    <span className="text-xs font-bold text-slate-400">Compression:</span>
+                                                    <span className={`text-sm font-black ${dataPoint.compressionScore >= 8 ? 'text-red-400' : dataPoint.compressionScore >= 5 ? 'text-orange-400' : 'text-blue-400'}`}>
+                                                        {dataPoint.compressionScore}/10
                                                     </span>
                                                 </div>
                                             </div>
 
                                             {dataPoint.eventName && (
-                                                <div className="pt-2 border-t border-white/5 space-y-0.5">
-                                                    <div className="text-[9px] font-black text-purple-400 uppercase tracking-wider leading-none">
+                                                <div className="pt-2 border-t border-white/10 space-y-1">
+                                                    <div className="text-[10px] font-black text-purple-400 uppercase tracking-wider leading-none">
                                                         Dominant Event
                                                     </div>
-                                                    <div className="text-[10px] font-bold text-white leading-tight truncate">
+                                                    <div className="text-xs font-bold text-white leading-snug">
                                                         {dataPoint.eventName}
                                                     </div>
                                                 </div>
                                             )}
+                                        </div>
                                         </div>
                                     );
                                 }
@@ -307,12 +308,12 @@ export const PricingEventOverlayChart: React.FC<PricingEventOverlayChartProps> =
                                 strokeWidth={1}
                                 strokeDasharray="3 3"
                                 label={{
-                                    value: evt.name.substring(0, 16) + (evt.name.length > 16 ? "..." : ""),
-                                    fill: "rgba(168, 85, 247, 0.8)",
-                                    fontSize: 8,
-                                    fontWeight: "black",
+                                    value: evt.name.substring(0, 12) + (evt.name.length > 12 ? "…" : ""),
+                                    fill: "rgba(168, 85, 247, 0.6)",
+                                    fontSize: 9,
+                                    fontWeight: "bold",
                                     position: "top",
-                                    offset: 10
+                                    offset: 8
                                 }}
                             />
                         ))}

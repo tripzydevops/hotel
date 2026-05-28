@@ -272,7 +272,7 @@ export default function MarketIntelligencePage() {
                         />
 
                         <div className="relative">
-                            <IntensityBubbleChart data={data} />
+                            <IntensityBubbleChart events={cityEvents} />
                             <div className="absolute top-6 right-6">
                                 <Tooltip 
                                     content={
@@ -329,8 +329,8 @@ export default function MarketIntelligencePage() {
                 </div>
 
                 {/* Right: Risk Action Panel */}
-                <div className="lg:col-span-2">
-                    <div className="p-8 rounded-[2.5rem] bg-gradient-to-br from-[#F6C344]/10 to-transparent border border-[#F6C344]/20 backdrop-blur-md shadow-2xl relative overflow-hidden group h-full flex flex-col">
+                <div className="lg:col-span-2 min-w-0">
+                    <div className="p-6 rounded-2xl bg-gradient-to-br from-[#F6C344]/10 to-[#0A1629]/50 border border-[#F6C344]/20 backdrop-blur-md shadow-2xl relative overflow-hidden group h-full flex flex-col">
                         {/* Background Pulse */}
                         <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#F6C344]/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
                         
