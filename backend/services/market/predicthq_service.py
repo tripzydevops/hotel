@@ -60,11 +60,10 @@ class PredictHQService:
                 results = data.get("results", [])
                 logger.info(f"[PredictHQ] Successfully retrieved {len(results)} events.")
 
-                processed_count = 0
+                events_list = []
                 for item in results:
                     try:
                         # Map PredictHQ event properties to market_events schema
-                        # PredictHQ rank ranges from 0 to 100. Map to 1-10 scale.
                         phq_rank = item.get("rank", 0)
                         compression_score = max(min(int(phq_rank / 10), 10), 1)
 
@@ -88,12 +87,16 @@ class PredictHQService:
                         if not event_data["start_date"] or not event_data["end_date"]:
                             continue
 
-                        self.db.table("market_events").upsert(
-                            event_data, on_conflict="name, start_date"
-                        ).execute()
-                        processed_count += 1
+                        events_list.append(event_data)
                     except Exception as e:
-                        logger.warning(f"[PredictHQ] Error staging event {item.get('title')}: {e}")
+                        logger.warning(f"[PredictHQ] Error processing event {item.get('title')}: {e}")
+
+                if events_list:
+                    # Perform dynamic bulk RPC upsert (bypasses PostgREST REST 404 cache limits)
+                    rpc_res = self.db.rpc("stage_market_events", {"events": events_list}).execute()
+                    processed_count = rpc_res.data.get("processed", len(events_list))
+                else:
+                    processed_count = 0
 
                 return {"status": "success", "processed": processed_count}
 

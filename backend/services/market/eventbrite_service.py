@@ -57,7 +57,7 @@ class EventbriteService:
                 results = data.get("events", [])
                 logger.info(f"[Eventbrite] Successfully retrieved {len(results)} events.")
 
-                processed_count = 0
+                events_list = []
                 for item in results:
                     try:
                         name_dict = item.get("name", {})
@@ -96,12 +96,15 @@ class EventbriteService:
                             }
                         }
 
-                        self.db.table("market_events").upsert(
-                            event_data, on_conflict="name, start_date"
-                        ).execute()
-                        processed_count += 1
+                        events_list.append(event_data)
                     except Exception as e:
-                        logger.warning(f"[Eventbrite] Error staging event {item.get('name', {}).get('text')}: {e}")
+                        logger.warning(f"[Eventbrite] Error processing event {item.get('name', {}).get('text')}: {e}")
+
+                if events_list:
+                    rpc_res = self.db.rpc("stage_market_events", {"events": events_list}).execute()
+                    processed_count = rpc_res.data.get("processed", len(events_list))
+                else:
+                    processed_count = 0
 
                 return {"status": "success", "processed": processed_count}
 
