@@ -247,10 +247,10 @@ export default function MarketIntelligencePage() {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+                    className="grid grid-cols-1 lg:grid-cols-3 gap-6"
                 >
                     {/* Left Column: Pricing Overlay, Compression Pulse, Intensity Scatter */}
-                    <div className="lg:col-span-2 space-y-8">
+                    <div className="lg:col-span-2 space-y-6">
                         {/* Premium Pricing vs Event Overlay Line Graph (NEW!) */}
                         <PricingEventOverlayChart 
                             city={city} 
@@ -314,10 +314,10 @@ export default function MarketIntelligencePage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-8"
+                className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6"
             >
                 {/* Left: Dual Radar Breakdown & Global Calendar */}
-                <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Radar Demand Distribution Widget (NEW!) */}
                     <DemandRadarChart 
                         city={city} 

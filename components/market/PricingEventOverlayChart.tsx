@@ -98,12 +98,14 @@ export const PricingEventOverlayChart: React.FC<PricingEventOverlayChartProps> =
             } else {
                 // Predictive pricing logic: Solve cold start / cross-city
                 // Dynamic multiplier based on event intensity & compression scores
-                const eventMultiplier = dailyEvents.reduce((acc, evt) => {
+                // Cap at 0.6 to prevent price spikes from blowing the Y-axis scale
+                const rawEventMultiplier = dailyEvents.reduce((acc, evt) => {
                     const weight = (evt.intensity_score || 3) / 15;
                     return acc + weight;
                 }, 0);
+                const eventMultiplier = Math.min(rawEventMultiplier, 0.6);
 
-                const compressionMultiplier = compressionScore / 20; // max score 10 = +50%
+                const compressionMultiplier = Math.min(compressionScore / 20, 0.5); // max score 10 = +50%, capped
                 const finalMultiplier = 1 + eventMultiplier + compressionMultiplier;
 
                 // Base pricing scales for different major cities in Turkey
@@ -177,7 +179,7 @@ export const PricingEventOverlayChart: React.FC<PricingEventOverlayChartProps> =
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="glass-card p-6 bg-[#0B1F3B]/40 border border-white/[0.08] rounded-3xl backdrop-blur-xl relative overflow-hidden flex flex-col h-full group"
+            className="glass-card p-6 bg-[#0B1F3B]/40 border border-white/[0.08] rounded-3xl backdrop-blur-xl relative overflow-hidden flex flex-col group"
         >
             {/* Ambient Background Glow */}
             <div className="absolute top-0 left-0 w-64 h-64 bg-[#D4AF37]/5 rounded-full blur-3xl -z-10 group-hover:bg-[#D4AF37]/8 transition-all duration-700"></div>
@@ -217,8 +219,8 @@ export const PricingEventOverlayChart: React.FC<PricingEventOverlayChartProps> =
             </div>
 
             {/* Main Chart Container */}
-            <div className="flex-1 min-h-[300px] w-full relative">
-                <ResponsiveContainer width="100%" height="100%">
+            <div className="w-full relative" style={{ height: 280 }}>
+                <ResponsiveContainer width="100%" height={280}>
                     <LineChart data={chartData} margin={{ top: 20, right: 35, left: 10, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                         
@@ -238,6 +240,10 @@ export const PricingEventOverlayChart: React.FC<PricingEventOverlayChartProps> =
                             tickLine={false}
                             axisLine={false}
                             tickFormatter={(v) => `${currencySymbol}${v}`}
+                            domain={[
+                                (dataMin: number) => Math.floor(dataMin * 0.9 / 100) * 100,
+                                (dataMax: number) => Math.ceil(dataMax * 1.1 / 100) * 100
+                            ]}
                         />
 
                         {/* Interactive Dark Tooltip */}
