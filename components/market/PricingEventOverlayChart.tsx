@@ -292,7 +292,6 @@ export const PricingEventOverlayChart: React.FC<PricingEventOverlayChartProps> =
                                                 </div>
                                             )}
                                         </div>
-                                        </div>
                                     );
                                 }
                                 return null;
