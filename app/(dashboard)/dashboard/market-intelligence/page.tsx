@@ -29,9 +29,12 @@ export default function MarketIntelligencePage() {
     const { userId } = useAuth();
     const { data: analysisData } = useAnalysisStream(userId);
 
-    // Dynamic Database Signal Feeds
-    const { data, metadata, loading, error } = useMarketForecast(city, days);
-    const { events, loading: eventsLoading } = useMarketEvents(city);
+    // 1. Load events from Supabase (single fast query)
+    const { events: cityEvents, loading: eventsLoading } = useMarketEvents(city);
+    const { events: allEvents } = useMarketEvents(); // Global events for calendar
+
+    // 2. Compute forecast client-side from events (instant, no backend call)
+    const { data, metadata, loading, error } = useMarketForecast(city, days, cityEvents);
 
     useEffect(() => {
         async function fetchCities() {
@@ -238,10 +241,10 @@ export default function MarketIntelligencePage() {
                 )}
             </AnimatePresence>
 
-            {loading && data.length === 0 ? (
+            {eventsLoading && data.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-[50vh]">
                     <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
-                    <p className="text-[var(--text-muted)] italic">Ingesting Turkish demand signals...</p>
+                    <p className="text-[var(--text-muted)] italic">Loading market events...</p>
                 </div>
             ) : (
                 <motion.div
@@ -254,7 +257,7 @@ export default function MarketIntelligencePage() {
                         {/* Premium Pricing vs Event Overlay Line Graph (NEW!) */}
                         <PricingEventOverlayChart 
                             city={city} 
-                            events={events} 
+                            events={cityEvents} 
                             forecastData={data} 
                             dailyPrices={analysisData?.daily_prices || []} 
                         />
@@ -302,7 +305,7 @@ export default function MarketIntelligencePage() {
                         {/* Categorized Agenda Timeline Widget (NEW!) */}
                         <CategorizedAgendaTimeline 
                             city={city} 
-                            events={events} 
+                            events={cityEvents} 
                             loading={eventsLoading} 
                         />
                     </div>
@@ -320,7 +323,7 @@ export default function MarketIntelligencePage() {
                 <div className="lg:col-span-1">
                     <DemandRadarChart 
                         city={city} 
-                        events={events} 
+                        events={cityEvents} 
                         loading={eventsLoading} 
                     />
                 </div>
