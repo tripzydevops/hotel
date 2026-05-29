@@ -47,7 +47,7 @@ export const DemandRadarChart: React.FC<DemandRadarChartProps> = ({
         // Classify each event
         events.forEach((e) => {
             const typeLower = (e.type || "").toLowerCase();
-            const intensity = e.intensity_score || 3;
+            const intensity = (e.intensity_score ?? e.compression_score) || 3;
             
             let matched = false;
             for (const [catName, cat] of Object.entries(categories)) {

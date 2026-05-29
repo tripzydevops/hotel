@@ -23,13 +23,13 @@ export const IntensityBubbleChart: React.FC<IntensityBubbleChartProps> = ({ even
         if (!events || events.length === 0) return [];
 
         return events
-            .filter(e => e.intensity_score && e.intensity_score > 0)
+            .filter(e => (e.intensity_score ?? e.compression_score) && ((e.intensity_score ?? e.compression_score) ?? 0) > 0)
             .map(e => ({
                 dateNum: new Date(e.start_date).getTime(),
-                score: e.intensity_score || 1,
+                score: (e.intensity_score ?? e.compression_score) || 1,
                 intensity: e.expected_attendees
                     ? Math.min(Math.max(Math.log10(e.expected_attendees) * 2, 1), 10)
-                    : (e.intensity_score || 3),
+                    : ((e.intensity_score ?? e.compression_score) || 3),
                 name: e.name,
                 type: e.type,
                 city: e.city

@@ -159,7 +159,7 @@ export function GlobalEventCalendar() {
                                 <span className="truncate max-w-[80px]">{event.city}</span>
                             </div>
                             
-                            {event.intensity_score && (
+                            {(event.intensity_score || event.compression_score) && (
                                 <div className="flex gap-0.5 items-center">
                                     <div 
                                         className="h-1 rounded-full overflow-hidden bg-white/5 w-8"
@@ -167,7 +167,7 @@ export function GlobalEventCalendar() {
                                         <div 
                                             className="h-full transition-all duration-500"
                                             style={{ 
-                                                width: `${(event.intensity_score / 10) * 100}%`,
+                                                width: `${(((event.intensity_score || event.compression_score) ?? 3) / 10) * 100}%`
                                                 backgroundColor: accentColor
                                             }}
                                         />

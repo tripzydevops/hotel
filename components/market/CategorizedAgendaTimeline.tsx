@@ -167,7 +167,7 @@ export const CategorizedAgendaTimeline: React.FC<CategorizedAgendaTimelineProps>
                             const day = format(startDate, "dd");
                             const month = format(startDate, "MMM");
                             
-                            const intensity = evt.intensity_score || 3;
+                            const intensity = (evt.intensity_score ?? evt.compression_score) || 3;
                             const compressionLevel = intensity >= 8 ? "CRITICAL" : intensity >= 5 ? "HIGH" : "MODERATE";
                             const compressionColor = intensity >= 8 ? "text-red-400" : intensity >= 5 ? "text-orange-400" : "text-blue-400";
 

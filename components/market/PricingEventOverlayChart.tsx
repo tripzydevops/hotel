@@ -100,7 +100,7 @@ export const PricingEventOverlayChart: React.FC<PricingEventOverlayChartProps> =
                 // Dynamic multiplier based on event intensity & compression scores
                 // Cap at 0.6 to prevent price spikes from blowing the Y-axis scale
                 const rawEventMultiplier = dailyEvents.reduce((acc, evt) => {
-                    const weight = (evt.intensity_score || 3) / 15;
+                    const weight = ((evt.intensity_score ?? evt.compression_score) || 3) / 15;
                     return acc + weight;
                 }, 0);
                 const eventMultiplier = Math.min(rawEventMultiplier, 0.6);
@@ -124,7 +124,7 @@ export const PricingEventOverlayChart: React.FC<PricingEventOverlayChartProps> =
             }
 
             // Top event info for tooltips
-            const dominantEvent = dailyEvents.sort((a, b) => (b.intensity_score || 0) - (a.intensity_score || 0))[0];
+            const dominantEvent = dailyEvents.sort((a, b) => ((b.intensity_score ?? b.compression_score) || 0) - ((a.intensity_score ?? a.compression_score) || 0))[0];
 
             return {
                 date: dateStr,
@@ -133,7 +133,7 @@ export const PricingEventOverlayChart: React.FC<PricingEventOverlayChartProps> =
                 compAverage,
                 compressionScore,
                 eventName: dominantEvent ? dominantEvent.name : null,
-                eventIntensity: dominantEvent ? dominantEvent.intensity_score : null,
+                eventIntensity: dominantEvent ? (dominantEvent.intensity_score ?? dominantEvent.compression_score) : null,
                 isPredicted: !hasActualPricing
             };
         });
@@ -154,7 +154,7 @@ export const PricingEventOverlayChart: React.FC<PricingEventOverlayChartProps> =
         const uniqueDayEvents: Record<string, MarketEvent> = {};
         activeUpcoming.forEach((e) => {
             const dateKey = e.start_date.split("T")[0];
-            if (!uniqueDayEvents[dateKey] || (e.intensity_score || 0) > (uniqueDayEvents[dateKey].intensity_score || 0)) {
+            if (!uniqueDayEvents[dateKey] || ((e.intensity_score ?? e.compression_score) || 0) > ((uniqueDayEvents[dateKey].intensity_score ?? uniqueDayEvents[dateKey].compression_score) || 0)) {
                 uniqueDayEvents[dateKey] = e;
             }
         });
@@ -164,7 +164,7 @@ export const PricingEventOverlayChart: React.FC<PricingEventOverlayChartProps> =
             .map(([dateStr, e]) => ({
                 date: dateStr,
                 name: e.name,
-                intensity: e.intensity_score || 3,
+                intensity: (e.intensity_score ?? e.compression_score) || 3,
                 type: e.type,
                 attendees: e.expected_attendees || 0
             }))

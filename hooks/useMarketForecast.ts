@@ -118,7 +118,7 @@ function computeForecast(
     const signals: MarketSignal[] = [];
 
     for (const event of activeEvents) {
-      const score = event.intensity_score || 1;
+      const score = event.intensity_score ?? event.compression_score ?? 1;
       const etype = event.type;
 
       if (etype === "fair") {

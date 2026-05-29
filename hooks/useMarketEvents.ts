@@ -16,6 +16,7 @@ export interface MarketEvent {
   source_url?: string;
   expected_attendees?: number;
   intensity_score?: number;
+  compression_score?: number;
   created_at: string;
   updated_at: string;
 }
