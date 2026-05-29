@@ -102,7 +102,7 @@ async def clear_market_events(db: Client = Depends(get_supabase_rls)):
     return {"status": "success", "cleared": len(res.data)}
 
 
-@router.get("/cities", response_model=CitiesResponse)
+@router.get("/cities", response_model=List[str])
 async def get_market_cities(db: Client = Depends(get_supabase_rls)):
     """
     Returns a unique list of cities present in the market_events table.

@@ -271,7 +271,7 @@ export default function MarketIntelligencePage() {
                             }}
                         />
 
-                        <div className="relative">
+                        <div className="relative h-[340px]">
                             <IntensityBubbleChart events={cityEvents} />
                             <div className="absolute top-6 right-6">
                                 <Tooltip 
@@ -317,10 +317,10 @@ export default function MarketIntelligencePage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+                className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch"
             >
                 {/* Left: Radar Demand Distribution */}
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-1 h-full">
                     <DemandRadarChart 
                         city={city} 
                         events={cityEvents} 
@@ -329,20 +329,20 @@ export default function MarketIntelligencePage() {
                 </div>
 
                 {/* Right: Risk Action Panel */}
-                <div className="lg:col-span-2 min-w-0">
-                    <div className="p-6 rounded-2xl bg-gradient-to-br from-[#F6C344]/10 to-[#0A1629]/50 border border-[#F6C344]/20 backdrop-blur-md shadow-2xl relative overflow-hidden group h-full flex flex-col">
+                <div className="lg:col-span-2 min-w-0 h-full">
+                    <div className="p-5 rounded-2xl bg-gradient-to-br from-[#F6C344]/10 to-[#0A1629]/50 border border-[#F6C344]/20 backdrop-blur-md shadow-2xl relative overflow-hidden group h-full flex flex-col justify-between">
                         {/* Background Pulse */}
                         <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#F6C344]/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
                         
-                        <div className="flex items-center justify-between mb-6 relative z-10">
+                        <div className="flex items-center justify-between mb-4 relative z-10">
                             <h4 className="text-[10px] font-black text-[#F6C344] uppercase tracking-[0.3em]">Market Risk Analysis</h4>
                         </div>
 
-                        <div className="flex-1 flex flex-col md:flex-row md:items-center gap-8 relative z-10">
-                            <div className="flex-1 space-y-4">
+                        <div className="flex-grow grid grid-cols-1 md:grid-cols-12 gap-6 items-center relative z-10">
+                            <div className="md:col-span-7 space-y-4">
                                 <div className="space-y-1">
                                     <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Recommended Action</span>
-                                    <div className="text-3xl font-black text-[var(--overlay-text)] tracking-tight">
+                                    <div className="text-2xl font-black text-[var(--overlay-text)] tracking-tight">
                                         {(metadata?.market_stats?.avg_tga_intensity ?? 0) > 3 ? 'Aggressive ADR' : 'Hold Rates'}
                                     </div>
                                 </div>
@@ -354,20 +354,22 @@ export default function MarketIntelligencePage() {
                                 </div>
                             </div>
 
-                            <div className="flex flex-row md:flex-col gap-4 shrink-0">
-                                <div className="p-4 rounded-2xl bg-white/5 border border-[var(--overlay-border)] min-w-[100px] text-center">
-                                    <span className="text-[9px] text-slate-500 uppercase font-black block mb-1">Confidence</span>
-                                    <span className="text-lg font-black text-emerald-400">92%</span>
+                            <div className="md:col-span-5 flex flex-col gap-4 w-full">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="p-3.5 rounded-xl bg-white/5 border border-[var(--overlay-border)] text-center">
+                                        <span className="text-[9px] text-slate-500 uppercase font-black block mb-1">Confidence</span>
+                                        <span className="text-base font-black text-emerald-400">92%</span>
+                                    </div>
+                                    <div className="p-3.5 rounded-xl bg-white/5 border border-[var(--overlay-border)] text-center">
+                                        <span className="text-[9px] text-slate-500 uppercase font-black block mb-1">Impact</span>
+                                        <span className="text-base font-black text-blue-400">High</span>
+                                    </div>
                                 </div>
-                                <div className="p-4 rounded-2xl bg-white/5 border border-[var(--overlay-border)] min-w-[100px] text-center">
-                                    <span className="text-[9px] text-slate-500 uppercase font-black block mb-1">Impact</span>
-                                    <span className="text-lg font-black text-blue-400">High</span>
-                                </div>
-                            </div>
 
-                            <button className="px-8 py-4 rounded-2xl bg-[#F6C344] text-[#050B18] font-black text-xs uppercase tracking-widest hover:shadow-[0_0_20px_rgba(246,195,68,0.4)] transition-all active:scale-95 shrink-0 md:self-center">
-                                Apply Strategy
-                            </button>
+                                <button className="w-full py-3.5 rounded-xl bg-[#F6C344] text-[#050B18] font-black text-xs uppercase tracking-widest hover:shadow-[0_0_20px_rgba(246,195,68,0.4)] transition-all active:scale-95">
+                                    Apply Strategy
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
