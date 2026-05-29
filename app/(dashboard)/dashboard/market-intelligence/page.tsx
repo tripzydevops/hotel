@@ -264,7 +264,7 @@ export default function MarketIntelligencePage() {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+                    className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch"
                 >
                     {/* Left Column: Pricing Overlay, Compression Pulse, Intensity Scatter */}
                     <div className="lg:col-span-2 space-y-6">
@@ -291,19 +291,21 @@ export default function MarketIntelligencePage() {
                     </div>
 
                     {/* Right Column: Strategic Matrix & Categorized Agenda Feed (NEW!) */}
-                    <div className="space-y-6 lg:col-span-1">
+                    <div className="flex flex-col gap-6 lg:col-span-1">
                         <OpportunityMatrix 
                             city={city} 
                             intensity={metadata?.market_stats?.avg_tga_intensity ?? 0}
                             priceGap={2.5} 
                         />
                         
-                        {/* Categorized Agenda Timeline Widget (NEW!) */}
-                        <CategorizedAgendaTimeline 
-                            city={city} 
-                            events={cityEvents} 
-                            loading={eventsLoading} 
-                        />
+                        {/* Categorized Agenda Timeline Widget — flex-1 to align bottom with left column */}
+                        <div className="flex-1 min-h-0">
+                            <CategorizedAgendaTimeline 
+                                city={city} 
+                                events={cityEvents} 
+                                loading={eventsLoading} 
+                            />
+                        </div>
                     </div>
                 </motion.div>
             )}

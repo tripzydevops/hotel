@@ -145,7 +145,7 @@ export const CategorizedAgendaTimeline: React.FC<CategorizedAgendaTimelineProps>
             </div>
 
             {/* List */}
-            <div className="flex-1 overflow-y-auto pr-1 max-h-[480px] scrollbar-thin">
+            <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin">
                 {timelineEvents.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full min-h-[250px] text-center p-4">
                         <Calendar className="w-8 h-8 text-slate-600 mb-2 stroke-[1.5]" />
