@@ -8,7 +8,7 @@ import { useMarketEvents } from "@/hooks/useMarketEvents";
 import { useAuth } from "@/hooks/useAuth";
 import { useAnalysisStream } from "@/hooks/useAnalysisStream";
 import { api } from "@/lib/api";
-import { Tooltip } from "@/components/ui/Tooltip";
+
 import { CompressionCalendar } from "@/components/market/CompressionCalendar";
 import { IntensityBubbleChart } from "@/components/market/IntensityBubbleChart";
 import { OpportunityMatrix } from "@/components/market/OpportunityMatrix";
@@ -21,6 +21,7 @@ import { BentoTile } from "@/components/ui/BentoGrid";
 export default function MarketIntelligencePage() {
     const [city, setCity] = useState("Istanbul");
     const [cities, setCities] = useState<string[]>(["Istanbul"]);
+    const [cityKey, setCityKey] = useState(0); // Force re-render on city change
     const [days, setDays] = useState(60);
     const [loadingCities, setLoadingCities] = useState(true);
     const [selectedDayIdx, setSelectedDayIdx] = useState(0);
@@ -56,8 +57,12 @@ export default function MarketIntelligencePage() {
     }, []);
 
     const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setCity(e.target.value);
-        setSelectedDayIdx(0);
+        const newCity = e.target.value;
+        if (newCity !== city) {
+            setCity(newCity);
+            setSelectedDayIdx(0);
+            setCityKey(prev => prev + 1);
+        }
     };
 
     const currentDay = data.length > 0 ? data[selectedDayIdx] : null;
@@ -152,20 +157,29 @@ export default function MarketIntelligencePage() {
 
                     <div className="relative">
                         <select
+                            key={`city-select-${cityKey}`}
                             value={city}
                             onChange={handleCityChange}
                             disabled={loadingCities}
-                            className="appearance-none pl-3 pr-10 py-1.5 rounded-lg bg-white/5 border border-[var(--overlay-border)] text-[var(--overlay-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)] w-60 cursor-pointer disabled:opacity-50"
+                            className="appearance-none pl-3 pr-10 py-1.5 rounded-lg bg-[#0f172a] border border-[var(--overlay-border)] text-white text-sm focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)] w-60 cursor-pointer disabled:opacity-50"
+                            style={{ colorScheme: 'dark' }}
                         >
                             {cities.map(c => (
-                                <option key={c} value={c} className="bg-[var(--bg-subtle)] text-[var(--overlay-text)]">
+                                <option key={c} value={c} style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>
                                     {c}
                                 </option>
                             ))}
                         </select>
                         <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <RefreshCw className={`w-3 h-3 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
+                            <svg className="w-4 h-4 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
                         </div>
+                        {loading && (
+                            <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+                                <RefreshCw className="w-3 h-3 text-[var(--soft-gold)] animate-spin" />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -271,26 +285,8 @@ export default function MarketIntelligencePage() {
                             }}
                         />
 
-                        <div className="relative h-[340px]">
+                        <div className="relative">
                             <IntensityBubbleChart events={cityEvents} />
-                            <div className="absolute top-6 right-6">
-                                <Tooltip 
-                                    content={
-                                        <div className="max-w-xs space-y-1">
-                                            <p className="font-bold border-b border-[var(--overlay-border)] pb-1 mb-1">Market Intensity Signals</p>
-                                            <p>Clusters of dots indicate high-density market events.</p>
-                                            <p className="text-[#A855F7] font-medium">Purple: Trade Fairs (TOBB)</p>
-                                            <p className="text-[#F97316] font-medium">Orange: Tourism Announcements (TGA)</p>
-                                            <p className="pt-1 italic">Closer clusters = Higher risk of demand compression.</p>
-                                        </div>
-                                    }
-                                    side="left"
-                                >
-                                    <div className="p-1 rounded-full bg-white/5 hover:bg-white/10 transition-colors cursor-help">
-                                        <Info className="w-4 h-4 text-[var(--text-muted)]" />
-                                    </div>
-                                </Tooltip>
-                            </div>
                         </div>
                     </div>
 
@@ -312,15 +308,16 @@ export default function MarketIntelligencePage() {
                 </motion.div>
             )}
 
-            {/* Demand Radar & Market Risk Row */}
+            {/* Demand Radar & Market Risk Row — Clear section break */}
+            <div className="border-t border-white/[0.05] pt-6 mt-2" />
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch"
+                className="grid grid-cols-1 lg:grid-cols-2 gap-6"
             >
                 {/* Left: Radar Demand Distribution */}
-                <div className="lg:col-span-1 h-full">
+                <div>
                     <DemandRadarChart 
                         city={city} 
                         events={cityEvents} 
@@ -329,47 +326,43 @@ export default function MarketIntelligencePage() {
                 </div>
 
                 {/* Right: Risk Action Panel */}
-                <div className="lg:col-span-2 min-w-0 h-full">
-                    <div className="p-5 rounded-2xl bg-gradient-to-br from-[#F6C344]/10 to-[#0A1629]/50 border border-[#F6C344]/20 backdrop-blur-md shadow-2xl relative overflow-hidden group h-full flex flex-col justify-between">
+                <div>
+                    <div className="p-6 rounded-2xl bg-gradient-to-br from-[#F6C344]/10 to-[#0A1629]/50 border border-[#F6C344]/20 backdrop-blur-md shadow-2xl relative overflow-hidden group h-full">
                         {/* Background Pulse */}
                         <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#F6C344]/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
                         
-                        <div className="flex items-center justify-between mb-4 relative z-10">
+                        <div className="flex items-center justify-between mb-5 relative z-10">
                             <h4 className="text-[10px] font-black text-[#F6C344] uppercase tracking-[0.3em]">Market Risk Analysis</h4>
                         </div>
 
-                        <div className="flex-grow grid grid-cols-1 md:grid-cols-12 gap-6 items-center relative z-10">
-                            <div className="md:col-span-7 space-y-4">
-                                <div className="space-y-1">
-                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Recommended Action</span>
-                                    <div className="text-2xl font-black text-[var(--overlay-text)] tracking-tight">
-                                        {(metadata?.market_stats?.avg_tga_intensity ?? 0) > 3 ? 'Aggressive ADR' : 'Hold Rates'}
-                                    </div>
-                                </div>
-
-                                <div className="pt-4 border-t border-[var(--overlay-border)]">
-                                    <p className="text-xs text-[var(--text-muted)] leading-relaxed italic">
-                                        &quot;Significant variance in regional performance detected. Maintaining current parity while monitoring Izmir Food Fest compression.&quot;
-                                    </p>
+                        <div className="space-y-5 relative z-10">
+                            <div className="space-y-1">
+                                <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Recommended Action</span>
+                                <div className="text-2xl font-black text-[var(--overlay-text)] tracking-tight">
+                                    {(metadata?.market_stats?.avg_tga_intensity ?? 0) > 3 ? 'Aggressive ADR' : 'Hold Rates'}
                                 </div>
                             </div>
 
-                            <div className="md:col-span-5 flex flex-col gap-4 w-full">
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="p-3.5 rounded-xl bg-white/5 border border-[var(--overlay-border)] text-center">
-                                        <span className="text-[9px] text-slate-500 uppercase font-black block mb-1">Confidence</span>
-                                        <span className="text-base font-black text-emerald-400">92%</span>
-                                    </div>
-                                    <div className="p-3.5 rounded-xl bg-white/5 border border-[var(--overlay-border)] text-center">
-                                        <span className="text-[9px] text-slate-500 uppercase font-black block mb-1">Impact</span>
-                                        <span className="text-base font-black text-blue-400">High</span>
-                                    </div>
-                                </div>
-
-                                <button className="w-full py-3.5 rounded-xl bg-[#F6C344] text-[#050B18] font-black text-xs uppercase tracking-widest hover:shadow-[0_0_20px_rgba(246,195,68,0.4)] transition-all active:scale-95">
-                                    Apply Strategy
-                                </button>
+                            <div className="pt-4 border-t border-[var(--overlay-border)]">
+                                <p className="text-xs text-[var(--text-muted)] leading-relaxed italic">
+                                    &quot;Significant variance in regional performance detected. Maintaining current parity while monitoring Izmir Food Fest compression.&quot;
+                                </p>
                             </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="p-3.5 rounded-xl bg-white/5 border border-[var(--overlay-border)] text-center">
+                                    <span className="text-[9px] text-slate-500 uppercase font-black block mb-1">Confidence</span>
+                                    <span className="text-base font-black text-emerald-400">92%</span>
+                                </div>
+                                <div className="p-3.5 rounded-xl bg-white/5 border border-[var(--overlay-border)] text-center">
+                                    <span className="text-[9px] text-slate-500 uppercase font-black block mb-1">Impact</span>
+                                    <span className="text-base font-black text-blue-400">High</span>
+                                </div>
+                            </div>
+
+                            <button className="w-full py-3.5 rounded-xl bg-[#F6C344] text-[#050B18] font-black text-xs uppercase tracking-widest hover:shadow-[0_0_20px_rgba(246,195,68,0.4)] transition-all active:scale-95">
+                                Apply Strategy
+                            </button>
                         </div>
                     </div>
                 </div>
