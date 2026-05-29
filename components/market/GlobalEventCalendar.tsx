@@ -167,7 +167,7 @@ export function GlobalEventCalendar() {
                                         <div 
                                             className="h-full transition-all duration-500"
                                             style={{ 
-                                                width: `${(((event.intensity_score || event.compression_score) ?? 3) / 10) * 100}%`
+                                                width: `${(((event.intensity_score || event.compression_score) ?? 3) / 10) * 100}%`,
                                                 backgroundColor: accentColor
                                             }}
                                         />
