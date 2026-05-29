@@ -291,7 +291,7 @@ export default function MarketIntelligencePage() {
                     </div>
 
                     {/* Right Column: Strategic Matrix & Categorized Agenda Feed (NEW!) */}
-                    <div className="flex flex-col gap-6 lg:col-span-1">
+                    <div className="flex flex-col gap-6 lg:col-span-1 lg:h-0 lg:min-h-full">
                         <OpportunityMatrix 
                             city={city} 
                             intensity={metadata?.market_stats?.avg_tga_intensity ?? 0}
@@ -299,7 +299,7 @@ export default function MarketIntelligencePage() {
                         />
                         
                         {/* Categorized Agenda Timeline Widget — flex-1 to align bottom with left column */}
-                        <div className="flex-1 min-h-0">
+                        <div className="flex-1 min-h-0 flex flex-col">
                             <CategorizedAgendaTimeline 
                                 city={city} 
                                 events={cityEvents} 
