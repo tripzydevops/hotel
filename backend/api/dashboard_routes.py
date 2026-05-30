@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
-from backend.services.auth_service import get_current_active_user, get_supabase_rls
+from backend.services.auth_service import get_current_active_user, get_current_admin_user, get_supabase_rls
 from backend.services.dashboard_service import get_dashboard_logic, get_recent_wins
 from backend.utils.db import get_supabase
 from supabase import Client
@@ -35,7 +35,7 @@ async def get_dashboard(
 
 
 @router.get("/debug-gemini")
-async def debug_gemini():
+async def debug_gemini(admin=Depends(get_current_admin_user)):
     import os
     gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     if not gemini_key:

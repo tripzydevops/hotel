@@ -4,7 +4,11 @@ from typing import List, Dict, Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from backend.services.auth_service import get_supabase_rls
+from backend.services.auth_service import (
+    get_current_active_user,
+    get_current_admin_user,
+    get_supabase_rls,
+)
 from backend.utils.logger import get_logger
 from supabase import Client
 
@@ -14,7 +18,10 @@ router = APIRouter(prefix="/market", tags=["Market Intelligence"])
 
 
 @router.post("/scrape/tobb", response_model=SuccessResponse)
-async def trigger_tobb_scrape(db: Client = Depends(get_supabase_rls)):
+async def trigger_tobb_scrape(
+    db: Client = Depends(get_supabase_rls),
+    admin=Depends(get_current_admin_user),
+):
     """
     Triggers the TOBB Fair Calendar Scraper.
     """
@@ -30,7 +37,10 @@ async def trigger_tobb_scrape(db: Client = Depends(get_supabase_rls)):
 
 
 @router.post("/scrape/tga", response_model=SuccessResponse)
-async def trigger_tga_scrape(db: Client = Depends(get_supabase_rls)):
+async def trigger_tga_scrape(
+    db: Client = Depends(get_supabase_rls),
+    admin=Depends(get_current_admin_user),
+):
     """
     Triggers the TGA Activity Scraper.
     """
@@ -46,7 +56,10 @@ async def trigger_tga_scrape(db: Client = Depends(get_supabase_rls)):
 
 
 @router.post("/scrape/all", response_model=SuccessResponse)
-async def trigger_full_market_sync(db: Client = Depends(get_supabase_rls)):
+async def trigger_full_market_sync(
+    db: Client = Depends(get_supabase_rls),
+    admin=Depends(get_current_admin_user),
+):
     """
     Runs both TOBB and TGA scrapers, as well as PredictHQ, Ticketmaster, and Eventbrite integrations.
     """
@@ -89,7 +102,10 @@ async def trigger_full_market_sync(db: Client = Depends(get_supabase_rls)):
 
 
 @router.post("/scrape/clear", response_model=SuccessResponse)
-async def clear_market_events(db: Client = Depends(get_supabase_rls)):
+async def clear_market_events(
+    db: Client = Depends(get_supabase_rls),
+    admin=Depends(get_current_admin_user),
+):
     """
     Clears all market events from the database.
     """
@@ -103,7 +119,10 @@ async def clear_market_events(db: Client = Depends(get_supabase_rls)):
 
 
 @router.get("/cities", response_model=List[str])
-async def get_market_cities(db: Client = Depends(get_supabase_rls)):
+async def get_market_cities(
+    db: Client = Depends(get_supabase_rls),
+    current_user=Depends(get_current_active_user),
+):
     """
     Returns a unique list of cities present in the market_events table.
     """
@@ -114,7 +133,9 @@ async def get_market_cities(db: Client = Depends(get_supabase_rls)):
 
 @router.get("/events", response_model=List[Dict[str, Any]])
 async def get_market_events(
-    city: Optional[str] = None, db: Client = Depends(get_supabase_rls)
+    city: Optional[str] = None,
+    db: Client = Depends(get_supabase_rls),
+    current_user=Depends(get_current_active_user),
 ):
     """
     Retrieves market events for the dashboard.
@@ -134,6 +155,7 @@ async def get_market_forecast(
     days: int = 30,
     language: Optional[str] = "en",
     db: Client = Depends(get_supabase_rls),
+    current_user=Depends(get_current_active_user),
 ):
     """
     Returns a 30-day demand compression forecast with AI-generated rationales.

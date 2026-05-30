@@ -26,13 +26,24 @@ backend.agents.copilot_agent.HAS_GENAI = False
 def make_mock_db():
     """Creates a mock Supabase client for DB calls."""
     db = MagicMock()
-    chain = MagicMock()
-    chain.select.return_value = chain
-    chain.eq.return_value = chain
-    chain.order.return_value = chain
-    chain.limit.return_value = chain
-    chain.execute.return_value = MagicMock(data=[])
-    db.table.return_value = chain
+    
+    def table_side_effect(name):
+        chain = MagicMock()
+        chain.select.return_value = chain
+        chain.eq.return_value = chain
+        chain.order.return_value = chain
+        chain.limit.return_value = chain
+        chain.maybe_single.return_value = chain
+        
+        if name == "user_hotels":
+            chain.execute.return_value = MagicMock(data=[{"user_id": "mock-user-123"}])
+        elif name == "user_profiles":
+            chain.execute.return_value = MagicMock(data={"role": "user"})
+        else:
+            chain.execute.return_value = MagicMock(data=[])
+        return chain
+
+    db.table.side_effect = table_side_effect
     return db
 
 

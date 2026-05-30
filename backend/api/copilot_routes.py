@@ -141,6 +141,11 @@ async def copilot_chat(
 
     user_id = str(current_user.id)
 
+    # IDOR GUARD: Verify that the user owns the active hotel if provided in the screen context
+    if body.screen_context.active_hotel_id:
+        from backend.utils.security import verify_hotel_ownership
+        await verify_hotel_ownership(db, user_id, body.screen_context.active_hotel_id)
+
     try:
         # Convert Pydantic models to dicts for the agent
         history_dicts = [msg.model_dump() for msg in body.history]

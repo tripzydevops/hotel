@@ -5,7 +5,7 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from backend.services.auth_service import get_supabase_rls
+from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.utils.logger import get_logger
 from supabase import Client
 
@@ -22,7 +22,9 @@ class ExecutionRequest(BaseModel):
 
 @router.post("/bridge", response_model=SuccessResponse)
 async def execute_strategy_bridge(
-    req: ExecutionRequest, db: Client = Depends(get_supabase_rls)
+    req: ExecutionRequest,
+    db: Client = Depends(get_supabase_rls),
+    current_user=Depends(get_current_active_user),
 ):
     """
     [Future-Proofing] Webhook listener for AI-recommended actions.

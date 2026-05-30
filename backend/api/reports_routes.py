@@ -22,6 +22,7 @@ from backend.templates.report_templates import (
     build_deep_ocean_briefing_html,
 )
 from backend.utils.db import get_supabase
+from backend.utils.security import verify_hotel_ownership
 from supabase import Client
 
 try:
@@ -69,6 +70,12 @@ async def generate_briefing(
     to the 'reports' table for future retrieval.
     """
     from backend.agents.analyst_agent import AnalystAgent
+
+    # IDOR GUARD: Verify user owns the target hotel before generating a briefing
+    user_id = str(current_user.id)
+    await verify_hotel_ownership(db, user_id, request.target_hotel_id)
+    if request.rival_hotel_id:
+        await verify_hotel_ownership(db, user_id, request.rival_hotel_id)
 
     agent = AnalystAgent(db)
 
@@ -454,6 +461,12 @@ async def export_briefing_pdf(
     Regenerates live market pulse with upgraded AI depth and visual styling.
     """
     from backend.agents.analyst_agent import AnalystAgent
+
+    # IDOR GUARD: Verify user owns the target hotel before generating a live PDF
+    user_id = str(current_user.id)
+    await verify_hotel_ownership(db, user_id, target_hotel_id)
+    if rival_hotel_id:
+        await verify_hotel_ownership(db, user_id, rival_hotel_id)
 
     agent = AnalystAgent(db)
     briefing = await agent.generate_executive_briefing(

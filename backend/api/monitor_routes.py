@@ -3,13 +3,14 @@ from backend.models.schemas import SuccessResponse
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 from backend.models.schemas import QueryLog, ScanSession
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
+from backend.utils.security import verify_scan_session_ownership
 from supabase import Client
 
 router = APIRouter(prefix="/monitor", tags=["monitor"])
@@ -24,19 +25,21 @@ async def get_session(
     current_user=Depends(get_current_active_user),
 ):
     """Fetch a single scan session by ID for live status/reasoning updates."""
+    # IDOR GUARD: Verify user owns the session's hotel
+    await verify_scan_session_ownership(db, str(current_user.id), str(session_id))
+
     try:
         result = (
             db.table("scan_sessions").select("*").eq("id", str(session_id)).execute()
         )
         if result.data:
             return ScanSession.model_validate(result.data[0])
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=404, detail="Session not found")
+    except HTTPException:
+        raise
     except Exception as e:
-        if not isinstance(e, HTTPException):
-            logger.error(f"Error fetching session: {e}")
-        raise e
+        logger.error(f"Error fetching session: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch session")
 
 
 @router.get("/sessions/{session_id}/logs", response_model=List[QueryLog])
@@ -46,6 +49,9 @@ async def get_session_logs(
     current_user=Depends(get_current_active_user),
 ):
     """Fetch all query logs linked to a specific scan session."""
+    # IDOR GUARD: Verify user owns the session's hotel
+    await verify_scan_session_ownership(db, str(current_user.id), str(session_id))
+
     try:
         result = (
             db.table("query_logs")
@@ -70,12 +76,35 @@ async def delete_log(
     Deletes a specific activity log.
     Supports frontend's cleanup functionality.
     """
+    # IDOR GUARD: Verify the log's parent session belongs to this user
+    try:
+        log_res = (
+            db.table("query_logs")
+            .select("session_id")
+            .eq("id", str(log_id))
+            .maybe_single()
+            .execute()
+        )
+        if not log_res.data:
+            raise HTTPException(status_code=404, detail="Log not found")
+
+        session_id = log_res.data.get("session_id")
+        if session_id:
+            await verify_scan_session_ownership(
+                db, str(current_user.id), str(session_id)
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Log ownership check failed: {e}")
+        raise HTTPException(status_code=403, detail="Log ownership verification failed")
+
     try:
         db.table("query_logs").delete().eq("id", str(log_id)).execute()
         return {"status": "success"}
     except Exception as e:
         logger.error(f"Error deleting log: {e}")
-        return {"status": "error", "detail": str(e)}
+        raise HTTPException(status_code=500, detail="Failed to delete log")
 
 
 @router.get("/active-tasks", response_model=List)

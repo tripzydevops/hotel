@@ -512,6 +512,10 @@ async def get_market_intelligence_brief(
 
     from backend.services.analysis_service import get_market_intelligence_data
     from backend.utils.logger import get_logger
+    from backend.utils.security import verify_hotel_ownership
+
+    # IDOR GUARD: Verify user owns this hotel before generating intelligence brief
+    await verify_hotel_ownership(db, str(current_user.id), hotel_id)
 
     # AGENT_FIX: Memory Cache for Serverless Context
     # Since Vercel instances are ephemeral, we use a simple dict.
