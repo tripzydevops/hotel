@@ -9,14 +9,24 @@ import ParityStats from "@/components/analytics/ParityStats";
 import RateMatrix from "@/components/analytics/RateMatrix";
 import { motion } from "framer-motion";
 import { api } from "@/lib/api";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function ParityPage() {
   const { t } = useI18n();
   const { userId } = useAuth();
   const [isExporting, setIsExporting] = useState(false);
   // Fetch real-time dashboard data including competitors and target hotel
-  const { data, profile, loading, isRefreshing } = useDashboard(userId, t);
+  const { data, profile, loading, isRefreshing, fetchData } = useDashboard(userId, t);
+
+  // Cache-bust: always re-fetch when the Parity Monitor page mounts so we
+  // never show stale data carried over from the main dashboard.
+  useEffect(() => {
+    if (!userId) return;
+    // Small delay lets the page paint its loading skeleton first
+    const timer = setTimeout(() => { fetchData(); }, 300);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   const handleExport = async () => {
     try {
@@ -42,6 +52,16 @@ export default function ParityPage() {
         </Link>
         
         <div className="flex items-center gap-3">
+          {/* Manual refresh button */}
+          <button
+            onClick={() => fetchData()}
+            disabled={loading || isRefreshing}
+            title="Refresh parity data"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-900 dark:text-white border border-slate-200 dark:border-transparent text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${(loading || isRefreshing) ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
           <button
             onClick={handleExport}
             disabled={isExporting}

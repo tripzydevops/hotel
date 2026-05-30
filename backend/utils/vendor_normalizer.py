@@ -32,8 +32,20 @@ class VendorNormalizer:
         "google hotels": "Google Hotels",
         "google": "Google Hotels",
         "google_hotels": "Google Hotels",
-        "search": "Google Hotels",
         "hotel_search": "Google Hotels",
+        # NOTE: "search" alone is NOT mapped to Google Hotels anymore to avoid
+        # "Direct Search" being misclassified. Use explicit "google hotels" match.
+
+        # Direct booking / own-website aliases — must never be renamed to an OTA
+        "direct": "Direct",
+        "direct search": "Direct",
+        "direct booking": "Direct",
+        "direct rate": "Direct",
+        "official site": "Direct",
+        "official website": "Direct",
+        "own website": "Direct",
+        "hotel website": "Direct",
+        "website": "Direct",
         
         # Turkish OTAs
         "tatilbudur": "Tatilbudur",
@@ -120,11 +132,16 @@ class VendorNormalizer:
         """
         if not name:
             return "Direct"
-        
+
         # 1. Preliminary clean
         clean_name = name.strip()
 
-        # 2. Check canonical map on original cleaned lower-case string
+        # 2. Short-circuit: if "direct" appears as a whole word, it IS the direct
+        #    booking channel — return immediately before any stripping mutates the name.
+        if re.search(r"\bdirect\b", clean_name, flags=re.IGNORECASE):
+            return "Direct"
+
+        # 3. Check canonical map on original cleaned lower-case string
         lookup = clean_name.lower()
         if lookup in cls.CANONICAL_MAP:
             return cls.CANONICAL_MAP[lookup]
