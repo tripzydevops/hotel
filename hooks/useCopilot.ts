@@ -66,8 +66,8 @@ function generateId(): string {
 // ---------------------------------------------------------------------------
 
 interface DashboardContextData {
-  target_hotel?: { name?: string } | null;
-  competitors?: Array<{ name?: string }>;
+  target_hotel?: { id?: string; name?: string } | null;
+  competitors?: Array<{ id?: string; name?: string }>;
 }
 
 export function useCopilot(dashboardData?: DashboardContextData | null) {
