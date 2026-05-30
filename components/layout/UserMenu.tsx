@@ -31,9 +31,13 @@ export default function UserMenu({
   }
 
   const handleLogout = async () => {
+    // Sign out from InsForge (clears in-memory token)
     await insforge.auth.signOut();
+    // Clear the app-domain session cookie so middleware also rejects access
+    await fetch("/api/auth/session", { method: "DELETE" });
     window.location.href = "/login";
   };
+
 
   return (
     <div className="relative">

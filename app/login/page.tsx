@@ -54,7 +54,34 @@ export default function LoginPage() {
         try {
           const { api } = await import("@/lib/api");
           await api.getProfile();
-          router.push("/dashboard");
+
+          // ── Issue app-domain session cookie for server-side middleware auth ──
+          // The InsForge SDK stores the access token in memory. We send it to
+          // our Route Handler which verifies it with InsForge and sets an
+          // HttpOnly `hp_sess` cookie on the app domain.
+          try {
+            const accessToken = await api.getAccessToken();
+            if (accessToken) {
+              await fetch("/api/auth/session", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  token: accessToken,
+                  uid: (result as any).data?.user?.id,
+                  email,
+                }),
+              });
+            }
+          } catch (sessionErr) {
+            // Non-fatal: middleware falls back to pass-through if cookie missing.
+            // Client-side useAuth hook still guards the dashboard.
+            console.warn("[Login] Could not set app session cookie:", sessionErr);
+          }
+
+          // Redirect to originally requested page if available
+          const params = new URLSearchParams(window.location.search);
+          const redirectTo = params.get("redirectTo") || "/dashboard";
+          router.push(redirectTo);
         } catch (profileErr: any) {
           if (profileErr.message.includes("pending administrator approval") || profileErr.message.includes("403")) {
             setIsPendingApproval(true);
@@ -69,6 +96,7 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
 
   const handleVerify = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -1,44 +1,104 @@
 /**
- * Next.js Edge Middleware
+ * Next.js Edge Middleware — Server-Side Authentication Guard
  *
- * CURRENT STATUS: Pass-through (auth enforced client-side via useAuth hook)
+ * IMPLEMENTATION: Dual-Cookie Pattern
  *
- * WHY THE SERVER-SIDE APPROACH WAS REVERTED:
- * The InsForge SDK (lib/insforge.ts) makes auth requests directly to the
- * InsForge backend domain (NEXT_PUBLIC_SUPABASE_URL). This means InsForge
- * sets its httpOnly refresh cookie on the **InsForge domain**, not on the
- * Vercel/app domain.
+ * InsForge sets its httpOnly refresh cookie on the InsForge domain, not the
+ * app domain. So we can't read it here. Instead, after InsForge login, the
+ * login page calls POST /api/auth/session which issues our own `hp_sess`
+ * HttpOnly cookie on the APP domain — HMAC-signed with SESSION_SECRET.
  *
- * When Next.js middleware intercepts a request to /dashboard, it only sees
- * cookies scoped to the app domain. The InsForge refresh cookie is invisible
- * to the middleware, so any attempt to validate the session by forwarding
- * cookies to InsForge will always appear unauthenticated — even for logged-in
- * users. This caused a login redirect loop.
+ * This middleware:
+ *   1. Reads the `hp_sess` cookie (app-domain, readable server-side)
+ *   2. Verifies the HMAC signature + expiry using SESSION_SECRET
+ *   3. Redirects unauthenticated users → /login?redirectTo=<path>
+ *   4. Redirects authenticated users away from /login → /dashboard
  *
- * WHAT IS NEEDED FOR A PROPER FIX (next milestone):
- * Option A — Proxy InsForge auth through Next.js:
- *   Add a Next.js Route Handler at app/api/auth/[...path]/route.ts that
- *   proxies all /api/auth/* calls to InsForge. The app (not InsForge) then
- *   owns the cookie domain, and the middleware can validate sessions properly.
- *
- * Option B — Dual-cookie after login:
- *   After a successful InsForge login, call a Next.js Route Handler that
- *   issues a short-lived, app-domain HttpOnly session cookie. Middleware
- *   validates this cookie (cryptographically signed with a server secret).
- *
- * ACTIVE PROTECTION (until above is implemented):
- *   - useAuth hook: redirects to /login if no in-memory session
- *   - useAdminGuard hook: validates admin role + email whitelist
- *   - FastAPI backend: enforces Bearer token on every API call
- *   - IDOR prevention: UUID ownership checks on all endpoints (d3270c21)
+ * Falls back to pass-through if SESSION_SECRET is not configured
+ * (so local dev without env vars still works, guarded by client-side hooks).
  */
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { verifySession, SESSION_COOKIE } from '@/lib/session';
 
-export function middleware(request: NextRequest) {
+// ---------------------------------------------------------------------------
+// Route classification
+// ---------------------------------------------------------------------------
+
+const PROTECTED_PATH_PREFIXES = [
+  '/dashboard',
+  '/analysis',
+  '/reports',
+  '/parity-monitor',
+  '/admin',
+  '/help',
+  '/debug',
+];
+
+const AUTH_ONLY_PATHS = ['/login'];
+
+function isProtectedPath(pathname: string): boolean {
+  return PROTECTED_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
+function isAuthOnlyPath(pathname: string): boolean {
+  return AUTH_ONLY_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Middleware
+// ---------------------------------------------------------------------------
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Fast-path: skip routes we don't protect
+  if (!isProtectedPath(pathname) && !isAuthOnlyPath(pathname)) {
+    return NextResponse.next();
+  }
+
+  const secret = process.env.SESSION_SECRET;
+
+  // If SESSION_SECRET isn't configured (e.g. local dev), skip server-side
+  // check. Client-side useAuth hook handles protection in that case.
+  if (!secret) {
+    console.warn(
+      '[Middleware] SESSION_SECRET not set — skipping server auth check.'
+    );
+    return NextResponse.next();
+  }
+
+  // Read and verify the app-domain session cookie
+  const cookieValue = request.cookies.get(SESSION_COOKIE)?.value ?? '';
+  const session = cookieValue ? await verifySession(cookieValue, secret) : null;
+  const isAuthenticated = session !== null;
+
+  // ── Case 1: Protected route + no valid session → redirect to login ─────────
+  if (isProtectedPath(pathname) && !isAuthenticated) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = '/login';
+    loginUrl.searchParams.set('redirectTo', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // ── Case 2: Already authenticated + visiting /login → go to dashboard ──────
+  if (isAuthOnlyPath(pathname) && isAuthenticated) {
+    const dashboardUrl = request.nextUrl.clone();
+    dashboardUrl.pathname = '/dashboard';
+    dashboardUrl.search = '';
+    return NextResponse.redirect(dashboardUrl);
+  }
+
   return NextResponse.next();
 }
 
+// ---------------------------------------------------------------------------
+// Matcher
+// ---------------------------------------------------------------------------
 export const config = {
   matcher: [
     '/((?!api|auth|rest|_next/static|_next/image|favicon.ico|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
