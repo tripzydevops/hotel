@@ -110,6 +110,59 @@ export default function MarketIntelligencePage() {
         document.body.removeChild(link);
     };
 
+    const getDynamicRiskAnalysis = () => {
+        if (!cityEvents || cityEvents.length === 0) {
+            return {
+                action: "Hold Rates",
+                rationale: `Market stable in ${city}. No major upcoming compression events detected. Focus on occupancy volume.`,
+                confidence: "95%",
+                impact: "Low",
+                impactColor: "text-emerald-400"
+            };
+        }
+        
+        // Find the event with the highest compression/intensity score
+        const topEvent = [...cityEvents].sort((a, b) => 
+            (b.intensity_score || b.compression_score || 0) - (a.intensity_score || a.compression_score || 0)
+        )[0];
+        
+        const topScore = topEvent.intensity_score || topEvent.compression_score || 1;
+        const avgCompression = metadata?.avg_compression_score ?? 0;
+        
+        let action = "Hold Rates";
+        let impact = "Low";
+        let impactColor = "text-emerald-400";
+        
+        if (avgCompression > 5 || topScore >= 7) {
+            action = "Aggressive ADR";
+            impact = "High";
+            impactColor = "text-red-400";
+        } else if (avgCompression > 3 || topScore >= 4) {
+            action = "Yield Management";
+            impact = "Medium";
+            impactColor = "text-orange-400";
+        }
+        
+        const confidenceScore = Math.min(80 + Math.round(avgCompression * 2) + Math.round(topScore * 1.5), 98);
+        
+        const dateRange = topEvent.end_date && topEvent.end_date !== topEvent.start_date
+            ? `${new Date(topEvent.start_date).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})} - ${new Date(topEvent.end_date).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}`
+            : new Date(topEvent.start_date).toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
+
+        const eventTypeLabel = topEvent.type === 'fair' ? 'trade fair' : 'regional announcement';
+        const rationale = `Variance in regional performance expected. Maintain rate parity while monitoring "${topEvent.name}" (${eventTypeLabel}) compression around ${dateRange}.`;
+        
+        return { 
+            action, 
+            rationale, 
+            confidence: `${confidenceScore}%`, 
+            impact, 
+            impactColor 
+        };
+    };
+
+    const riskAnalysis = getDynamicRiskAnalysis();
+
     return (
         <div className="container mx-auto p-6 space-y-8 min-h-screen bg-[#020617]">
             {/* Header section */}
@@ -341,24 +394,24 @@ export default function MarketIntelligencePage() {
                             <div className="space-y-1">
                                 <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Recommended Action</span>
                                 <div className="text-2xl font-black text-[var(--overlay-text)] tracking-tight">
-                                    {(metadata?.market_stats?.avg_tga_intensity ?? 0) > 3 ? 'Aggressive ADR' : 'Hold Rates'}
+                                    {riskAnalysis.action}
                                 </div>
                             </div>
 
                             <div className="pt-4 border-t border-[var(--overlay-border)]">
                                 <p className="text-xs text-[var(--text-muted)] leading-relaxed italic">
-                                    &quot;Significant variance in regional performance detected. Maintaining current parity while monitoring Izmir Food Fest compression.&quot;
+                                    &quot;{riskAnalysis.rationale}&quot;
                                 </p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="p-3.5 rounded-xl bg-white/5 border border-[var(--overlay-border)] text-center">
                                     <span className="text-[9px] text-slate-500 uppercase font-black block mb-1">Confidence</span>
-                                    <span className="text-base font-black text-emerald-400">92%</span>
+                                    <span className="text-base font-black text-emerald-400">{riskAnalysis.confidence}</span>
                                 </div>
                                 <div className="p-3.5 rounded-xl bg-white/5 border border-[var(--overlay-border)] text-center">
                                     <span className="text-[9px] text-slate-500 uppercase font-black block mb-1">Impact</span>
-                                    <span className="text-base font-black text-blue-400">High</span>
+                                    <span className={`text-base font-black ${riskAnalysis.impactColor}`}>{riskAnalysis.impact}</span>
                                 </div>
                             </div>
 
