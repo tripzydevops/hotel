@@ -662,6 +662,7 @@ class ApiClient {
     rival_hotel_id?: string;
     days?: number;
     report_type?: string;
+    locale?: string;
   }): Promise<any> {
     return this.fetch<any>("/api/reports/briefing", {
       method: "POST",
