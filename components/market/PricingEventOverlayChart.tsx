@@ -18,6 +18,43 @@ import { ForecastDay } from "@/hooks/useMarketForecast";
 import { TrendingUp, Activity, HelpCircle, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
+const CustomReferenceLabel = (props: any) => {
+    const { viewBox, value, index } = props;
+    if (!viewBox) return null;
+    const { x, y } = viewBox;
+    
+    // Alternating vertical positions to prevent overlapping
+    const yPos = y + 10 + (index % 3) * 24; 
+    
+    return (
+        <g transform={`translate(${x}, ${yPos}) rotate(-90)`}>
+            {/* Capsule background for high contrast */}
+            <rect
+                x={-6}
+                y={-8}
+                width={80}
+                height={14}
+                rx={4}
+                fill="rgba(11, 31, 59, 0.95)"
+                stroke="rgba(168, 85, 247, 0.6)"
+                strokeWidth={1}
+            />
+            {/* Dot indicator */}
+            <circle cx={-1} cy={-1} r={2} fill="#C084FC" />
+            <text
+                x={6}
+                y={2}
+                fill="#E9D5FF"
+                fontSize={8}
+                fontWeight="black"
+                letterSpacing={0.5}
+            >
+                {value.toUpperCase()}
+            </text>
+        </g>
+    );
+};
+
 interface PricingEventOverlayChartProps {
     city: string;
     events: MarketEvent[];
@@ -306,14 +343,12 @@ export const PricingEventOverlayChart: React.FC<PricingEventOverlayChartProps> =
                                 stroke="rgba(168, 85, 247, 0.45)"
                                 strokeWidth={1}
                                 strokeDasharray="3 3"
-                                label={{
-                                    value: evt.name.substring(0, 12) + (evt.name.length > 12 ? "…" : ""),
-                                    fill: "rgba(168, 85, 247, 0.6)",
-                                    fontSize: 9,
-                                    fontWeight: "bold",
-                                    position: "top",
-                                    offset: 8
-                                }}
+                                label={
+                                    <CustomReferenceLabel 
+                                        value={evt.name.substring(0, 12) + (evt.name.length > 12 ? "…" : "")} 
+                                        index={idx} 
+                                    />
+                                }
                             />
                         ))}
 
