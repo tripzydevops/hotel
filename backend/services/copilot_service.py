@@ -107,7 +107,7 @@ async def fetch_hotel_context(
     try:
         res = (
             db.table("user_hotels")
-            .select("hotel_id, is_target, hotels(id, name, rating, review_count, preferred_currency, location)")
+            .select("hotel_id, is_target, preferred_currency, hotels(id, name, rating, review_count, location)")
             .eq("user_id", user_id)
             .execute()
         )
@@ -125,7 +125,7 @@ async def fetch_hotel_context(
                 "name": hotel_data.get("name"),
                 "rating": hotel_data.get("rating"),
                 "review_count": hotel_data.get("review_count"),
-                "preferred_currency": hotel_data.get("preferred_currency", "TRY"),
+                "preferred_currency": row.get("preferred_currency", "TRY"),
                 "location": hotel_data.get("location"),
             })
         return hotels
