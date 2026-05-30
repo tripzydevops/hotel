@@ -213,7 +213,7 @@ export default function HotelTile(props: HotelTileProps) {
             >
               <div className="flex items-center gap-1.5 text-[9px] text-[var(--text-muted)] uppercase font-black tracking-[0.2em] opacity-60">
                 <Globe className="w-2.5 h-2.5" />
-                t("hotelDetails.marketPresence") + " (\"{allOffers.length})
+                {t("hotelDetails.marketPresence")} ({allOffers.length})
               </div>
               {allOffers.length > 1 && (
                 <div className="text-[9px] font-black text-[var(--soft-gold)] flex items-center gap-1 uppercase tracking-widest">
