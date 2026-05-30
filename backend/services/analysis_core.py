@@ -4,7 +4,6 @@ Handles complex market analysis, room type matching, and sentiment data processi
 """
 
 import asyncio
-import os
 import re
 # LINTER FIX: Moved imports to top of file to resolve E402
 import json
@@ -12,8 +11,6 @@ import time
 from typing import Any, Dict, List, Optional, Tuple, cast
 
 from backend.services.ai_service import intelligence_service
-from backend.utils.helpers import convert_currency
-from backend.utils.vendor_normalizer import normalize_vendor_name
 from backend.utils.logger import get_logger
 from backend.utils.sentiment_utils import (
     calculate_stability,
@@ -24,7 +21,7 @@ from supabase import Client
 logger = get_logger(__name__)
 
 # AGENT_NOTE: Added typing-safe import for Google GenAI to satisfy strict linter checks
-from backend.utils.ai_client import get_genai_client, HAS_GENAI
+from backend.utils.ai_client import get_genai_client
 
 try:
     from google.genai import types

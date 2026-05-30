@@ -13,7 +13,10 @@ from fastapi import HTTPException
 from backend.utils.helpers import log_query
 from backend.utils.url_extractors import extract_hotel_data_from_url
 from backend.utils.text_normalizer import normalize_search_string
+from backend.utils.logger import get_logger
 from supabase import Client
+
+logger = get_logger(__name__)
 
 
 async def search_hotel_directory_logic(
@@ -111,7 +114,7 @@ async def search_hotel_directory_logic(
         for provider in active_providers:
             p_name = provider.get_provider_name()
             try:
-                print(f"[Directory Search] Trying {p_name} for '{live_query}'")
+                logger.info(f"[Directory Search] Trying {p_name} for '{live_query}'")
                 live_results = await provider.search_hotels(live_query, limit=10, db=db)
 
                 if live_results:
@@ -134,12 +137,12 @@ async def search_hotel_directory_logic(
                                 found_new = True
 
                     if found_new:
-                        print(f"[Directory Search] SUCCESS with {p_name}")
+                        logger.info(f"[Directory Search] SUCCESS with {p_name}")
                         break  # Stop if we found good results
                 else:
-                    print(f"[Directory Search] {p_name} returned no results")
+                    logger.info(f"[Directory Search] {p_name} returned no results")
             except Exception as e:
-                print(f"[Directory Search] {p_name} Error: {e}")
+                logger.error(f"[Directory Search] {p_name} Error: {e}")
 
     if user_id:
         await log_query(
@@ -276,7 +279,7 @@ async def add_hotel_to_account_logic(
             
             if h_res.data:
                 existing_hotel = h_res.data[0]
-                print(f"[Normalization Shield] Matched existing hotel via search_name: {existing_hotel['id']}")
+                logger.info(f"[Normalization Shield] Matched existing hotel via search_name: {existing_hotel['id']}")
             else:
                 # Fallback: if search_name doesn't match, try partial match with ilike but verify
                 h_res = (
@@ -528,7 +531,7 @@ async def add_hotel_to_account_logic(
                 on_conflict=conflict_target,
             ).execute()
         except Exception as e:
-            print(f"Directory Auto-Sync Warning: {e}")
+            logger.warning(f"Directory Auto-Sync Warning: {e}")
 
         # Log action
         await log_query(
@@ -545,7 +548,7 @@ async def add_hotel_to_account_logic(
     except Exception as e:
         if isinstance(e, HTTPException):
             raise e
-        print(f"Add Hotel Logic Error: {e}")
+        logger.error(f"Add Hotel Logic Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

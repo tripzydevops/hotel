@@ -1,6 +1,9 @@
 import time
 from datetime import datetime, timezone
 from typing import Any, Dict, Tuple
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 # Fallback Configuration (Used if DB table is missing or unreachable)
 DEFAULT_TIERS = {
@@ -53,7 +56,7 @@ class SubscriptionService:
                 _cache_expiry = now + CACHE_TTL
                 return _tier_cache
         except Exception as e:
-            print(f"[Subscription] DB Fetch Warning: {e}. Using fallback TIERS.")
+            logger.warning(f"DB Fetch Warning: {e}. Using fallback TIERS.")
 
         return DEFAULT_TIERS
 

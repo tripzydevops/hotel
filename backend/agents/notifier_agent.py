@@ -1,6 +1,9 @@
 from typing import Any, Dict
 
 from backend.services.notification_service import notification_service
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class NotifierAgent:
@@ -50,7 +53,7 @@ class NotifierAgent:
             ).execute()
             self._log_buffer = []  # Clear after flush
         except Exception as e:
-            print(f"[NotifierAgent] Failed to flush logs: {e}")
+            logger.error(f"[NotifierAgent] Failed to flush logs: {e}")
 
     async def notify(
         self,
@@ -92,7 +95,7 @@ class NotifierAgent:
                     session_id, "Summary notification dispatched successfully."
                 )
             except Exception as e:
-                print(f"[NotifierAgent] Failed to dispatch summary: {e}")
+                logger.error(f"[NotifierAgent] Failed to dispatch summary: {e}")
                 await self.log_reasoning(session_id, f"Dispatch FAILED: {str(e)}")
         else:
             # Single alert behavior
@@ -122,7 +125,7 @@ class NotifierAgent:
                     session_id, f"Alert for {hotel_name} dispatched."
                 )
             except Exception as e:
-                print(f"[NotifierAgent] Failed to dispatch alert: {e}")
+                logger.error(f"[NotifierAgent] Failed to dispatch alert: {e}")
                 await self.log_reasoning(session_id, f"Dispatch FAILED: {str(e)}")
 
         # Final flush to persist all reasoning traces in one DB operation

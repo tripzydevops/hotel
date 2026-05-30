@@ -1,7 +1,7 @@
 import os
 import httpx
 from datetime import date, timedelta
-from typing import Any, Dict, List
+from typing import Any, Dict
 from backend.utils.logger import get_logger
 from supabase import Client
 

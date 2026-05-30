@@ -1,7 +1,6 @@
 
 from backend.models.schemas import HotelWithPrice, MarketAnalysis, SuccessResponse
 import json
-import time
 
 # from backend.agents.analyst_agent import AnalystAgent  # Lazy loaded below
 from datetime import date
@@ -510,7 +509,6 @@ async def get_market_intelligence_brief(
     Synthesizes market data into actionable insights.
     Caches results for 5 minutes per user/hotel combo to reduce AI overhead.
     """
-    import time
 
     from backend.services.analysis_service import get_market_intelligence_data
     from backend.utils.logger import get_logger

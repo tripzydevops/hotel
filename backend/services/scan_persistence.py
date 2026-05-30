@@ -5,7 +5,6 @@ import re
 import statistics
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, cast
-from collections import Counter
 from uuid import UUID
 
 from backend.models.schemas import ScanOptions

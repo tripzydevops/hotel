@@ -12,6 +12,9 @@ from typing import Optional
 from uuid import UUID, uuid4
 
 from supabase import Client  # type: ignore
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 # Exchange rates to USD (stable hardcoded fallbacks, updated periodically)
 EXCHANGE_RATES_TO_USD = {
@@ -105,7 +108,7 @@ async def _update_exchange_rates_live() -> None:
                 _save_cache_to_disk(new_cache)
     except Exception as e:
         # Gracefully handle network/API failures — continue with cached/static fallbacks
-        print(f"[CURRENCY API WARNING] Failed to fetch live exchange rates: {e}. Using cached/static fallbacks.")
+        logger.warning(f"Failed to fetch live exchange rates: {e}. Using cached/static fallbacks.")
         # Delay the next retry by 5 minutes to avoid spamming the external API
         _LAST_FETCH_TIME = now - _CACHE_TTL_SECONDS + 300
 
@@ -186,7 +189,7 @@ async def log_query(
 
         db.table("query_logs").insert(log_data).execute()
     except Exception as e:
-        print(f"Error logging query: {e}")
+        logger.error(f"Error logging query: {e}")
 
 
 def normalize_room_name(name: str) -> str:

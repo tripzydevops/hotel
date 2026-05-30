@@ -7,7 +7,7 @@ and receive an AI-generated market impact simulation.
 import json
 import logging
 import os
-from typing import Any, AsyncGenerator, Dict
+from typing import Any, Dict
 
 from supabase import Client
 

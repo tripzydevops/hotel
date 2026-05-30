@@ -2,6 +2,9 @@ import time
 from typing import Any, Dict
 
 from supabase import Client
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class RetentionService:
@@ -28,7 +31,7 @@ class RetentionService:
 
         try:
             if dry_run:
-                print("[DRY RUN] Would execute native SQL maintenance function.")
+                logger.info("[DRY RUN] Would execute native SQL maintenance function.")
                 return stats
 
             # Call the optimized SQL function created in the DB
@@ -47,7 +50,7 @@ class RetentionService:
         except Exception as e:
             status = "FAILED"
             stats["errors"].append(str(e))
-            print(f"MAIN_CRON_ERROR: {str(e)}")
+            logger.error(f"MAIN_CRON_ERROR: {str(e)}")
 
         # Log completion to maintenance_logs
         duration_ms = int((time.time() - start_time) * 1000)
@@ -109,7 +112,7 @@ class RetentionService:
                         for (check_in, obs_date), group_logs in groups.items():
                             if not check_in or not obs_date:
                                 continue
-                            prices = [float(l.get("price", 0)) for l in group_logs if l.get("price")]
+                            prices = [float(log_item.get("price", 0)) for log_item in group_logs if log_item.get("price")]
                             if not prices:
                                 continue
 

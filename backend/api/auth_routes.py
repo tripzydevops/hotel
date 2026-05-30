@@ -1,4 +1,4 @@
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 
 from backend.models.schemas import SuccessResponse, TokenResponse, UserProfile
 from fastapi import APIRouter, Depends, HTTPException, Request

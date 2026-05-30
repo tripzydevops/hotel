@@ -1,7 +1,6 @@
 # InsForge/PostgREST Database Utility
 import os
 import logging
-import time
 from typing import Any, Optional
 
 from dotenv import load_dotenv

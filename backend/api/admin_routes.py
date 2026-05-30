@@ -10,14 +10,12 @@ from backend.models.schemas import (
     AdminDirectoryEntry,
     AdminLog,
     AdminStats,
-    AdminUser,
     AdminUserCreate,
     AdminUserUpdate,
     MembershipPlan,
     PlanCreate,
     PlanUpdate,
     HealthMetrics,
-    SystemLogEntry,
     SystemLogsResponse,
 )
 from backend.services.admin import (

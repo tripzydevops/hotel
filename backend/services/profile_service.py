@@ -11,6 +11,9 @@ from fastapi import HTTPException
 
 from backend.models.schemas import UserProfileUpdate
 from supabase import Client
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 async def get_enriched_profile_logic(
@@ -29,7 +32,7 @@ async def get_enriched_profile_logic(
 
     admin_db = get_supabase_client(admin=True)
     if not admin_db:
-        print("[Profile] Admin access unavailable, proceeding with basic DB connection")
+        logger.warning("Admin access unavailable, proceeding with basic DB connection")
 
     # 1. Fetch base metadata if not provided
     if base_data is None:
@@ -76,8 +79,8 @@ async def get_enriched_profile_logic(
                                 new_profile
                             ).execute()
                             base_data = new_profile
-                            print(
-                                f"[Profile] Self-healed missing profile for {user_id_str} using email {resolved_email}"
+                            logger.info(
+                                f"Self-healed missing profile for {user_id_str} using email {resolved_email}"
                             )
 
                             # Initialize default settings
@@ -96,9 +99,9 @@ async def get_enriched_profile_logic(
                                 }
                             ).execute()
                     except Exception as he:
-                        print(f"[Profile] Self-healing attempt failed: {he}")
+                        logger.error(f"Self-healing attempt failed: {he}")
         except Exception as e:
-            print(f"Base Profile Fetch Error: {e}")
+            logger.error(f"Base Profile Fetch Error: {e}")
 
     # 2. Fetch subscription info (truth source) from the auth profiles table
     auth_plan = "trial"
@@ -121,7 +124,7 @@ async def get_enriched_profile_logic(
             auth_status = sub_data[0].get("subscription_status") or "trial"
             current_period_end = sub_data[0].get("current_period_end")
     except Exception as e:
-        print(f"Profile Sync Error: {e}")
+        logger.error(f"Profile Sync Error: {e}")
 
     # 3. Administrative & Role-Based Access Logic (Bypasses)
     # We consolidate access rules here to ensure admins and enterprise users
@@ -171,7 +174,7 @@ async def get_enriched_profile_logic(
     # GLOBAL ACCESS RESOLUTION
     # Rule 1: Admins and Known DevOps/Support accounts are always Enterprise
     if is_admin_role or is_admin_email or is_specific_admin or is_dev_user:
-        print(f"[Profile] Admin/Bypass detected for {user_id_str}. Granting Enterprise.")
+        logger.info(f"Admin/Bypass detected for {user_id_str}. Granting Enterprise.")
         final_plan = "enterprise"
         final_status = "active"
         bypass_active = True
@@ -180,14 +183,14 @@ async def get_enriched_profile_logic(
     # Rule 2: If either table explicitly says Enterprise, honor it (Most Permissive wins)
     # This prevents users from being stuck in "Trial" (limit 1) if they were manually upgraded
     elif is_enterprise_val(auth_plan) or is_enterprise_val(meta_plan):
-        print(f"[Profile] Enterprise override detected (Auth: {auth_plan}, Meta: {meta_plan}) for {user_id_str}")
+        logger.info(f"Enterprise override detected (Auth: {auth_plan}, Meta: {meta_plan}) for {user_id_str}")
         final_plan = "enterprise"
         final_status = "active"
         bypass_active = True if is_enterprise_val(meta_plan) else False
 
     # Rule 3: General Fallback for trial discrepancies
     elif auth_plan == "trial" and meta_plan not in ["trial", None]:
-        print(f"[Profile] Plan discrepancy: {auth_plan} vs {meta_plan}. Honoring metadata.")
+        logger.info(f"Plan discrepancy: {auth_plan} vs {meta_plan}. Honoring metadata.")
         final_plan = meta_plan
         # Maintain status from billing truth unless it's a specific bypass branch above
 
@@ -304,11 +307,11 @@ async def update_profile_logic(
                 .execute()
             )
     except Exception as db_err:
-        print(f"[Profile] DB error during profile upsert for {user_id_str}: {db_err}")
+        logger.error(f"DB error during profile upsert for {user_id_str}: {db_err}")
         raise HTTPException(status_code=500, detail=f"Database update failed: {db_err}")
 
     if not result.data:
-        print(f"[Profile] Empty result after upsert for {user_id_str}. RLS may be blocking the operation.")
+        logger.error(f"Empty result after upsert for {user_id_str}. RLS may be blocking the operation.")
         raise HTTPException(status_code=500, detail="Database update returned no data — check RLS policies")
 
     # After update, always re-enrich the data so the UI gets the correct plan status immediately

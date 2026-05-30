@@ -1,5 +1,5 @@
 
-from backend.models.schemas import CitiesResponse, SuccessResponse
+from backend.models.schemas import SuccessResponse
 from typing import List, Dict, Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException

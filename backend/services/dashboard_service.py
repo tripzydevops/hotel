@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 from fastapi import HTTPException
 from postgrest import CountMethod
 
-from backend.services.analysis_service import (
+from backend.services.analysis_core import (
     _extract_price,
     generate_synthetic_narrative,
     get_price_for_room,

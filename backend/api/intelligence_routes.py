@@ -8,9 +8,8 @@ Intelligence Routes — v1 endpoints for:
 
 import json
 from typing import Any, Dict, List, Optional
-from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -280,7 +279,8 @@ async def generate_meeting_prep(
             }
 
         # Generate brief with Gemini
-        import os, google.generativeai as genai
+        import os
+        import google.generativeai as genai
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
             return {"brief": "AI service unavailable.", "action_items": [], "risks": []}

@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from backend.services.analysis_service import get_genai_client
+from backend.utils.ai_client import get_genai_client
 from backend.utils.logger import get_logger
 from supabase import Client
 

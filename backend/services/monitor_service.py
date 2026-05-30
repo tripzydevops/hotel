@@ -16,7 +16,7 @@ import logging
 import os
 import traceback
 from datetime import date, datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Sequence, cast
+from typing import Any, Dict, List, Optional, cast
 import uuid
 from uuid import UUID
 

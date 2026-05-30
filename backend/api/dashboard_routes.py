@@ -1,4 +1,4 @@
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 
 from backend.models.schemas import DashboardResponse
 from fastapi import APIRouter, Depends

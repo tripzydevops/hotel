@@ -4,11 +4,10 @@ Quantifies the financial cost of sentiment score changes.
 "Your cleanliness score dropped 0.4 pts over 30 days → estimated ₺8,200/month revenue loss"
 """
 
-import json
 import logging
 import os
 from datetime import datetime, timezone, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from supabase import Client
 

@@ -7,6 +7,9 @@ from datetime import datetime
 from typing import List
 
 from supabase import Client
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class LocationService:
@@ -34,7 +37,7 @@ class LocationService:
             if not hotels:
                 return
 
-            print(f"Resolving location codes for {len(hotels)} hotels...")
+            logger.info(f"Resolving location codes for {len(hotels)} hotels...")
 
             for hotel in hotels:
                 hid = hotel["id"]
@@ -45,7 +48,7 @@ class LocationService:
                 # Try to resolve via DataForSEO
                 code = await dataforseo_provider.search_location(loc_str)
                 if code:
-                    print(f"Resolved '{loc_str}' to code {code} for hotel {hid}")
+                    logger.info(f"Resolved '{loc_str}' to code {code} for hotel {hid}")
                     self.db.table("hotels").update({"location_code": code}).eq(
                         "id", hid
                     ).execute()
@@ -55,7 +58,7 @@ class LocationService:
                     pass
 
         except Exception as e:
-            print(f"Error in resolve_hotel_locations: {e}")
+            logger.error(f"Error in resolve_hotel_locations: {e}")
 
     async def get_locations(self) -> List[dict]:
         """Fetch unique countries and their cities from the registry."""
@@ -70,7 +73,7 @@ class LocationService:
 
             return res.data or []
         except Exception as e:
-            print(f"Error fetching locations: {e}")
+            logger.error(f"Error fetching locations: {e}")
             return []
 
     async def upsert_location(self, country: str, city: str, district: str = ""):
@@ -109,7 +112,7 @@ class LocationService:
 
             return res.data
         except Exception as e:
-            print(f"Error upserting location {city}, {country}: {e}")
+            logger.error(f"Error upserting location {city}, {country}: {e}")
             return None
 
     async def seed_from_hotels(self):
@@ -118,4 +121,4 @@ class LocationService:
             # Call the RPC function created in the migration
             self.db.rpc("seed_location_registry", {}).execute()
         except Exception as e:
-            print(f"Error seeding locations: {e}")
+            logger.error(f"Error seeding locations: {e}")

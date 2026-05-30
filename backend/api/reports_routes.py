@@ -1,7 +1,7 @@
 
 from backend.models.schemas import ReportsResponse, SuccessResponse
 import io
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response

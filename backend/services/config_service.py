@@ -3,6 +3,9 @@ from threading import Lock
 from typing import Any, Dict
 
 from backend.utils.db import get_supabase
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ConfigService:
@@ -57,7 +60,7 @@ class ConfigService:
             cls._category_order = new_order
 
         except Exception as e:
-            print(f"ConfigService Error fetching tokens: {e}")
+            logger.error(f"ConfigService Error fetching tokens: {e}")
 
         # 2. Fetch Aliases (Mappings)
         try:
@@ -74,7 +77,7 @@ class ConfigService:
             cls._last_loaded = datetime.now()
 
         except Exception as e:
-            print(f"ConfigService Error fetching aliases: {e}")
+            logger.error(f"ConfigService Error fetching aliases: {e}")
 
 
 # Global accessor

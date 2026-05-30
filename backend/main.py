@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 # Ensure backend module is resolvable
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Depends, HTTPException
 from typing import Dict, Any
 import traceback
@@ -63,6 +64,34 @@ from backend.api.v1.webhooks import dataforseo as dataforseo_v1
 # Using gemini-3-* models is recommended.
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Startup health check.
+    """
+    from backend.services.ai_service import HAS_GENAI
+
+    logger.info("--- STARTUP DIAGNOSTICS ---")
+    logger.info(
+        f"AI Service: {'ENABLED' if HAS_GENAI else 'DISABLED (google-genai SDK missing)'}"
+    )
+    logger.info(f"Analysis Module: {'READY' if ANALYSIS_ENABLED else 'FAILED TO INITIALIZE'}")
+
+    # Check DB Connection (Proactive Error Handling)
+    try:
+        from backend.utils.db import get_supabase_client
+
+        db = get_supabase_client(admin=True)
+        if db:
+            logger.info("Database Connection: OK")
+        else:
+            logger.error("Database Connection: FAILED (Empty Client)")
+    except Exception as e:
+        logger.error(f"Database Connection: ERROR ({e})")
+    logger.info("---------------------------")
+    yield
+
+
 # Initialize FastAPI
 # Routing is configured to avoid double-prefixing with Vercel.
 app = FastAPI(
@@ -70,6 +99,7 @@ app = FastAPI(
     description="Sentinel Core Engine - Market Intelligence Platform",
     version="2026.03",
     # redirect_slashes=True is the default and preferred for link robustness
+    lifespan=lifespan,
 )
 
 
@@ -167,13 +197,13 @@ async def global_exception_handler(request: Request, exc: Exception):
         detail = getattr(exc, "detail", str(exc))
 
         if status_code >= 500:
-            print(f"CRITICAL HTTP 500 on {request.url.path}: {str(detail)}")
+            logger.critical(f"HTTP 500 on {request.url.path}: {str(detail)}")
             detail = "Internal Server Error"
 
         return JSONResponse(status_code=status_code, content={"detail": str(detail)})
 
-    print(f"CRITICAL 500 on {request.url.path}: {str(exc)}")
-    traceback.print_exc()
+    logger.critical(f"Unhandled 500 on {request.url.path}: {str(exc)}")
+    logger.error(traceback.format_exc())
 
     return JSONResponse(
         status_code=500,
@@ -183,7 +213,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    print(f"VALIDATION ERROR: {exc.errors()}")
+    logger.warning(f"VALIDATION ERROR on {request.url.path}: {exc.errors()}")
     return JSONResponse(
         status_code=422,
         content={"detail": exc.errors(), "body": exc.body},
@@ -310,31 +340,7 @@ app.include_router(copilot_routes.router, prefix="/api")
 
 
 
-@app.on_event("startup")
-async def startup_event():
-    """
-    Startup health check.
-    """
-    from backend.services.ai_service import HAS_GENAI
-
-    print("--- STARTUP DIAGNOSTICS ---")
-    print(
-        f"AI Service: {'ENABLED' if HAS_GENAI else 'DISABLED (google-genai SDK missing)'}"
-    )
-    print(f"Analysis Module: {'READY' if ANALYSIS_ENABLED else 'FAILED TO INITIALIZE'}")
-
-    # Check DB Connection (Proactive Error Handling)
-    try:
-        from backend.utils.db import get_supabase_client
-
-        db = get_supabase_client(admin=True)
-        if db:
-            print("Database Connection: OK")
-        else:
-            print("Database Connection: FAILED (Empty Client)")
-    except Exception as e:
-        print(f"Database Connection: ERROR ({e})")
-    print("---------------------------")
+# Startup event has been migrated to lifespan context manager above.
 
 
 # The /auth/v1/* paths must be proxied directly to InsForge by Vercel.

@@ -110,7 +110,7 @@ async def evaluate_proactive_alerts(
                     hotel_id=hotel_id,
                     alert_type="margin_erosion",
                     severity="high",
-                    title=f"⚠️ Margin Erosion Detected",
+                    title="⚠️ Margin Erosion Detected",
                     message=(
                         f"{comp_name} is {pct_diff:.1f}% cheaper than {hotel_name} "
                         f"({_fmt(comp_price, currency)} vs {_fmt(target_price, currency)}). "
@@ -134,7 +134,7 @@ async def evaluate_proactive_alerts(
                     hotel_id=hotel_id,
                     alert_type="rate_opportunity",
                     severity="medium",
-                    title=f"📈 Rate Opportunity",
+                    title="📈 Rate Opportunity",
                     message=(
                         f"{comp_name} raised rates by {abs(pct_diff):.1f}% above {hotel_name}. "
                         f"Market may support a price increase of up to {abs(pct_diff) * 0.5:.0f}%."

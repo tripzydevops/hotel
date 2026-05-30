@@ -1,9 +1,12 @@
 
 from backend.models.schemas import SuccessResponse
-from typing import List, Dict, Any, Optional
+from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 from backend.models.schemas import QueryLog, ScanSession
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
@@ -32,7 +35,7 @@ async def get_session(
         raise HTTPException(status_code=404, detail="Session not found")
     except Exception as e:
         if not isinstance(e, HTTPException):
-            print(f"Error fetching session: {e}")
+            logger.error(f"Error fetching session: {e}")
         raise e
 
 
@@ -53,7 +56,7 @@ async def get_session_logs(
         )
         return result.data or []
     except Exception as e:
-        print(f"Error fetching session logs: {e}")
+        logger.error(f"Error fetching session logs: {e}")
         return []
 
 
@@ -71,7 +74,7 @@ async def delete_log(
         db.table("query_logs").delete().eq("id", str(log_id)).execute()
         return {"status": "success"}
     except Exception as e:
-        print(f"Error deleting log: {e}")
+        logger.error(f"Error deleting log: {e}")
         return {"status": "error", "detail": str(e)}
 
 
@@ -81,7 +84,7 @@ async def honey_pot_tasks(request: Request):
     Honey Pot route to identify and log rogue services pinging the system.
     Returns empty list to stop 404 spam.
     """
-    print(
-        f"\n[IDENTIFIED] Rogue pinger caught! IP: {request.client.host} | User-Agent: {request.headers.get('user-agent')}\n"
+    logger.warning(
+        f"[IDENTIFIED] Rogue pinger caught! IP: {request.client.host} | User-Agent: {request.headers.get('user-agent')}"
     )
     return []

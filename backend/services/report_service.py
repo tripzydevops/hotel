@@ -9,7 +9,7 @@ They serve the user-facing /api/reports endpoints.
 
 import csv
 import io
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List
 from uuid import UUID
 
 from fastapi import HTTPException

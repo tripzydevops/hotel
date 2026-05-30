@@ -931,20 +931,20 @@ class CopilotAgent:
             # Default fallback
             return {
                 "reply": (
-                    f"I'm your Revenue Intelligence Advisor for the Hotel Rate Sentinel platform. "
-                    f"I can help you with:\n\n"
-                    f"- 📊 **Rate Analysis** — \"What's my average rate this month?\"\n"
-                    f"- ⚠️ **Parity Alerts** — \"Do I have any active parity violations?\"\n"
-                    f"- 📈 **Competitor Benchmarking** — \"How do my rates compare to competitors?\"\n"
-                    f"- 🎯 **Rate Simulation** — \"What rate should I set for 80% occupancy?\"\n"
-                    f"- 💬 **Sentiment & Reviews** — \"What's my guest satisfaction score?\"\n"
-                    f"- 🔍 **Scan History** — \"When was my last market scan?\"\n"
-                    f"- 📄 **Saved Reports** — \"Show me my saved briefings\"\n"
-                    f"- 🎪 **Market Events** — \"Any upcoming events in my city?\"\n"
-                    f"- 📅 **Rate Calendar** — \"What are my rates for next week?\"\n"
-                    f"- 📥 **PDF Export** — \"Generate a PDF report for my hotel\"\n"
-                    f"- 🌐 **Live Web Search** — \"What's my Tripadvisor rating right now?\"\n\n"
-                    f"_Note: The AI engine is currently in Safe Mode. I can still fetch and summarize your data._"
+                    "I'm your Revenue Intelligence Advisor for the Hotel Rate Sentinel platform. "
+                    "I can help you with:\n\n"
+                    "- 📊 **Rate Analysis** — \"What's my average rate this month?\"\n"
+                    "- ⚠️ **Parity Alerts** — \"Do I have any active parity violations?\"\n"
+                    "- 📈 **Competitor Benchmarking** — \"How do my rates compare to competitors?\"\n"
+                    "- 🎯 **Rate Simulation** — \"What rate should I set for 80% occupancy?\"\n"
+                    "- 💬 **Sentiment & Reviews** — \"What's my guest satisfaction score?\"\n"
+                    "- 🔍 **Scan History** — \"When was my last market scan?\"\n"
+                    "- 📄 **Saved Reports** — \"Show me my saved briefings\"\n"
+                    "- 🎪 **Market Events** — \"Any upcoming events in my city?\"\n"
+                    "- 📅 **Rate Calendar** — \"What are my rates for next week?\"\n"
+                    "- 📥 **PDF Export** — \"Generate a PDF report for my hotel\"\n"
+                    "- 🌐 **Live Web Search** — \"What's my Tripadvisor rating right now?\"\n\n"
+                    "_Note: The AI engine is currently in Safe Mode. I can still fetch and summarize your data._"
                 ),
                 "tool_calls": [],
                 "report_data": None,

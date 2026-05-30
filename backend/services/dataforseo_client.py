@@ -9,7 +9,6 @@ import os
 from typing import Any, Dict, Optional
 
 import httpx
-from dotenv import load_dotenv
 
 from backend.utils.logger import get_logger
 

@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from backend.models.schemas import Hotel, HotelCreate, HotelUpdate, LocationRegistry
+from backend.models.schemas import HotelCreate, HotelUpdate, LocationRegistry
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
 from backend.services.hotel_service import (
     add_hotel_to_account_logic,

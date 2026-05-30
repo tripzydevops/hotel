@@ -1,8 +1,11 @@
 from datetime import datetime, timezone
-from typing import Optional, Dict, List, Any
+from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 from backend.models.schemas import (
     Settings,
@@ -80,7 +83,7 @@ async def update_profile(
         # Re-raise HTTP exceptions as-is (preserves specific status codes from service layer)
         raise
     except Exception as e:
-        print(f"[Profile Route] Unhandled error updating profile for {user_id}: {e}")
+        logger.error(f"[Profile Route] Unhandled error updating profile for {user_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
@@ -143,7 +146,7 @@ async def get_settings(
 
         return settings_data
     except Exception as e:
-        print(f"Error in get_settings: {e}")
+        logger.error(f"Error in get_settings: {e}")
         return safe_defaults
 
 

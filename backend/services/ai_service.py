@@ -4,7 +4,6 @@ import os
 # LINTER FIX: Moved imports to top of file to resolve E402
 from typing import Any, Dict, List, Optional
 
-from dotenv import load_dotenv
 
 from backend.utils.logger import get_logger
 

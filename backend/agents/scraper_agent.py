@@ -6,7 +6,10 @@ from uuid import UUID
 from backend.models.schemas import ScanOptions
 from backend.services.provider_factory import ProviderFactory
 from backend.utils.room_normalizer import RoomTypeNormalizer
+from backend.utils.logger import get_logger
 from supabase import Client
+
+logger = get_logger(__name__)
 
 
 class ScraperAgent:
@@ -86,7 +89,7 @@ class ScraperAgent:
 
             self._log_buffer[sid_key] = []
         except Exception as e:
-            print(f"[ScraperAgent] Log flush failed: {e}")
+            logger.error(f"[ScraperAgent] Log flush failed: {e}")
 
     async def _check_global_cache(
         self, serp_api_id: str, check_in: date
@@ -142,7 +145,7 @@ class ScraperAgent:
                 if not cached_rooms or not cached_offers:
                     return None
 
-                print(f"[Cache Hit] {serp_api_id} on {check_in}")
+                logger.info(f"[Cache Hit] {serp_api_id} on {check_in}")
                 return {
                     "price": float(log["price"]),
                     "currency": log.get("currency", "USD"),
@@ -155,7 +158,7 @@ class ScraperAgent:
                     "source": "global_cache",
                 }
         except Exception as e:
-            print(f"[Cache] Lookup error: {e}")
+            logger.error(f"[Cache] Lookup error: {e}")
 
         return None
 
@@ -183,7 +186,7 @@ class ScraperAgent:
                     "id", str(session_id)
                 ).execute()
             except Exception as e:
-                print(f"[ScraperAgent] Error updating session: {e}")
+                logger.error(f"[ScraperAgent] Error updating session: {e}")
 
         async def fetch_hotel(hotel: Dict[str, Any]):
             hotel_name = str(hotel.get("name") or "Unknown Hotel")

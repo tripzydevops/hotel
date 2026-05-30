@@ -3,28 +3,19 @@ Analysis Service
 Handles complex market analysis, room type matching, and sentiment data processing.
 """
 
-import asyncio
-import os
-import re
 # LINTER FIX: Moved imports to top of file to resolve E402
 import json
-import time
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, cast
 
-from backend.services.ai_service import intelligence_service
 from backend.utils.helpers import convert_currency
 from backend.utils.vendor_normalizer import normalize_vendor_name
 from backend.utils.logger import get_logger
-from backend.utils.sentiment_utils import (
-    calculate_stability,
-)
 from supabase import Client
 
 # AGENT_LOGIC: Module-level logger replaces raw print() for structured output
 logger = get_logger(__name__)
 
 # AGENT_NOTE: Added typing-safe import for Google GenAI to satisfy strict linter checks
-from backend.utils.ai_client import get_genai_client, HAS_GENAI
 
 try:
     from google.genai import types
@@ -34,17 +25,8 @@ except ImportError:
 
 
 from backend.services.analysis_core import (
-    get_sentiment_trends,
-    _transform_serp_links,
-    _extract_price,
     get_price_for_room,
     generate_synthetic_narrative,
-    _clean_json_output,
-    run_market_intelligence,
-    run_heuristic_market_fallback,
-    synthesize_pricing_dna,
-    generate_strategy_embedding,
-    stream_narrative_gen,
     calculate_rate_recommendation,
     generate_audit_checklist,
 )

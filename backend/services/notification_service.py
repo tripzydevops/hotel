@@ -8,6 +8,9 @@ import smtplib
 import asyncio
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 # Environment is loaded centrally via db.load_env_standard()
 # No redundant load_dotenv() call needed here.
@@ -36,7 +39,7 @@ class NotificationService:
                 server.send_message(msg)
             return True
         except Exception as e:
-            print(f"[Notification] SMTP Error: {e}")
+            logger.error(f"[Notification] SMTP Error: {e}")
             return False
 
     async def send_notifications(
@@ -167,13 +170,13 @@ class NotificationService:
             # Offload to thread to prevent blocking the event loop
             return await asyncio.to_thread(self._send_smtp_email, msg)
         except Exception as e:
-            print(f"[Notification] Summary Email preparation failed: {e}")
+            logger.error(f"[Notification] Summary Email preparation failed: {e}")
             return False
 
     async def send_whatsapp(self, number: str, message: str) -> bool:
         """Placeholder for WhatsApp integration (e.g. Twilio)"""
         # TODO: Implement Twilio/Meta API
-        print(f"[Notification] WOULD send WhatsApp to {number}: {message}")
+        logger.info(f"[Notification] WOULD send WhatsApp to {number}: {message}")
         return True
 
     async def send_push(
@@ -187,7 +190,7 @@ class NotificationService:
         Send Web Push notification.
         """
         if not subscription:
-            print(f"[Notification] No subscription found for user {user_id}")
+            logger.warning(f"[Notification] No subscription found for user {user_id}")
             return False
 
         try:
@@ -198,7 +201,7 @@ class NotificationService:
             # Get VAPID private key from env
             private_key = os.getenv("VAPID_PRIVATE_KEY")
             if not private_key:
-                print("[Notification] VAPID_PRIVATE_KEY not set")
+                logger.error("[Notification] VAPID_PRIVATE_KEY not set")
                 return False
 
             claims = {
@@ -224,14 +227,14 @@ class NotificationService:
                 vapid_private_key=private_key,
                 vapid_claims=claims,
             )
-            print(f"[Notification] Push sent to {user_id}")
+            logger.info(f"[Notification] Push sent to {user_id}")
             return True
 
         except ImportError:
-            print("[Notification] pywebpush not installed")
+            logger.error("[Notification] pywebpush not installed")
             return False
         except Exception as e:
-            print(f"[Notification] Push failed: {e}")
+            logger.error(f"[Notification] Push failed: {e}")
             return False
 
     async def send_alert_email(
@@ -247,7 +250,7 @@ class NotificationService:
         Send an alert email to the user.
         """
         if not self.enabled:
-            print(
+            logger.info(
                 f"[Notification] Email disabled. Would have sent to {to_email}: {alert_message}"
             )
             return False
@@ -277,7 +280,7 @@ class NotificationService:
             return await asyncio.to_thread(self._send_smtp_email, msg)
 
         except Exception as e:
-            print(f"[Notification] Email preparation failed: {e}")
+            logger.error(f"[Notification] Email preparation failed: {e}")
             return False
 
 
