@@ -127,6 +127,8 @@ export const tr = {
     addFirstHotel: "Rekabet setinizi izlemeye başlamak için ilk otelinizi ekleyin.",
     aiInsight: "Yapay Zeka Analizi",
     liveAnalysis: "Canlı Analiz",
+    healthIndex: "Sağlık Endeksi",
+    addError: "Otel takibi eklenemedi",
   },
   hotelDetails: {
     overview: "Genel Bakış",
@@ -176,6 +178,9 @@ export const tr = {
     setAsMyHotel: "Benim Otelim Olarak Ayarla",
     editIntel: "İstihbaratı Düzenle",
     purgeIntel: "İstihbaratı Sil",
+    ratingDistribution: "Puan Dağılımı",
+    contactInfo: "İletişim Bilgileri",
+    description: "İstihbarat Özeti",
   },
   addHotel: {
     title: "Yeni Otel Ekle",

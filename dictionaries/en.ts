@@ -127,6 +127,8 @@ export const en = {
     addFirstHotel: "Add your first hotel to start monitoring your competitive set.",
     aiInsight: "AI Insight",
     liveAnalysis: "Live Analysis",
+    healthIndex: "Health Index",
+    addError: "Failed to add hotel monitor",
   },
   hotelDetails: {
     overview: "Overview",
@@ -174,6 +176,9 @@ export const en = {
     setAsMyHotel: "Set as My Hotel",
     editIntel: "Edit Intel",
     purgeIntel: "Purge Intel",
+    ratingDistribution: "Rating Distribution",
+    contactInfo: "Contact Details",
+    description: "Intelligence Brief",
   },
   addHotel: {
     title: "Add New Hotel",
