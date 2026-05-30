@@ -153,8 +153,8 @@ export default function AnalysisPage() {
             setCurrency(prev => prev !== result.display_currency ? result.display_currency : prev);
           }
           
-          if (result.target_hotel && result.competitors) {
-            setAllHotels([result.target_hotel, ...result.competitors]);
+          if (result.all_hotels) {
+            setAllHotels(result.all_hotels);
           }
           
           setLoading(false);
@@ -352,7 +352,7 @@ export default function AnalysisPage() {
 
         {/* Market Intelligence AI Hub */}
         <div className="mb-12 cursor-pointer">
-          <IntelligenceHUD hotelId={data?.target_hotel?.id || "default"} />
+          <IntelligenceHUD hotelId={data?.hotel_id || "default"} />
         </div>
 
         {/* Global KPI Cards */}
