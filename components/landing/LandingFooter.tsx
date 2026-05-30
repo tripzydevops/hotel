@@ -96,6 +96,14 @@ export default function LandingFooter() {
           <p className="text-xs text-[var(--text-muted)]">
             {t("landing.footer.rights")}
           </p>
+          <div className="flex gap-6">
+            <Link
+              href="/privacy"
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--soft-gold)] transition-colors cursor-pointer"
+            >
+              {t("common.privacy")}
+            </Link>
+          </div>
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-[0.2em]">
             hotelplustr.com
           </p>

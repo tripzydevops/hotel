@@ -33,6 +33,11 @@ Deep dives into the platform core:
 -   **[Discovery Engine](DISCOVERY_ENGINE.md)**: Vector-based semantic hotel mapping.
 -   **[Sentinel Protocol](SENTINEL_PROTOCOL.md)**: Autonomous Monitoring & "Token-First" Strategy.
 
+### 🛡️ Compliance & Certification Readiness
+As part of onboarding readiness for major enterprise hotel chains (e.g., Marriott, Hilton, IHG):
+-   **[PCI Scope Exclusion Statement](PCI_SCOPE_EXCLUSION.md)**: Declaration and mapping criteria for SAQ-A scope exclusion.
+-   **[Bilingual Privacy Policy Page](file:///C:/Users/elif/.gemini/antigravity/scratch/hotel/app/(landing)/privacy/page.tsx)**: GDPR/KVKK and CCPA compliant privacy disclosure integrated into the B2B landing environment.
+
 
 ## 🚀 Getting Started
 
@@ -78,4 +83,4 @@ Track background scan progress via the `scan_sessions` table in Supabase or the 
 
 _Hotel Rate Sentinel R&D - 2026_
 ❤️ for the future of Autonomous Travel Intelligence.
-**Last Updated:** 2026-05-10 (Python 3.12 Support & Build Infrastructure Optimization)
+**Last Updated:** 2026-05-30 (Bilingual Privacy Policy & PCI Scope Exclusion documentation added for compliance readiness)
