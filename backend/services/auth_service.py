@@ -19,6 +19,23 @@ logger = get_logger(__name__)
 # InsForge backend URL for direct REST API calls
 INSFORGE_URL = os.getenv("NEXT_PUBLIC_INSFORGE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
 
+ADMIN_EMAILS = {
+    "admin@hotel.plus",
+    "selcuk@rate-sentinel.com",
+    "asknsezen@gmail.com",
+    "askinsezen@gmail.com",
+    "yusuf@tripzy.travel",
+    "elif@tripzy.travel",
+    "tripzydevops@gmail.com",
+}
+
+
+def is_admin_email(email: str) -> bool:
+    if not email:
+        return False
+    email_lower = email.lower()
+    return email_lower in ADMIN_EMAILS or email_lower.endswith("@hotel.plus")
+
 
 async def _verify_token_via_insforge(token: str) -> dict:
     """
@@ -155,6 +172,9 @@ async def get_current_admin_user(
         email = getattr(user_obj, "email", None)
 
         # Verify admin role in database
+        if email and is_admin_email(email):
+            return user_obj
+
         try:
             profile_res = (
                 insforge.table("user_profiles")
@@ -355,7 +375,12 @@ async def get_current_active_user(
             logger.error(traceback.format_exc())
 
         # Enforce Admin Verification
-        is_admin = str(user_role).lower() in ["admin", "market_admin", "market admin"]
+        is_admin = str(user_role).lower() in ["admin", "market_admin", "market admin"] or (
+            email and is_admin_email(email)
+        )
+        if email and is_admin_email(email):
+            is_verified = True
+
         logger.info(
             f"AUTH GATE RESULT: is_verified={is_verified}, is_admin={is_admin}, role={user_role}"
         )
