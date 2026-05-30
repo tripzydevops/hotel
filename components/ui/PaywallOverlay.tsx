@@ -25,7 +25,7 @@ export function PaywallOverlay({ reason = "Your trial has ended." }: PaywallOver
         <div className="flex flex-col gap-3">
           <button 
             className="btn-gold w-full flex items-center justify-center gap-2 py-3"
-            onClick={() => window.open('mailto:sales@tripzy.travel?subject=Upgrade Request', '_blank')}
+            onClick={() => window.open('mailto:info@hotelplus.com.tr?subject=Upgrade Request', '_blank')}
           >
             Upgrade Now
           </button>

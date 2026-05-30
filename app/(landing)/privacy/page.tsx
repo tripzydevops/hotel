@@ -82,7 +82,7 @@ export default function PrivacyPage() {
                     Genel Bakış ve Veri Minimizasyonu
                   </h2>
                   <p className="text-sm mb-4">
-                    HotelPlus (Tripzy), oteller için otonom fiyat ve rakip istihbaratı sağlayan bir B2B platformudur. Kamusal alanda yayınlanan otel oda fiyatları ve pazar dağılım verilerini analiz ederek çalışır.
+                    HotelPlus, oteller için otonom fiyat ve rakip istihbaratı sağlayan bir B2B platformudur. Kamusal alanda yayınlanan otel oda fiyatları ve pazar dağılım verilerini analiz ederek çalışır.
                   </p>
                   <p className="text-sm">
                     <strong>Kişisel Veri Minimizasyonu:</strong> Platformumuz nihai tüketicilere (otel misafirlerine) ait hiçbir kredi kartı, ödeme, rezervasyon veya kimlik bilgisi (PII) <strong>işlemez, kaydetmez veya iletmez</strong>. Tüm fiyat verileri kamuya açık arama kaynaklarından toplanır.
@@ -100,10 +100,10 @@ export default function PrivacyPage() {
                   </p>
                   <ul className="list-disc pl-5 space-y-2 text-sm">
                     <li>
-                      <strong>B2B Kullanıcı Profili:</strong> B2B kontrol paneline erişen otel yöneticilerinin ad soyad, iş e-postası, telefon numarası, otel adı ve unvan bilgileri (Supabase veritabanında güvenli bir şekilde saklanır).
+                      <strong>B2B Kullanıcı Profili:</strong> B2B kontrol paneline erişen otel yöneticilerinin ad soyad, iş e-postası, telefon numarası, otel adı ve unvan bilgileri (InsForge veritabanında güvenli bir şekilde saklanır).
                     </li>
                     <li>
-                      <strong>Kamuya Açık Rekabet Verileri:</strong> Rakiplerinizin OTA kanallarındaki liste fiyatları, müsaitlik durumları, oda kategorileri ve kamuya açık misafir yorum skorları (DataForSEO web scraping entegrasyonu ile sağlanır).
+                      <strong>Kamuya Açık Rekabet Verileri:</strong> Rakiplerinizin OTA kanallarındaki liste fiyatları, müsaitlik durumları, oda kategorileri ve kamuya açık misafir yorum skorları (web scraping entegrasyonu ile sağlanır).
                     </li>
                     <li>
                       <strong>Sistem Kayıtları (Loglar):</strong> Güvenlik denetimleri ve suistimali önlemek amacıyla kullanıcıların IP adresleri, tarayıcı bilgileri ve arayüz hareketleri.
@@ -195,7 +195,7 @@ export default function PrivacyPage() {
                     Overview & Data Minimization
                   </h2>
                   <p className="text-sm mb-4">
-                    HotelPlus (Tripzy) is a B2B hotel rate intelligence, market pricing analysis, and competitive parity monitoring platform. It works by analyzing publicly available hotel room rates and market distribution data.
+                    HotelPlus is a B2B hotel rate intelligence, market pricing analysis, and competitive parity monitoring platform. It works by analyzing publicly available hotel room rates and market distribution data.
                   </p>
                   <p className="text-sm">
                     <strong>Zero Personal Data Footprint:</strong> Our platform **does not process, store, or transmit** credit card details, guest booking databases, or guest Personally Identifiable Information (PII). All pricing data is collected from public meta-search and OTA channels.
@@ -213,10 +213,10 @@ export default function PrivacyPage() {
                   </p>
                   <ul className="list-disc pl-5 space-y-2 text-sm">
                     <li>
-                      <strong>B2B Account Metadata:</strong> Names, business emails, phone numbers, hotel names, and job titles of registered hotel revenue managers (stored securely via Supabase).
+                      <strong>B2B Account Metadata:</strong> Names, business emails, phone numbers, hotel names, and job titles of registered hotel revenue managers (stored securely via InsForge).
                     </li>
                     <li>
-                      <strong>Public Competitive Data:</strong> Competitor public pricing, rate types, room availability, and guest sentiment rating scores fetched via third-party scraping APIs (DataForSEO).
+                      <strong>Public Competitive Data:</strong> Competitor public pricing, rate types, room availability, and guest sentiment rating scores fetched via third-party scraping APIs.
                     </li>
                     <li>
                       <strong>System Logging:</strong> IP addresses, browser user agent strings, and click paths logs collected solely to maintain service integrity and prevent scraping abuse.

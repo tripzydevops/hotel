@@ -47,7 +47,7 @@ export default function HelpPage() {
           <div className="bg-white/5 border border-[var(--overlay-border)] rounded-2xl p-8">
             <h2 className="text-xl font-bold mb-4">Support</h2>
             <p className="text-[var(--text-muted)]">
-              Need technical assistance? Contact our engineering team at support@tripzy.com 
+              Need technical assistance? Contact our engineering team at support@hotelplus.com.tr 
               or reach out via the Administrator panel.
             </p>
           </div>

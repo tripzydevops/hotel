@@ -30,7 +30,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(() => {
     // Load saved locale from localStorage if available
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("tripzy_locale") as Locale;
+      const saved = localStorage.getItem("hotelplus_locale") as Locale;
       if (saved && (saved === "en" || saved === "tr")) {
         return saved;
       }
@@ -41,7 +41,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const setLocale = (newLocale: Locale) => {
     setLocaleState(newLocale);
     if (typeof window !== "undefined") {
-      localStorage.setItem("tripzy_locale", newLocale);
+      localStorage.setItem("hotelplus_locale", newLocale);
     }
   };
 

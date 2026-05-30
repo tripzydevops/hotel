@@ -331,7 +331,7 @@ export default function ScanResultsPage() {
             transition={{ repeat: Infinity, duration: 2 }}
             className="absolute -bottom-12 left-1/2 -translate-x-1/2 whitespace-nowrap text-blue-400 text-[10px] font-black uppercase tracking-[0.2em]"
           >
-            Parsing DataForSEO Intelligence...
+            Parsing Intelligence Data...
           </motion.p>
         </div>
       </div>
@@ -403,7 +403,7 @@ export default function ScanResultsPage() {
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest">
               <ShieldCheck className="w-3 h-3" />
-              Verified DataForSEO Source
+              Verified Intelligence Source
             </div>
             <h1 className="text-5xl lg:text-6xl font-black tracking-tightest leading-none">
               MARKET <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">SNAPSHOT</span>
@@ -1226,7 +1226,7 @@ export default function ScanResultsPage() {
                   </div>
                   <div>
                     <h3 className="text-lg font-black tracking-tight">RAW PAYLOAD</h3>
-                    <span className="font-bold uppercase tracking-widest text-zinc-500 text-[10px]">DataForSEO Schema v3</span>
+                    <span className="font-bold uppercase tracking-widest text-zinc-500 text-[10px]">Intelligence Schema v3</span>
                   </div>
                 </div>
                 <button 
@@ -1256,7 +1256,7 @@ export default function ScanResultsPage() {
         </div>
         <div className="w-px h-4 bg-zinc-800"></div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Verified by DataForSEO</span>
+          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Verified Intelligence Node</span>
         </div>
       </div>
     </div>

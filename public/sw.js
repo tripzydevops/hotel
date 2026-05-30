@@ -14,7 +14,7 @@ self.addEventListener('push', function (event) {
         try {
             data = event.data.json();
         } catch (e) {
-            data = { title: 'Tripzy', body: event.data.text() };
+            data = { title: 'HotelPlus', body: event.data.text() };
         }
         
         const options = {

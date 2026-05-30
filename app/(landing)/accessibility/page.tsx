@@ -82,7 +82,7 @@ export default function AccessibilityPage() {
                     Erişilebilirlik Vizyonumuz ve Standartlar
                   </h2>
                   <p className="text-sm mb-4">
-                    HotelPlus (Tripzy), platformumuzu engelli bireyler de dahil olmak üzere herkes için erişilebilir kılmaya kararlıdır. Web içeriğimizin tüm kullanıcılar için kullanılabilirliğini artırmak amacıyla sürekli olarak kullanıcı deneyimini iyileştiriyor ve ilgili erişilebilirlik standartlarını uyguluyoruz.
+                    HotelPlus, platformumuzu engelli bireyler de dahil olmak üzere herkes için erişilebilir kılmaya kararlıdır. Web içeriğimizin tüm kullanıcılar için kullanılabilirliğini artırmak amacıyla sürekli olarak kullanıcı deneyimini iyileştiriyor ve ilgili erişilebilirlik standartlarını uyguluyoruz.
                   </p>
                   <p className="text-sm">
                     <strong>WCAG Uyum Hedefi:</strong> Platformumuz, W3C Web İçeriği Erişilebilirlik Kılavuz İlkeleri (WCAG) 2.1 Seviye AA standartlarına büyük ölçüde uyum sağlamak üzere tasarlanmıştır.
@@ -182,7 +182,7 @@ export default function AccessibilityPage() {
                     Our Vision and Standards
                   </h2>
                   <p className="text-sm mb-4">
-                    HotelPlus (Tripzy) is committed to ensuring digital accessibility for people with disabilities. We are continually improving the user experience for everyone, and applying the relevant accessibility standards to make our platform intuitive and inclusive.
+                    HotelPlus is committed to ensuring digital accessibility for people with disabilities. We are continually improving the user experience for everyone, and applying the relevant accessibility standards to make our platform intuitive and inclusive.
                   </p>
                   <p className="text-sm">
                     <strong>WCAG Target:</strong> Our software is built to conform to the World Wide Web Consortium (W3C) Web Content Accessibility Guidelines (WCAG) 2.1 Level AA specifications.

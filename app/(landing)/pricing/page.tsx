@@ -117,7 +117,7 @@ export default function PricingPage() {
     },
     {
       question: "Verilerim güvende mi?",
-      answer: "Evet. Tüm veriler SSL ile şifrelenir ve Supabase altyapısında güvenli bir şekilde saklanır. Verilerinize yalnızca siz erişebilirsiniz.",
+      answer: "Evet. Tüm veriler SSL ile şifrelenir ve InsForge altyapısında güvenli bir şekilde saklanır. Verilerinize yalnızca siz erişebilirsiniz.",
     },
     {
       question: "Planımı değiştirebilir miyim?",

@@ -104,7 +104,7 @@ rate_limit_store = defaultdict(list)
 app = FastAPI(
     title="Hotel Price API",
     description="""
-# HotelPlus (Tripzy) Rate Intelligence Platform API
+# HotelPlus Rate Intelligence Platform API
 
 Sentinel Core Engine providing:
 - Real-time and scheduled competitor price intelligence.
