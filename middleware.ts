@@ -1,152 +1,46 @@
 /**
- * Next.js Edge Middleware — Server-Side Authentication Guard
+ * Next.js Edge Middleware
  *
- * SECURITY REWRITE (SOC 2 / OWASP A07 Remediation)
+ * CURRENT STATUS: Pass-through (auth enforced client-side via useAuth hook)
  *
- * Previous implementation delegated ALL auth decisions to client-side
- * in-memory tokens (InsForge SDK TokenManager), which meant:
- *   - Any user could directly navigate to /dashboard by disabling JavaScript
- *   - Auth bypass was trivially achievable via browser devtools
- *   - Penetration testers would flag this as a P1 finding immediately
+ * WHY THE SERVER-SIDE APPROACH WAS REVERTED:
+ * The InsForge SDK (lib/insforge.ts) makes auth requests directly to the
+ * InsForge backend domain (NEXT_PUBLIC_SUPABASE_URL). This means InsForge
+ * sets its httpOnly refresh cookie on the **InsForge domain**, not on the
+ * Vercel/app domain.
  *
- * HOW INSFORGE AUTH WORKS (server-side):
- *   - On login, InsForge server sets an httpOnly refresh cookie on the browser
- *   - The browser sends this cookie automatically on every request (including
- *     the middleware Edge request) — the JS layer never sees its value
- *   - We validate it by calling POST /api/auth/refresh; a 200 response means
- *     the session is valid, a 401 means it is not
+ * When Next.js middleware intercepts a request to /dashboard, it only sees
+ * cookies scoped to the app domain. The InsForge refresh cookie is invisible
+ * to the middleware, so any attempt to validate the session by forwarding
+ * cookies to InsForge will always appear unauthenticated — even for logged-in
+ * users. This caused a login redirect loop.
  *
- * This middleware runs at the Edge (before any page renders) and validates
- * the session via the InsForge refresh endpoint. This cannot be bypassed
- * by client-side JavaScript.
+ * WHAT IS NEEDED FOR A PROPER FIX (next milestone):
+ * Option A — Proxy InsForge auth through Next.js:
+ *   Add a Next.js Route Handler at app/api/auth/[...path]/route.ts that
+ *   proxies all /api/auth/* calls to InsForge. The app (not InsForge) then
+ *   owns the cookie domain, and the middleware can validate sessions properly.
  *
- * Responsibilities:
- *   1. Redirect unauthenticated users from protected routes → /login
- *   2. Redirect authenticated users away from /login → /dashboard
- *   3. Allow all public routes and Next.js internals to pass through
+ * Option B — Dual-cookie after login:
+ *   After a successful InsForge login, call a Next.js Route Handler that
+ *   issues a short-lived, app-domain HttpOnly session cookie. Middleware
+ *   validates this cookie (cryptographically signed with a server secret).
+ *
+ * ACTIVE PROTECTION (until above is implemented):
+ *   - useAuth hook: redirects to /login if no in-memory session
+ *   - useAdminGuard hook: validates admin role + email whitelist
+ *   - FastAPI backend: enforces Bearer token on every API call
+ *   - IDOR prevention: UUID ownership checks on all endpoints (d3270c21)
  */
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// ---------------------------------------------------------------------------
-// Route classification
-// ---------------------------------------------------------------------------
-
-/** Routes that require a valid session. Anything NOT listed here is public. */
-const PROTECTED_PATH_PREFIXES = [
-  '/dashboard',
-  '/analysis',
-  '/reports',
-  '/parity-monitor',
-  '/admin',
-  '/help',
-  '/debug',
-];
-
-/** Routes that authenticated users should be redirected away from. */
-const AUTH_ONLY_PATHS = ['/login'];
-
-function isProtectedPath(pathname: string): boolean {
-  return PROTECTED_PATH_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-  );
-}
-
-function isAuthOnlyPath(pathname: string): boolean {
-  return AUTH_ONLY_PATHS.some(
-    (p) => pathname === p || pathname.startsWith(`${p}/`)
-  );
-}
-
-// ---------------------------------------------------------------------------
-// InsForge session validator
-// ---------------------------------------------------------------------------
-
-/**
- * Validates the current session by calling InsForge's refresh endpoint.
- *
- * The InsForge SDK sets an httpOnly refresh cookie on login. The browser
- * forwards this cookie automatically on every Edge request. We hit
- * POST /api/auth/refresh — a 200 means a valid session exists.
- *
- * We forward ALL cookies from the incoming request so the server sees the
- * httpOnly refresh cookie it set.
- */
-async function isSessionValid(request: NextRequest): Promise<boolean> {
-  const insforgeUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-
-  if (!insforgeUrl) {
-    // No backend URL configured — skip server check, client guard handles it.
-    console.warn('[Middleware] NEXT_PUBLIC_SUPABASE_URL not set. Skipping auth check.');
-    return true;
-  }
-
-  try {
-    // Forward all cookies so the httpOnly refresh token cookie reaches InsForge.
-    const cookieHeader = request.headers.get('cookie') ?? '';
-
-    const response = await fetch(`${insforgeUrl}/api/auth/refresh`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookieHeader,
-      },
-      // Edge runtime: no body needed; the refresh cookie is the credential.
-    });
-
-    return response.ok; // 200 = valid session, 401/403 = no valid session
-
-  } catch (err) {
-    // Network error (InsForge unreachable) — fail open to avoid locking out
-    // users during backend downtime. The FastAPI backend will still enforce auth.
-    console.error('[Middleware] InsForge auth check failed (network error):', err);
-    return true;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Middleware
-// ---------------------------------------------------------------------------
-
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Fast-path: not a route we care about — skip immediately.
-  if (!isProtectedPath(pathname) && !isAuthOnlyPath(pathname)) {
-    return NextResponse.next();
-  }
-
-  const authenticated = await isSessionValid(request);
-
-  // ── Case 1: Protected route + no session → redirect to login ──────────────
-  if (isProtectedPath(pathname) && !authenticated) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = '/login';
-    // Preserve intended destination so login page can redirect back after auth.
-    loginUrl.searchParams.set('redirectTo', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // ── Case 2: Already logged in + visiting /login → redirect to dashboard ───
-  if (isAuthOnlyPath(pathname) && authenticated) {
-    const dashboardUrl = request.nextUrl.clone();
-    dashboardUrl.pathname = '/dashboard';
-    dashboardUrl.search = '';
-    return NextResponse.redirect(dashboardUrl);
-  }
-
-  // ── Case 3: All checks passed ──────────────────────────────────────────────
+export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// ---------------------------------------------------------------------------
-// Matcher — which requests this middleware runs on
-// ---------------------------------------------------------------------------
-// Excludes Next.js internals and static assets to minimise Edge invocations.
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|json)$).*)',
+    '/((?!api|auth|rest|_next/static|_next/image|favicon.ico|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
-
-
