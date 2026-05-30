@@ -55,6 +55,7 @@ from backend.api import (
     hotel_webhook,
     signals_routes,
     intelligence_routes,
+    copilot_routes,
 )
 from backend.api.v1.webhooks import dataforseo as dataforseo_v1
 
@@ -305,6 +306,7 @@ app.include_router(dataforseo_v1.router, prefix="/api")
 app.include_router(hotel_webhook.router, prefix="/api")
 app.include_router(signals_routes.router, prefix="/api")
 app.include_router(intelligence_routes.router, prefix="/api")
+app.include_router(copilot_routes.router, prefix="/api")
 
 
 

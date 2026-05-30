@@ -674,6 +674,7 @@ class ApiClient {
     rival_hotel_id?: string,
     days: number = 30,
     report_type: string = "Standard Comparison",
+    locale?: string,
   ): Promise<void> {
     const token = await this.getToken();
     const headers: any = {};
@@ -684,6 +685,7 @@ class ApiClient {
       report_type,
     });
     if (rival_hotel_id) params.append("rival_hotel_id", rival_hotel_id);
+    if (locale) params.append("locale", locale);
 
     const url = `${API_BASE_URL}/api/reports/briefing/${target_hotel_id}/pdf?${params.toString()}`;
     const response = await fetch(url, {
@@ -828,6 +830,23 @@ class ApiClient {
     a.click();
     window.URL.revokeObjectURL(downloadUrl);
     document.body.removeChild(a);
+  }
+
+  // ===== AI Copilot Chat =====
+
+  async copilotChat(
+    message: string,
+    history: Array<{ role: string; content: string }>,
+    screenContext: Record<string, unknown>,
+  ): Promise<{ reply: string; tool_calls?: Array<{ name: string; label?: string }> }> {
+    return this.fetch('/api/copilot/chat', {
+      method: 'POST',
+      body: JSON.stringify({
+        message,
+        history,
+        screen_context: screenContext,
+      }),
+    });
   }
 }
 

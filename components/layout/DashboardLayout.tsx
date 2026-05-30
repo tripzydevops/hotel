@@ -12,6 +12,8 @@ import { useModalContext } from "@/components/ui/ModalContext";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import ModalLoading from "@/components/ui/ModalLoading";
+import CopilotPanel from "@/components/layout/CopilotPanel";
+import { useCopilot } from "@/hooks/useCopilot";
 
 // Modals
 import AddHotelModal from "@/components/modals/AddHotelModal";
@@ -56,6 +58,8 @@ export default function DashboardLayout({
     updateSettings,
     setProfile,
   } = useDashboard(userId, t);
+
+  const copilot = useCopilot(data);
 
   const {
     isAddHotelOpen,
@@ -365,6 +369,16 @@ export default function DashboardLayout({
           hotelName={selectedIntradayHotelName}
         />
       </Suspense>
+
+      {/* AI Copilot Panel */}
+      <CopilotPanel
+        isOpen={copilot.isOpen}
+        onToggle={copilot.togglePanel}
+        messages={copilot.messages}
+        isLoading={copilot.isLoading}
+        onSendMessage={copilot.sendMessage}
+        onClear={copilot.clearHistory}
+      />
     </div>
   );
 }

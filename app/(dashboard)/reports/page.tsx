@@ -778,7 +778,8 @@ export default function ReportsPage() {
         target_hotel_id: targetHotel.id,
         rival_hotel_id: selectedRivalId || undefined,
         days: timeframe,
-        report_type: reportType
+        report_type: reportType,
+        locale: locale
       });
       setBriefing(res);
       toast.success("Executive briefing generated successfully!");
@@ -794,7 +795,7 @@ export default function ReportsPage() {
   const handleExportBriefingPdf = async () => {
     if (!targetHotel?.id) return;
     try {
-      await api.exportBriefingPdf(targetHotel.id, selectedRivalId || undefined, timeframe, reportType);
+      await api.exportBriefingPdf(targetHotel.id, selectedRivalId || undefined, timeframe, reportType, locale);
     } catch (err) {
       console.error("Briefing PDF failed:", err);
     }

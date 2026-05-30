@@ -59,6 +59,7 @@ backend/libs
 debug_*.py
 reproduce_*.py
 test_*.py
+!backend/tests/test_*.py
 check_*.py
 !check_due_scans.py
 diag_*.py

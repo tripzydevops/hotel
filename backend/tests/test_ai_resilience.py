@@ -6,19 +6,8 @@ from unittest.mock import patch, MagicMock
 # Ensure we can import backend
 sys.path.append(os.getcwd())
 
-# KAİZEN: Global mocks for all missing dependencies to allow tests to run in restricted environments
-for mod in ['supabase', 'firecrawl', 'sse_starlette', 'dotenv', 'firecrawl-py']:
-    if mod not in sys.modules:
-        sys.modules[mod] = MagicMock()
-        if mod == 'dotenv':
-            sys.modules['dotenv'].load_dotenv = MagicMock()
-
 # Ensure we can import backend as a package
 import backend
-if not hasattr(backend, 'services'):
-    backend.services = MagicMock()
-if not hasattr(backend, 'utils'):
-    backend.utils = MagicMock()
 
 class TestAIResilience(unittest.TestCase):
     def test_ai_service_resilience(self):

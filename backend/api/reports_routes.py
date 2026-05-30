@@ -53,9 +53,10 @@ class BriefingRequest(BaseModel):
     rival_hotel_id: Optional[str] = None
     days: int = 30
     report_type: Optional[str] = "Strategic Market Pulse"
+    locale: Optional[str] = "en"
 
 
-@router.post("/briefing", response_model=ReportsResponse)
+@router.post("/briefing", response_model=Dict[str, Any])
 async def generate_briefing(
     request: BriefingRequest,
     db: Client = Depends(get_supabase_rls),
@@ -77,6 +78,7 @@ async def generate_briefing(
         rival_hotel_id=request.rival_hotel_id,
         days=request.days,
         report_type=request.report_type,
+        locale=request.locale,
     )
 
     if "error" in result:
@@ -443,6 +445,7 @@ async def export_briefing_pdf(
     rival_hotel_id: Optional[str] = None,
     days: int = 30,
     report_type: Optional[str] = "Strategic Market Pulse",
+    locale: Optional[str] = "en",
     db: Client = Depends(get_supabase_rls),
     current_user=Depends(get_current_active_user),
 ):
@@ -459,6 +462,7 @@ async def export_briefing_pdf(
         rival_hotel_id=rival_hotel_id,
         days=days,
         report_type=report_type,
+        locale=locale,
     )
 
     if "error" in briefing:

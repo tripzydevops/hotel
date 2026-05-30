@@ -483,6 +483,7 @@ class AnalystAgent:
         rival_hotel_id: Optional[str] = None,
         days: int = 30,
         report_type: str = "Standard",
+        locale: Optional[str] = "en",
     ) -> Dict[str, Any]:
         """
         Narrative generation (Deep Think) logic.
@@ -508,59 +509,237 @@ class AnalystAgent:
                 if rival_h.data:
                     rival_data = rival_h.data[0]
 
-            # 2. Get Intelligence Metrics
-            # Calculate range
+            # 2. Compute rival exclusion if benchmarking a specific rival
+            exclude_ids = None
+            if rival_hotel_id:
+                uh_res = (
+                    self.db.table("user_hotels")
+                    .select("hotel_id")
+                    .eq("user_id", str(user_id))
+                    .execute()
+                )
+                if uh_res.data:
+                    to_exclude = [
+                        item["hotel_id"]
+                        for item in uh_res.data
+                        if item["hotel_id"] != target_hotel_id and item["hotel_id"] != rival_hotel_id
+                    ]
+                    if to_exclude:
+                        exclude_ids = ",".join(to_exclude)
+
+            # 3. Get Intelligence Metrics
             end_date = datetime.now()
             start_date = end_date - timedelta(days=days)
 
             intel_res = await get_market_intelligence_data(
-                user_id=user_id,
-                target_hotel_id=target_hotel_id,
+                db=self.db,
+                user_id=str(user_id),
                 start_date=start_date.strftime("%Y-%m-%d"),
                 end_date=end_date.strftime("%Y-%m-%d"),
+                exclude_hotel_ids=exclude_ids,
+                admin_db=self.admin_db,
             )
 
             if "error" in intel_res:
                 return intel_res
 
-            metrics = intel_res.get("analysis", {})
+            metrics = intel_res
 
-            # 3. Augment Metrics for Report Requirements
-            # If ARI or Sentiment index is missing, use defaults or calculate if possible
+            # 4. Augment Metrics for Report Requirements
             ari = metrics.get("ari")
             if ari is None:
                 ari = 100.0
 
-            sent_index = metrics.get("sent_index") or 100.0
+            sent_index = metrics.get("sent_index") or metrics.get("sentiment_index") or 100.0
+            target_price = metrics.get("target_price") or 0.0
+            market_average = metrics.get("market_average") or 0.0
+            price_rank_list = metrics.get("price_rank_list") or []
+            price_history = metrics.get("price_history") or []
 
-            # 4. Generate Qualitative Narrative (Verdicts)
-            title = "STABLE"
-            verdict = "Your pricing is currently aligned with the market average."
+            # Calculate active undercuts and revenue risk
+            parity_leaks_count = 0
+            revenue_risk = 0.0
+            if target_price > 0:
+                for h in price_rank_list:
+                    if not h.get("is_target") and h.get("price") and h.get("price") < target_price:
+                        parity_leaks_count += 1
+                        revenue_risk += (target_price - h.get("price"))
 
-            if ari > 105:
-                title = "PREMIUM POSITIONING"
-                verdict = "You are currently pricing at a premium compared to the market. Guest sentiment remains strong, supporting this strategy."
-            elif ari < 95:
-                title = "AGGRESSIVE CAPTURE"
-                verdict = "Your rates are significantly below market average. While this may drive occupancy, review your ADR strategy to avoid revenue leakage."
+            # Calculate price trend
+            price_trend = {"direction": "neutral", "change_pct": 0.0}
+            if len(price_history) >= 2:
+                latest_p = price_history[0].get("price", 0.0)
+                oldest_p = price_history[-1].get("price", 0.0)
+                if oldest_p > 0:
+                    change = ((latest_p - oldest_p) / oldest_p) * 100
+                    direction = "up" if change >= 1.0 else "down" if change <= -1.0 else "neutral"
+                    price_trend = {"direction": direction, "change_pct": round(change, 1)}
 
-            if sent_index < 90:
-                verdict += " WARNING: Declining sentiment detected. Immediate attention to service quality required."
+            # Build competitor table
+            competitor_table = []
+            for h in price_rank_list:
+                if not h.get("is_target"):
+                    gap_pct = 0.0
+                    if target_price > 0 and h.get("price") and h.get("price") > 0:
+                        gap_pct = round(((target_price - h.get("price")) / h.get("price")) * 100, 1)
+                    competitor_table.append({
+                        "name": h.get("name"),
+                        "price": h.get("price"),
+                        "rating": h.get("rating") or 0.0,
+                        "gap_pct": gap_pct
+                    })
 
-            narrative = f"""
-### {title}
-{verdict}
+            # Calculate competitive rank
+            avg_rank = 1
+            for h in price_rank_list:
+                if h.get("is_target"):
+                    avg_rank = h.get("rank", 1)
 
-Our analysis of the last {days} days indicates a {metrics.get("market_average", 0)} {target_data.get("preferred_currency", "TRY")} market baseline. 
-Your Average Rate Index (ARI) of {ari:.1f} suggests a {"premium" if ari > 100 else "discounted"} stance.
-            """.strip()
+            # Compute boutique similarity if we have embeddings and rival_data
+            bout_similarity = 50.0
+            if rival_data and target_data:
+                target_emb = target_data.get("embedding")
+                rival_emb = rival_data.get("embedding")
+                if target_emb and rival_emb:
+                    import math
+                    try:
+                        dot_product = sum(a * b for a, b in zip(target_emb, rival_emb))
+                        norm_a = math.sqrt(sum(a * a for a in target_emb))
+                        norm_b = math.sqrt(sum(b * b for b in rival_emb))
+                        if norm_a > 0 and norm_b > 0:
+                            bout_similarity = round((dot_product / (norm_a * norm_b)) * 100, 1)
+                    except Exception as emb_err:
+                        logger.warning(f"[AnalystAgent] Embedding similarity error: {emb_err}")
 
-            # 5. Final Package
+            # 5. Narrative generation via Gemini (Strategic LLM Analysis)
+            from backend.utils.ai_client import get_genai_client
+            client = get_genai_client()
+            
+            narrative = ""
+            battlefield_text = ""
+            yield_text = ""
+            
+            preferred_currency = target_data.get("preferred_currency", "TRY")
+            is_tr = locale == "tr"
+            language = "Turkish" if is_tr else "English"
+            
+            dna_text = target_data.get("pricing_dna") or "Neutral positioning"
+            rival_name = rival_data.get("name") if rival_data else "Market"
+            rival_rating = rival_data.get("rating", 0.0) if rival_data else 0.0
+            # Get latest price for the selected rival
+            rival_price = 0.0
+            if rival_data:
+                for h in price_rank_list:
+                    if str(h.get("id")) == str(rival_hotel_id):
+                        rival_price = h.get("price") or 0.0
+                        break
+            
+            if client:
+                prompt = f"""
+                You are a Lead Hotel Revenue Architect for Tripzy.travel.
+                Analyze the following market intelligence data for '{target_data.get("name")}' over the last {days} days:
+                - Target Hotel: {target_data.get("name")} (Rating: {target_data.get("rating")}/5.0, Current Price: {target_price} {preferred_currency})
+                - Benchmark Market Average Price: {market_average} {preferred_currency}
+                - Competitor Count: {len(competitor_table)}
+                {f"- Selected Rival Benchmarked: {rival_name} (Rating: {rival_rating}/5.0, Current Price: {rival_price} {preferred_currency})" if rival_data else ""}
+                - Price Index (ARI): {ari:.1f}
+                - Guest Sentiment Index: {sent_index:.1f}
+                - Parity Leaks (Undercuts) Count: {parity_leaks_count}
+                - Estimated Monthly Revenue Risk: {revenue_risk * 30:.2f} {preferred_currency}
+                - Active Pricing Strategy Archetype: {dna_text}
+                
+                You are generating a briefing of type: '{report_type}'.
+                
+                Provide your analysis in {language}.
+                
+                Provide the output in JSON format with the following keys:
+                - "narrative_raw": A rich, professional executive summary (2-3 paragraphs, formatted in Markdown, without using headers or bold/italic markers at the start of sentences). Focus on strategic positioning, yield optimizations, reputation leverage, and specific action steps.
+                - "battlefield_text": A concise strategic commentary (1-2 sentences) about the competitive landscape, search ranking/visibility, and market share capture.
+                - "yield_text": A concise strategic commentary (1-2 sentences) focused on pricing friction, rate parity leakage, or guest value perception index.
+                
+                Ensure the JSON is valid and strictly follows this structure.
+                """
+                
+                models_to_try = ["gemini-3-flash-preview", "gemini-2.5-flash"]
+                response = None
+                for m in models_to_try:
+                    try:
+                        import json
+                        response = await asyncio.to_thread(
+                            client.models.generate_content,
+                            model=m,
+                            contents=prompt,
+                            config={
+                                "response_mime_type": "application/json"
+                            }
+                        )
+                        if response and response.text:
+                            break
+                    except Exception as model_err:
+                        logger.warning(f"[AnalystAgent] Model {m} failed in briefing generation: {model_err}")
+                        continue
+                        
+                if response and response.text:
+                    try:
+                        import json
+                        from backend.services.analysis_core import _clean_json_output
+                        cleaned_json = _clean_json_output(response.text)
+                        parsed = json.loads(cleaned_json)
+                        narrative = parsed.get("narrative_raw", "")
+                        battlefield_text = parsed.get("battlefield_text", "")
+                        yield_text = parsed.get("yield_text", "")
+                    except Exception as parse_err:
+                        logger.error(f"[AnalystAgent] JSON parse error on GenAI response: {parse_err}")
+
+            if not narrative:
+                # Heuristic Fallback
+                title = "STABLE"
+                verdict = "Your pricing is currently aligned with the market average."
+                if ari > 105:
+                    title = "PREMIUM POSITIONING"
+                    verdict = "You are currently pricing at a premium compared to the market. Guest sentiment remains strong, supporting this strategy."
+                elif ari < 95:
+                    title = "AGGRESSIVE CAPTURE"
+                    verdict = "Your rates are significantly below market average. While this may drive occupancy, review your ADR strategy to avoid revenue leakage."
+
+                if sent_index < 90:
+                    verdict += " WARNING: Declining sentiment detected. Immediate attention to service quality required."
+
+                if is_tr:
+                    narrative = f"### {title}\n{verdict}\n\nSon {days} güne ait analizimiz, {market_average} {preferred_currency} seviyesinde bir pazar baz çizgisi göstermektedir. ARI (Ortalama Fiyat Endeksi) değeriniz olan {ari:.1f}, {'premium' if ari > 100 else 'indirimli'} bir duruşa işaret etmektedir."
+                    if report_type == "Sentiment Deep-Dive":
+                        battlefield_text = "Misafir memnuniyeti fiyatlandırma gücünün temel itici gücüdür."
+                        yield_text = f"Memnuniyet endeksi {sent_index:.1f} seviyesinde olup, pazar ortalamasının {'üzerinde' if sent_index > 100 else 'altında'} bir performans göstermektedir."
+                    elif report_type == "Yield Audit":
+                        battlefield_text = "Fiyat paritesi, gelir kaybını önlemek için son derece önemlidir."
+                        yield_text = f"OTA kanallarında aktif {parity_leaks_count} adet düşük fiyat tespiti yapıldı, bu durum günlük potansiyel gelir kaybına yol açmaktadır."
+                    elif report_type == "Competitive Battlefield":
+                        battlefield_text = f"{'Seçilen rakip' if rival_data else 'Pazar ortalaması'} karşısında doğrudan konumlandırma analizi."
+                        yield_text = f"Fiyat farkı {'pozitif' if ari > 100 else 'negatif'} olup, rekabet riskini göstermektedir."
+                    else:
+                        battlefield_text = "Pazar fiyatlandırma sinyalleri beklenen varyasyon dahilinde sabit kalmaktadır."
+                        yield_text = "Fiyat paritesi günlükleri normal bir OTA dağılımı göstermektedir."
+                else:
+                    narrative = f"### {title}\n{verdict}\n\nOur analysis of the last {days} days indicates a {market_average} {preferred_currency} market baseline. Your Average Rate Index (ARI) of {ari:.1f} suggests a {'premium' if ari > 100 else 'discounted'} stance."
+                    if report_type == "Sentiment Deep-Dive":
+                        battlefield_text = "Guest sentiment is the primary driver of pricing power."
+                        yield_text = f"Sentiment index stands at {sent_index:.1f}, indicating {'above' if sent_index > 100 else 'below'} par performance."
+                    elif report_type == "Yield Audit":
+                        battlefield_text = "Rate parity is crucial to preventing revenue leakage."
+                        yield_text = f"Detected {parity_leaks_count} active undercuts on OTAs, representing potential daily leakage."
+                    elif report_type == "Competitive Battlefield":
+                        battlefield_text = f"Direct positioning analysis against {'selected rival' if rival_data else 'market average'}."
+                        yield_text = f"Rate gap is {'positive' if ari > 100 else 'negative'}, indexing risk."
+                    else:
+                        battlefield_text = "Market pricing signals remain stable within expected variance."
+                        yield_text = "Parity logs indicate typical distribution of OTA rates."
+
+            # 6. Final Package
             return {
                 "target": {
                     "id": target_data.get("id"),
                     "name": target_data.get("name"),
-                    "preferred_currency": target_data.get("preferred_currency", "TRY"),
+                    "preferred_currency": preferred_currency,
                     "rating": target_data.get("rating"),
                     "review_count": target_data.get("review_count"),
                 },
@@ -571,27 +750,32 @@ Your Average Rate Index (ARI) of {ari:.1f} suggests a {"premium" if ari > 100 el
                 if rival_data
                 else None,
                 "metrics": {
-                    "market_avg_price": metrics.get("market_average", 0),
-                    "target_price": metrics.get("target_price", 0),
+                    "report_type": report_type,
+                    "market_avg_price": market_average,
+                    "target_price": target_price,
                     "ari": ari,
-                    "gri": metrics.get(
-                        "sentiment_snapshot", target_data.get("rating") or 0.0
-                    ),
-                    "parity_leaks_count": len(
-                        [
-                            o
-                            for o in metrics.get("price_rank", [])
-                            if o.get("is_target") and o.get("offers")
-                        ]
-                    ),
-                    "sentiment_snapshot": "Robust guest praise in Service & Cleanliness."
-                    if sent_index > 100
-                    else "Neutral feedback observed.",
+                    "gri": sent_index,
+                    "parity_leaks_count": parity_leaks_count,
+                    "revenue_projection": {
+                        "currency": preferred_currency,
+                        "monthly_risk": round(revenue_risk * 30, 2)
+                    },
+                    "price_trend": price_trend,
+                    "price_history": [
+                        {"price": entry.get("price"), "date": entry.get("recorded_at")}
+                        for entry in price_history
+                    ],
+                    "competitor_table": competitor_table,
+                    "avg_rank": avg_rank,
+                    "bout_similarity": bout_similarity,
+                    "battlefield_text": battlefield_text,
+                    "yield_text": yield_text,
                 },
                 "narrative_raw": narrative,
                 "context": {
                     "report_type": report_type,
                     "analysis_days": days,
+                    "timeframe": f"{days}-Day" if locale == "en" else f"{days} Günlük",
                     "generated_at": datetime.now().isoformat(),
                 },
             }

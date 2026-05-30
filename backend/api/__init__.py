@@ -2,6 +2,7 @@ from . import (  # noqa: F401
     admin_routes,
     alerts_routes,
     analysis_routes,
+    copilot_routes,
     dashboard_routes,
     hotel_routes,
     landing_routes,
