@@ -10,7 +10,7 @@ Architecture:
   - Executes multi-turn tool-calling loops (max 5 iterations)
   - Falls back to heuristic keyword-based responses when Gemini is unavailable
 
-Model cascade: gemini-2.5-flash → gemini-2.0-flash
+Model cascade: gemini-2.5-flash → gemini-2.5-flash-lite → gemini-2.5-pro
 """
 
 import asyncio
@@ -332,7 +332,8 @@ TOOL_DECLARATIONS = [
 MAX_TOOL_ITERATIONS = 5
 
 # Models to try in order (cascade)
-MODEL_CASCADE = ["gemini-2.5-flash", "gemini-1.5-flash"]
+MODEL_CASCADE = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"]
+
 
 
 def _build_system_prompt(screen_context: Dict[str, Any]) -> str:
