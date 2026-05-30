@@ -19,4 +19,4 @@ Jinja2>=3.1.2
 psutil>=5.9.0
 sse-starlette>=2.0.0
 xhtml2pdf>=0.2.11
-# REDEPLOY TRIGGER: 2026-03-28T12:37:30Z
+# REDEPLOY TRIGGER: 2026-05-30T10:30:00Z
