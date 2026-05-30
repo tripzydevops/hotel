@@ -24,9 +24,9 @@ export interface CopilotToolCall {
 
 export interface CopilotScreenContext {
   page: string;
-  targetHotel?: string | null;
-  competitorCount?: number;
-  competitorNames?: string[];
+  active_hotel_id?: string | null;
+  active_hotel_name?: string | null;
+  active_competitors?: string[];
 }
 
 interface CopilotChatResponse {
@@ -84,9 +84,9 @@ export function useCopilot(dashboardData?: DashboardContextData | null) {
   // ---- Screen Context (auto-captured) ----
   const screenContext: CopilotScreenContext = useMemo(() => ({
     page: pageLabel(pathname),
-    targetHotel: dashboardData?.target_hotel?.name ?? null,
-    competitorCount: dashboardData?.competitors?.length ?? 0,
-    competitorNames: (dashboardData?.competitors ?? [])
+    active_hotel_id: dashboardData?.target_hotel?.id ?? null,
+    active_hotel_name: dashboardData?.target_hotel?.name ?? null,
+    active_competitors: (dashboardData?.competitors ?? [])
       .map((c) => c.name)
       .filter(Boolean) as string[],
   }), [pathname, dashboardData]);
