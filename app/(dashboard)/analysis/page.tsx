@@ -137,6 +137,13 @@ export default function AnalysisPage() {
       }
       params.set("token", token);
 
+      if (typeof window !== "undefined") {
+        const impersonateId = window.sessionStorage.getItem("impersonate_user_id");
+        if (impersonateId) {
+          params.set("impersonate_user_id", impersonateId);
+        }
+      }
+
       const base = API_BASE_URL || (typeof window !== "undefined" ? window.location.origin : "");
       const url = `${base}/api/v2/analysis/stream?${params.toString()}`;
       const eventSource = new EventSource(url);

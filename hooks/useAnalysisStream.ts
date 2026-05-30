@@ -35,10 +35,17 @@ export function useAnalysisStream(userId: string | undefined, roomType: string =
         const headers = insforge.getHttpClient().getHeaders();
         const token = (headers as any)["Authorization"]?.replace("Bearer ", "");
 
-        if (!isMounted) return;
-
-        const tokenParam = token ? `&token=${encodeURIComponent(token)}` : '';
-        const url = `${api.baseURL}/api/v2/analysis/stream?room_type=${roomType}${tokenParam}`;
+        let queryParams = `room_type=${roomType}`;
+        if (token) {
+          queryParams += `&token=${encodeURIComponent(token)}`;
+        }
+        if (typeof window !== "undefined") {
+          const impersonateId = window.sessionStorage.getItem("impersonate_user_id");
+          if (impersonateId) {
+            queryParams += `&impersonate_user_id=${encodeURIComponent(impersonateId)}`;
+          }
+        }
+        const url = `${api.baseURL}/api/v2/analysis/stream?${queryParams}`;
         
         eventSource = new EventSource(url);
 

@@ -45,6 +45,22 @@ class ScreenContext(BaseModel):
         default=None,
         description="List of competitor hotel names currently visible.",
     )
+    active_city: Optional[str] = Field(
+        default=None,
+        description="Parsed city location of the active hotel.",
+    )
+    currency: Optional[str] = Field(
+        default=None,
+        description="Active dashboard display currency.",
+    )
+    user_profile: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Current user profile information.",
+    )
+    user_settings: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Current user configurations/settings.",
+    )
     filters: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Active filter state on the current page.",

@@ -198,9 +198,11 @@ async def get_current_active_user(
         email = getattr(user, "email", "No Email")
 
         # --- GHOST MODE (IMPERSONATION) LOGIC ---
-        # Allow admins to masquerade as other users using the x-impersonate-user-id header.
-        # This is critical for support/debugging without requiring user credentials.
-        impersonate_id = request.headers.get("x-impersonate-user-id")
+        impersonate_id = (
+            request.headers.get("x-impersonate-user-id")
+            or request.query_params.get("impersonate_user_id")
+            or request.query_params.get("x-impersonate-user-id")
+        )
         original_admin_id = None
 
         if impersonate_id and impersonate_id != str(user_id):

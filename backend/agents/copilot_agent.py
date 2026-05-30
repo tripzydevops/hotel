@@ -347,6 +347,19 @@ def _build_system_prompt(screen_context: Dict[str, Any]) -> str:
     active_hotel_name = screen_context.get("active_hotel_name", "Not selected")
     active_hotel_id = screen_context.get("active_hotel_id")
     active_competitors = screen_context.get("active_competitors") or []
+    active_city = screen_context.get("active_city", "Unknown")
+    currency = screen_context.get("currency", "TRY")
+
+    profile = screen_context.get("user_profile") or {}
+    profile_name = profile.get("display_name", "Enterprise User")
+    profile_role = profile.get("role", "Revenue Intelligence")
+    profile_plan = profile.get("plan_type", "trial")
+
+    settings = screen_context.get("user_settings") or {}
+    threshold = settings.get("threshold_percent", 5.0)
+    frequency = settings.get("check_frequency_minutes", 1440)
+    notifications = "Enabled" if settings.get("notifications_enabled", False) else "Disabled"
+
     filters = screen_context.get("filters") or {}
 
     competitors_text = ", ".join(active_competitors) if active_competitors else "None selected"
@@ -369,12 +382,23 @@ def _build_system_prompt(screen_context: Dict[str, Any]) -> str:
 - When recommending actions, be specific (e.g., "Increase your rate by 5-8%" rather than "Consider adjusting rates").
 - If data is insufficient, say so clearly and suggest what the user can do (e.g., "Run a scan to update your rates").
 
+## Current User Context
+- **User Name**: {profile_name}
+- **Role**: {profile_role}
+- **Plan Type**: {profile_plan}
+
 ## Current Dashboard Context
 The user is currently viewing:
 - **Page**: {page}
 - **Active Hotel**: {active_hotel_name} (ID: {active_hotel_id or 'None'})
-- **Tracked Competitors**: {competitors_text}
+- **Active City**: {active_city}
+- **Preferred Currency**: {currency}
 - **Active Filters**: {filters_text}
+
+## User Configuration Settings
+- **Violation Threshold**: {threshold}%
+- **Scan Frequency**: Every {frequency} minutes
+- **Email Notifications**: {notifications}
 
 ## Tool Usage Guidelines
 - When the user mentions a hotel by name but you need an ID, use `get_hotel_context` first to resolve it.

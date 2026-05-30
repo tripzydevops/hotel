@@ -20,8 +20,7 @@ class TestAIResilience(unittest.TestCase):
             
             # Verify generate_command_brief returns a safe fallback instead of crashing
             import asyncio
-            loop = asyncio.get_event_loop()
-            result = loop.run_until_complete(commander.generate_market_brief({"test": "data"}))
+            result = asyncio.run(commander.generate_market_brief({"test": "data"}))
             
             self.assertIn("summary", result)
             self.assertIn("strategic_actions", result)

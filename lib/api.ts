@@ -114,6 +114,19 @@ class ApiClient {
       console.warn(`[ApiClient] [AUTH_MISSING] ${endpoint}`);
     }
 
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const impersonateFromUrl = urlParams.get("impersonate");
+      if (impersonateFromUrl) {
+        window.sessionStorage.setItem("impersonate_user_id", impersonateFromUrl);
+      }
+
+      const impersonateId = window.sessionStorage.getItem("impersonate_user_id");
+      if (impersonateId) {
+        (headers as any)["x-impersonate-user-id"] = impersonateId;
+      }
+    }
+
     const fullUrl = `${API_BASE_URL}${endpoint}`;
     
     const response = await fetch(fullUrl, {
@@ -429,6 +442,9 @@ class ApiClient {
   }
 
   async terminateImpersonation(): Promise<void> {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem("impersonate_user_id");
+    }
     return this.fetch<void>("/api/admin/terminate-impersonation", {
       method: "POST",
     });
