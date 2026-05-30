@@ -34,6 +34,28 @@ async def get_dashboard(
     return JSONResponse(content=jsonable_encoder(data))
 
 
+@router.get("/debug-gemini")
+async def debug_gemini():
+    import os
+    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if not gemini_key:
+        return {"status": "missing", "preview": None, "has_genai": False}
+    
+    try:
+        from google import genai
+        has_genai = True
+    except ImportError:
+        has_genai = False
+        
+    return {
+        "status": "loaded",
+        "has_genai": has_genai,
+        "key_length": len(gemini_key),
+        "prefix": gemini_key[:5] if len(gemini_key) >= 5 else "",
+        "suffix": gemini_key[-5:] if len(gemini_key) >= 5 else "",
+    }
+
+
 @router.get("/global-pulse", response_model=Dict[str, Any])
 async def get_global_pulse(db: Client = Depends(get_supabase)):
     """
