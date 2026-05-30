@@ -37,7 +37,7 @@ def test_backend_health(client):
 
 def test_openapi_schema_includes_new_routes(client):
     """OpenAPI schema lists all our new routes."""
-    r = client.get("/openapi.json")
+    r = client.get("/api/openapi.json")
     assert r.status_code == 200
     schema = r.json()
     paths = schema.get("paths", {})
