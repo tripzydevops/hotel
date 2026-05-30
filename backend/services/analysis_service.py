@@ -11,25 +11,26 @@ from backend.utils.helpers import convert_currency
 from backend.utils.vendor_normalizer import normalize_vendor_name
 from backend.utils.logger import get_logger
 from supabase import Client
+from backend.services.analysis_core import (  # noqa: F401 — re-exported for downstream consumers
+    get_sentiment_trends,
+    _transform_serp_links,
+    _extract_price,
+    get_price_for_room,
+    generate_synthetic_narrative,
+    _clean_json_output,
+    run_market_intelligence,
+    run_heuristic_market_fallback,
+    synthesize_pricing_dna,
+    generate_strategy_embedding,
+    stream_narrative_gen,
+    calculate_rate_recommendation,
+    generate_audit_checklist,
+)
 
 # AGENT_LOGIC: Module-level logger replaces raw print() for structured output
 logger = get_logger(__name__)
 
-# AGENT_NOTE: Added typing-safe import for Google GenAI to satisfy strict linter checks
 
-try:
-    from google.genai import types
-except ImportError:
-    pass
-
-
-
-from backend.services.analysis_core import (
-    get_price_for_room,
-    generate_synthetic_narrative,
-    calculate_rate_recommendation,
-    generate_audit_checklist,
-)
 async def perform_market_analysis(
     user_id: str,
     hotels: List[Dict[str, Any]],
