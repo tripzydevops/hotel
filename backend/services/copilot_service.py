@@ -107,7 +107,7 @@ async def fetch_hotel_context(
     try:
         res = (
             db.table("user_hotels")
-            .select("hotel_id, relationship_type, hotels(id, name, rating, review_count, preferred_currency, location)")
+            .select("hotel_id, is_target, hotels(id, name, rating, review_count, preferred_currency, location)")
             .eq("user_id", user_id)
             .execute()
         )
@@ -121,7 +121,7 @@ async def fetch_hotel_context(
                 hotel_data = hotel_data[0] if hotel_data else {}
             hotels.append({
                 "hotel_id": row.get("hotel_id"),
-                "relationship_type": row.get("relationship_type", "target"),
+                "relationship_type": "target" if row.get("is_target", False) else "competitor",
                 "name": hotel_data.get("name"),
                 "rating": hotel_data.get("rating"),
                 "review_count": hotel_data.get("review_count"),

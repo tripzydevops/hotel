@@ -11,6 +11,8 @@ import {
   User,
   Wrench,
 } from 'lucide-react';
+import { api } from '@/lib/api';
+
 
 // ---------------------------------------------------------------------------
 // Types
@@ -60,6 +62,23 @@ function toolEmoji(name: string): string {
 // Link Parsing Helpers
 // ---------------------------------------------------------------------------
 
+async function handleApiLinkClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
+  if (href.startsWith('/api/') || href.includes('/api/reports/')) {
+    e.preventDefault();
+    try {
+      const token = await api.getAccessToken();
+      const url = new URL(href, window.location.origin);
+      if (token) {
+        url.searchParams.set('token', token);
+      }
+      window.open(url.toString(), '_blank');
+    } catch (err) {
+      console.error('Failed to resolve authenticated download link:', err);
+      window.open(href, '_blank');
+    }
+  }
+}
+
 function parseRawLinks(text: string): React.ReactNode[] {
   const urlRegex = /(https?:\/\/[^\s)]+|\/api\/[^\s)]+)/g;
   const rawParts = text.split(urlRegex);
@@ -70,6 +89,7 @@ function parseRawLinks(text: string): React.ReactNode[] {
         <a
           key={`raw-${index}`}
           href={part}
+          onClick={(e) => handleApiLinkClick(e, part)}
           target="_blank"
           rel="noopener noreferrer"
           className="text-[var(--soft-gold)] hover:underline font-bold break-all transition-colors cursor-pointer"
@@ -107,6 +127,7 @@ function renderMessageContent(content: string): React.ReactNode {
       <a
         key={`md-${matchIndex}`}
         href={linkUrl}
+        onClick={(e) => handleApiLinkClick(e, linkUrl)}
         target="_blank"
         rel="noopener noreferrer"
         className="text-[var(--soft-gold)] hover:underline font-bold transition-colors cursor-pointer"

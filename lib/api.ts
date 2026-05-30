@@ -92,6 +92,11 @@ class ApiClient {
     }
   }
 
+  public async getAccessToken(): Promise<string | null> {
+    return this.getToken();
+  }
+
+
 
   private async fetch<T>(
     endpoint: string,
@@ -728,7 +733,7 @@ class ApiClient {
     const headers: any = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const url = `${this.baseURL}/api/reports/briefing/${reportId}/download`;
+    const url = `${this.baseURL}/api/reports/briefing/saved/${reportId}/pdf`;
     const response = await fetch(url, {
       method: "GET",
       headers,
