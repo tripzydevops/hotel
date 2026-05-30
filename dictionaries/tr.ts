@@ -32,6 +32,7 @@ export const tr = {
     pending: "Beklemede",
     availableNow: "Şu an Müsait",
     privacy: "Gizlilik",
+    accessibility: "Erişilebilirlik",
     terms: "Koşullar",
     checkIn: "Giriş",
     checkOut: "Çıkış",

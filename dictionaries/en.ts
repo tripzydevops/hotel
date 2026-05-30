@@ -32,6 +32,7 @@ export const en = {
     pending: "Pending",
     availableNow: "Available Now",
     privacy: "Privacy",
+    accessibility: "Accessibility",
     terms: "Terms",
     checkIn: "Check-in",
     checkOut: "Check-out",

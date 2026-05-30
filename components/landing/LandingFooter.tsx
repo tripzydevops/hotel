@@ -103,6 +103,12 @@ export default function LandingFooter() {
             >
               {t("common.privacy")}
             </Link>
+            <Link
+              href="/accessibility"
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--soft-gold)] transition-colors cursor-pointer"
+            >
+              {t("common.accessibility")}
+            </Link>
           </div>
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-[0.2em]">
             hotelplustr.com

@@ -7,6 +7,8 @@ Redeploy trigger: 2026-03-17T11:52:00Z
 # ruff: noqa
 import os
 import sys
+import time
+from collections import defaultdict
 from datetime import datetime, timezone
 
 # Ensure backend module is resolvable
@@ -92,12 +94,52 @@ async def lifespan(app: FastAPI):
     yield
 
 
+# In-memory rate limiting store
+# Format: {(client_ip, category): [timestamp1, timestamp2, ...]}
+rate_limit_store = defaultdict(list)
+
+
 # Initialize FastAPI
 # Routing is configured to avoid double-prefixing with Vercel.
 app = FastAPI(
     title="Hotel Price API",
-    description="Sentinel Core Engine - Market Intelligence Platform",
+    description="""
+# HotelPlus (Tripzy) Rate Intelligence Platform API
+
+Sentinel Core Engine providing:
+- Real-time and scheduled competitor price intelligence.
+- Semantic search using vector embeddings and PostgreSQL pgvector.
+- Otonom reasoning and decision analysis using Gemini models.
+- Deep market yield analysis and rate parity logs.
+
+### Compliance & Security
+- Rate-limited endpoints for system stability.
+- Zero PII footprint in accordance with GDPR & CCPA scope exclusion.
+- All requests are logged and monitored under strict Row-Level Security (RLS).
+""",
     version="2026.03",
+    terms_of_service="https://hotelplustr.com/terms",
+    contact={
+        "name": "HotelPlus Compliance and API Support",
+        "url": "https://hotelplustr.com/contact",
+        "email": "info@hotelplus.com.tr",
+    },
+    license_info={
+        "name": "Proprietary B2B License",
+        "url": "https://hotelplustr.com/license",
+    },
+    openapi_tags=[
+        {"name": "Auth", "description": "Enterprise authentication & token management"},
+        {"name": "Hotels", "description": "Hotel management and profile properties"},
+        {"name": "Monitor", "description": "Real-time rate scanners & competitor tracklist management"},
+        {"name": "Analysis", "description": "Market price comparison and trend tracking"},
+        {"name": "Reports", "description": "Exportable business intelligence & parity audits"},
+        {"name": "Alerts", "description": "Rate parity violations and threshold alert triggers"},
+        {"name": "Intelligence", "description": "Autonomous AI reasoning engine"},
+    ],
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
     # redirect_slashes=True is the default and preferred for link robustness
     lifespan=lifespan,
 )
@@ -114,7 +156,53 @@ async def unified_middleware(request: Request, call_next):
         from fastapi.responses import JSONResponse
         response = JSONResponse(content="OK")
     else:
-        response = await call_next(request)
+        # Extract Client IP
+        x_forwarded_for = request.headers.get("X-Forwarded-For")
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(",")[0].strip()
+        else:
+            x_real_ip = request.headers.get("X-Real-IP")
+            if x_real_ip:
+                ip = x_real_ip.strip()
+            else:
+                ip = request.client.host if request.client else "unknown"
+
+        # Bypass rate limits for local development connections, and public pings / basic health endpoints
+        if ip in ("127.0.0.1", "localhost", "::1") or path in ("/ping", "/api/ping", "/api/health"):
+            response = await call_next(request)
+        else:
+            # Categorize route and lookup limit
+            if "/auth" in path or "/login" in path or "/signup" in path:
+                category = "auth"
+                limit = 10
+            elif "/scan" in path or "/execution" in path or "/trigger" in path or "/cron" in path:
+                category = "scan"
+                limit = 5
+            else:
+                category = "general"
+                limit = 60
+
+            now = time.time()
+            key = (ip, category)
+            timestamps = rate_limit_store[key]
+            active_timestamps = [t for t in timestamps if now - t < 60.0]
+
+            if len(active_timestamps) >= limit:
+                logger.warning(
+                    f"Rate limit exceeded for IP {ip} on category {category} "
+                    f"({len(active_timestamps)}/{limit} reqs/min) on path {path}"
+                )
+                retry_after = int(60.0 - (now - active_timestamps[0])) + 1
+                from fastapi.responses import JSONResponse
+                response = JSONResponse(
+                    status_code=429,
+                    content={"detail": "Too many requests. Please try again later."},
+                )
+                response.headers["Retry-After"] = str(retry_after)
+            else:
+                active_timestamps.append(now)
+                rate_limit_store[key] = active_timestamps
+                response = await call_next(request)
 
     logger.debug(f"Response {response.status_code} for {path}")
 
@@ -306,37 +394,37 @@ async def system_report(db: Client = Depends(get_supabase)):
 # --- ROUTE REGISTRATION ---
 
 # 1. Core Services
-app.include_router(auth_routes.router, prefix="/api")
+app.include_router(auth_routes.router, prefix="/api", tags=["Auth"])
 app.include_router(
-    auth_routes.v1_router, prefix="/api"
+    auth_routes.v1_router, prefix="/api", tags=["Auth"]
 )  # Required for InsForge SDK Login
-app.include_router(hotel_routes.router, prefix="/api")
-app.include_router(profile_routes.router, prefix="/api")
+app.include_router(hotel_routes.router, prefix="/api", tags=["Hotels"])
+app.include_router(profile_routes.router, prefix="/api", tags=["Profile"])
 
 # 2. Intelligence & Reports
-app.include_router(analysis_routes.router, prefix="/api")
+app.include_router(analysis_routes.router, prefix="/api", tags=["Analysis"])
 ANALYSIS_ENABLED = True
 
-app.include_router(market_routes.router, prefix="/api")
-app.include_router(reports_routes.router, prefix="/api")
+app.include_router(market_routes.router, prefix="/api", tags=["Market"])
+app.include_router(reports_routes.router, prefix="/api", tags=["Reports"])
 
 # 3. Operational Routes
 # Centralized API Routing: Registered relative to /api prefix.
-app.include_router(admin_routes.router, prefix="/api")
-app.include_router(monitor_routes.router, prefix="/api")
-app.include_router(monitor_routes.router_legacy, include_in_schema=False, prefix="/api")
-app.include_router(dashboard_routes.router, prefix="/api")
-app.include_router(alerts_routes.router, prefix="/api")
-app.include_router(landing_routes.router, prefix="/api")
-app.include_router(pulse_routes.router, prefix="/api")
-app.include_router(execution_routes.router, prefix="/api")
-app.include_router(recovery_routes.router, prefix="/api")
-app.include_router(webhook_routes.router, prefix="/api")
-app.include_router(dataforseo_v1.router, prefix="/api")
-app.include_router(hotel_webhook.router, prefix="/api")
-app.include_router(signals_routes.router, prefix="/api")
-app.include_router(intelligence_routes.router, prefix="/api")
-app.include_router(copilot_routes.router, prefix="/api")
+app.include_router(admin_routes.router, prefix="/api", tags=["Admin"])
+app.include_router(monitor_routes.router, prefix="/api", tags=["Monitor"])
+app.include_router(monitor_routes.router_legacy, include_in_schema=False, prefix="/api", tags=["Monitor"])
+app.include_router(dashboard_routes.router, prefix="/api", tags=["Dashboard"])
+app.include_router(alerts_routes.router, prefix="/api", tags=["Alerts"])
+app.include_router(landing_routes.router, prefix="/api", tags=["Landing"])
+app.include_router(pulse_routes.router, prefix="/api", tags=["Pulse"])
+app.include_router(execution_routes.router, prefix="/api", tags=["Execution"])
+app.include_router(recovery_routes.router, prefix="/api", tags=["Recovery"])
+app.include_router(webhook_routes.router, prefix="/api", tags=["Webhooks"])
+app.include_router(dataforseo_v1.router, prefix="/api", tags=["Webhooks"])
+app.include_router(hotel_webhook.router, prefix="/api", tags=["Webhooks"])
+app.include_router(signals_routes.router, prefix="/api", tags=["Signals"])
+app.include_router(intelligence_routes.router, prefix="/api", tags=["Intelligence"])
+app.include_router(copilot_routes.router, prefix="/api", tags=["Copilot"])
 
 
 
