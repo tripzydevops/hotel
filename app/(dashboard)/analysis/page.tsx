@@ -16,7 +16,6 @@ import {
   Info,
   Zap,
   LayoutGrid,
-  Sparkles,
   ArrowRight,
 } from "lucide-react";
 import { api, API_BASE_URL } from "@/lib/api";
@@ -33,7 +32,7 @@ import RoomTypeMapper from "@/components/features/analysis/RoomTypeMapper";
 // Heavy chart components are loaded dynamically on the client side only to 
 // optimize the main application bundle size and initial painting speed.
 const RateSpreadChart = dynamic(() => import("@/components/analytics/RateSpreadChart"), { ssr: false });
-import SemanticSearchBar from "@/components/features/analysis/SemanticSearchBar";
+
 import ProfileModal from "@/components/modals/ProfileModal";
 import SettingsModal from "@/components/modals/SettingsModal";
 import AlertsModal from "@/components/modals/AlertsModal";
@@ -85,8 +84,7 @@ export default function AnalysisPage() {
     { id: string; name: string; is_target: boolean }[]
   >([]);
 
-  // Search state
-  const [searchQuery, setSearchQuery] = useState<string>("");
+
 
   // AI Streaming state
   const [streamingNarrative, setStreamingNarrative] = useState<string>("");
@@ -116,7 +114,6 @@ export default function AnalysisPage() {
       if (excludedHotelIds.length > 0)
         params.set("exclude_hotel_ids", excludedHotelIds.join(","));
       if (roomType) params.set("room_type", roomType);
-      if (searchQuery) params.set("search_query", searchQuery);
       if (locale) params.set("locale", locale);
 
       // [IMPROVEMENT] Session Validation
@@ -269,9 +266,7 @@ export default function AnalysisPage() {
     }
   };
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-  };
+
 
   if (loading && !data) {
     return (
@@ -300,29 +295,7 @@ export default function AnalysisPage() {
       <main className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Page Header */}
         <div className="mb-8">
-          <SemanticSearchBar onSearch={handleSearch} />
 
-          {/* Search Feedback Banner */}
-          {searchQuery && !loading && (
-            <div className="mb-6 mx-auto max-w-2xl bg-[var(--glass-bg-accent)] border border-[var(--soft-gold)]/20 rounded-lg p-3 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[var(--soft-gold)]" />
-                <span className="text-sm text-[var(--text-primary)]">
-                  Found{" "}
-                  <span className="font-bold text-[var(--soft-gold)]">
-                    {data?.price_rank_list?.length || 0}
-                  </span>{" "}
-                  hotels matching <span className="italic">&quot;{searchQuery}&quot;</span>
-                </span>
-              </div>
-              <button
-                onClick={() => handleSearch("")}
-                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:underline uppercase tracking-wider font-bold"
-              >
-                Clear Filter
-              </button>
-            </div>
-          )}
 
           <div className="flex items-center justify-end mb-2">
             {/* Currency Selector */}
