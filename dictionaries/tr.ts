@@ -62,6 +62,10 @@ export const tr = {
     crossPlatformIntelligence: "Çapraz Platform İstihbaratı",
     compare: "Karşılaştır",
     collapse: "Daralt",
+    cookieConsentTitle: "Çerez Tercihleri",
+    cookieConsentText: "Fiyat istihbaratı deneyiminizi optimize etmek, site kullanımını analiz etmek ve KVKK/GDPR uyumluluğumuzu desteklemek amacıyla çerezler kullanıyoruz. Kabul et'e tıklayarak bu teknolojileri kullanmamıza izin vermiş olursunuz.",
+    cookieAccept: "Hepsini Kabul Et",
+    cookieDecline: "Gerekli Olmayanları Reddet",
   },
   auth: {
     loginTitle: "B2B panelinize giriş yapın",

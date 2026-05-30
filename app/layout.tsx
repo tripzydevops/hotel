@@ -16,6 +16,7 @@ import QueryProvider from "@/components/providers/QueryProvider";
 
 import ServiceWorkerProvider from "@/components/providers/ServiceWorkerProvider";
 import { InsforgeProvider } from "./providers";
+import CookieConsent from "@/components/ui/CookieConsent";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -104,6 +105,7 @@ export default function RootLayout({
                   <ModalProvider>
                     <ServiceWorkerProvider>
                       {children}
+                      <CookieConsent />
                     </ServiceWorkerProvider>
                   </ModalProvider>
                 </ToastProvider>

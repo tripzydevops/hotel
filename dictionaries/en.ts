@@ -62,6 +62,10 @@ export const en = {
     crossPlatformIntelligence: "Cross-Platform Intelligence",
     compare: "Compare",
     collapse: "Collapse",
+    cookieConsentTitle: "Cookie Consent",
+    cookieConsentText: "We use cookies to optimize your rate intelligence experience, analyze site usage, and support our security compliance under GDPR & CCPA. By clicking accept, you consent to our use of these technologies.",
+    cookieAccept: "Accept All",
+    cookieDecline: "Reject Non-Essential",
   },
   auth: {
     loginTitle: "Log in to your B2B dashboard",
