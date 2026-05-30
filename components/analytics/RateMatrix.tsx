@@ -114,8 +114,30 @@ export default function RateMatrix({
     if (selectedOTAs.length > 0) {
       return selectedOTAs;
     }
-    return allOTAs.slice(0, DEFAULT_OTA_COUNT);
-  }, [selectedOTAs, allOTAs, showAllOTAs]);
+    const defaultOTAs = allOTAs.slice(0, DEFAULT_OTA_COUNT);
+    
+    // Auto-include undercutting OTAs for target hotel so they are always visible
+    const undercuttingOTAs: string[] = [];
+    targetOffers.forEach((o) => {
+      if (!o.is_direct && o.price && o.vendor) {
+        const otaPrice = parsePrice(o.price);
+        if (otaPrice < targetPrice && targetPrice > 0) {
+          const norm = normalizeVendor(o.vendor);
+          undercuttingOTAs.push(norm);
+        }
+      }
+    });
+    
+    const merged = [...defaultOTAs];
+    undercuttingOTAs.forEach((ota) => {
+      const exactName = allOTAs.find(o => o.toLowerCase() === ota.toLowerCase()) || ota;
+      if (!merged.some(o => o.toLowerCase() === exactName.toLowerCase())) {
+        merged.push(exactName);
+      }
+    });
+    
+    return merged;
+  }, [selectedOTAs, allOTAs, showAllOTAs, targetOffers, targetPrice]);
 
   // Calculate market averages per OTA for yield analysis
   const otaAverages = useMemo(() => {

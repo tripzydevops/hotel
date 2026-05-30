@@ -102,7 +102,7 @@ export default function ParityStats({
           <div
             className="h-full bg-rose-500 transition-all duration-1000"
             style={{
-              width: `${(activeDiscrepancies / (competitors.length || 1)) * 100}%`,
+              width: `${(activeDiscrepancies / (otaOffers.length || 1)) * 100}%`,
             }}
           />
         </div>
