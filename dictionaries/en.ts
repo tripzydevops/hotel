@@ -59,6 +59,8 @@ export const en = {
     above: "Above",
     below: "Below",
     crossPlatformIntelligence: "Cross-Platform Intelligence",
+    compare: "Compare",
+    collapse: "Collapse",
   },
   auth: {
     loginTitle: "Log in to your B2B dashboard",

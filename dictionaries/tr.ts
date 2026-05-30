@@ -59,6 +59,8 @@ export const tr = {
     above: "Üzerinde",
     below: "Altında",
     crossPlatformIntelligence: "Çapraz Platform İstihbaratı",
+    compare: "Karşılaştır",
+    collapse: "Daralt",
   },
   auth: {
     loginTitle: "B2B panelinize giriş yapın",
