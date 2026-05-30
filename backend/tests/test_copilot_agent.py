@@ -13,6 +13,11 @@ from backend.main import app
 from backend.agents.copilot_agent import CopilotAgent
 from backend.services.auth_service import get_current_active_user, get_supabase_rls
 
+# Mock Google GenAI client globally in tests to force Heuristic Fallback/Safe Mode
+import backend.agents.copilot_agent
+backend.agents.copilot_agent.get_genai_client = lambda: None
+backend.agents.copilot_agent.HAS_GENAI = False
+
 
 # ==========================================================================
 # Mocking Helpers

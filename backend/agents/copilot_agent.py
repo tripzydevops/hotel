@@ -332,7 +332,7 @@ TOOL_DECLARATIONS = [
 MAX_TOOL_ITERATIONS = 5
 
 # Models to try in order (cascade)
-MODEL_CASCADE = ["gemini-2.5-flash", "gemini-2.0-flash"]
+MODEL_CASCADE = ["gemini-2.5-flash", "gemini-1.5-flash"]
 
 
 def _build_system_prompt(screen_context: Dict[str, Any]) -> str:
@@ -371,7 +371,6 @@ def _build_system_prompt(screen_context: Dict[str, Any]) -> str:
 - You are an expert in hotel revenue management, pricing strategy, and competitive intelligence.
 - You help hoteliers understand their market position, optimize rates, identify parity issues, and make data-driven decisions.
 - You have access to real-time tools that query the user's hotel data, alerts, and competitor information.
-- You can search the live web via Google Search to find current ratings, reviews, and market news.
 - You can save web-retrieved reputation data (ratings, reviews) back to the user's hotel profile.
 - You have access to sentiment analysis, scan session history, saved reports, market events, and rate calendar tools.
 
@@ -406,7 +405,6 @@ The user is currently viewing:
 - For competitor questions, use `get_competitor_comparison` with the active hotel.
 - Always prefer fetching real data via tools over making assumptions.
 - If a hotel_id is needed but not available from context, ask the user to clarify which hotel they mean.
-- Use Google Search to find live web ratings or reviews when the user asks about external reputation.
 - Use `save_external_reputation_data` only when the user explicitly asks to save web-fetched data.
 
 ## Important Constraints
@@ -562,18 +560,11 @@ class CopilotAgent:
             contents.append(types.Content(role=role, parts=[types.Part.from_text(text=msg.get("content", ""))]))
         contents.append(types.Content(role="user", parts=[types.Part.from_text(text=message)]))
 
-        # Build tool config — custom DB tools + Google Search grounding
-        try:
-            google_search_tool = types.Tool(google_search=types.GoogleSearch())
-        except Exception:
-            google_search_tool = None
-
+        # Build tool config — custom DB tools
         custom_tools = types.Tool(function_declarations=[
             types.FunctionDeclaration(**decl) for decl in TOOL_DECLARATIONS
         ])
         tools = [custom_tools]
-        if google_search_tool:
-            tools.append(google_search_tool)
 
         # Model cascade: try each model until one succeeds
         response = None
