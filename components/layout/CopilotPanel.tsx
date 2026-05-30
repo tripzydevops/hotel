@@ -57,6 +57,76 @@ function toolEmoji(name: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Link Parsing Helpers
+// ---------------------------------------------------------------------------
+
+function parseRawLinks(text: string): React.ReactNode[] {
+  const urlRegex = /(https?:\/\/[^\s)]+|\/api\/[^\s)]+)/g;
+  const rawParts = text.split(urlRegex);
+  
+  return rawParts.map((part, index) => {
+    if (urlRegex.test(part)) {
+      return (
+        <a
+          key={`raw-${index}`}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[var(--soft-gold)] hover:underline font-bold break-all transition-colors cursor-pointer"
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+}
+
+function renderMessageContent(content: string): React.ReactNode {
+  if (!content) return null;
+
+  const mdLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+
+  mdLinkRegex.lastIndex = 0;
+
+  while ((match = mdLinkRegex.exec(content)) !== null) {
+    const matchIndex = match.index;
+    const textBefore = content.substring(lastIndex, matchIndex);
+    
+    if (textBefore) {
+      parts.push(...parseRawLinks(textBefore));
+    }
+
+    const linkText = match[1];
+    const linkUrl = match[2];
+    
+    parts.push(
+      <a
+        key={`md-${matchIndex}`}
+        href={linkUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-[var(--soft-gold)] hover:underline font-bold transition-colors cursor-pointer"
+      >
+        {linkText}
+      </a>
+    );
+
+    lastIndex = mdLinkRegex.lastIndex;
+  }
+
+  const remainingText = content.substring(lastIndex);
+  if (remainingText) {
+    parts.push(...parseRawLinks(remainingText));
+  }
+
+  return <>{parts}</>;
+}
+
+// ---------------------------------------------------------------------------
 // Typing Indicator
 // ---------------------------------------------------------------------------
 
@@ -141,7 +211,7 @@ function MessageBubble({ message }: { message: Message }) {
                 : 'rounded-2xl rounded-tl-md bg-[var(--glass-bg-accent)] border border-[var(--glass-border)] text-[var(--text-primary)]'
               }`}
           >
-            {message.content}
+            {renderMessageContent(message.content)}
           </div>
 
           {/* Timestamp */}
