@@ -889,6 +889,16 @@ class ApiClient {
       body: JSON.stringify({ accepted }),
     });
   }
+
+  // ── Compliance Document Center ──────────────────────────────────────────
+
+  async getComplianceDocuments(): Promise<Array<{ id: string; title: string; format: string }>> {
+    return this.fetch<Array<{ id: string; title: string; format: string }>>(`/api/admin/compliance/documents`);
+  }
+
+  async getComplianceDocument(id: string): Promise<{ id: string; title: string; content: string; format: string }> {
+    return this.fetch<{ id: string; title: string; content: string; format: string }>(`/api/admin/compliance/documents/${id}`);
+  }
 }
 
 export const api = new ApiClient();

@@ -4,7 +4,7 @@ import os
 from typing import Dict, Any, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from backend.models.schemas import (
     AdminDirectoryEntry,
@@ -559,3 +559,50 @@ async def terminate_impersonation(admin=Depends(get_current_admin_user)):
     impersonation by removing the headers/query parameters.
     """
     return {"status": "success", "message": "Impersonation session terminated successfully."}
+
+
+# --- Compliance & Document Center ---
+COMPLIANCE_DOCS = {
+    "irp": {"path": "docs/INCIDENT_RESPONSE_PLAN.md", "title": "Incident Response Plan (IRP)", "format": "markdown"},
+    "access": {"path": "docs/ACCESS_CONTROL_POLICY.md", "title": "Access Control & Auth Policy", "format": "markdown"},
+    "dpa": {"path": "docs/DATA_PROCESSING_AGREEMENT.md", "title": "Data Processing Agreement (DPA)", "format": "markdown"},
+    "retention": {"path": "docs/DATA_RETENTION.md", "title": "Data Retention & Purge Policy", "format": "markdown"},
+    "backup": {"path": "docs/BACKUP_RESTORE_PROCEDURES.md", "title": "Backup & Disaster Recovery Procedures", "format": "markdown"},
+    "deployment": {"path": "docs/DEPLOYMENT_RUNBOOK.md", "title": "CI/CD & Deployment Runbook", "format": "markdown"},
+    "pci": {"path": "PCI_SCOPE_EXCLUSION.md", "title": "PCI DSS Scope Exclusion Statement", "format": "markdown"},
+    "openapi": {"path": "docs/openapi.json", "title": "OpenAPI v3 System Specification", "format": "json"}
+}
+
+
+@router.get("/compliance/documents")
+async def list_compliance_documents(admin=Depends(get_current_admin_user)):
+    """Lists all available compliance & audit-ready documents."""
+    return [
+        {"id": doc_id, "title": info["title"], "format": info["format"]}
+        for doc_id, info in COMPLIANCE_DOCS.items()
+    ]
+
+
+@router.get("/compliance/documents/{doc_id}")
+async def get_compliance_document(doc_id: str, admin=Depends(get_current_admin_user)):
+    """Retrieves raw content of a specific compliance document."""
+    if doc_id not in COMPLIANCE_DOCS:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    info = COMPLIANCE_DOCS[doc_id]
+    import os
+    base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    full_path = os.path.join(base_path, info["path"].replace("/", os.sep))
+    
+    if not os.path.exists(full_path):
+        raise HTTPException(status_code=404, detail=f"Document file missing: {info['path']}")
+        
+    with open(full_path, "r", encoding="utf-8") as f:
+        content = f.read()
+        
+    return {
+        "id": doc_id,
+        "title": info["title"],
+        "content": content,
+        "format": info["format"]
+    }

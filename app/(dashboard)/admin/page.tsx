@@ -35,6 +35,7 @@ import SystemHealthPanel from "@/components/admin/SystemHealthPanel";
 import LandingPageEditor from "@/components/admin/LandingPageEditor";
 import HeartbeatMonitor from "@/components/admin/HeartbeatMonitor";
 import MaintenancePanel from "@/components/admin/MaintenancePanel";
+import CompliancePanel from "@/components/admin/CompliancePanel";
 
 import ActivityFeed from "@/components/admin/ActivityFeed";
 import AnalyticsPanel from "@/components/admin/AnalyticsPanel";
@@ -122,6 +123,7 @@ export default function AdminPage() {
         <TabButton id="scans" label="Scans" icon={Activity} />
         <TabButton id="analytics" label="Intelligence" icon={LineChart} />
         <TabButton id="reports" label="Reports" icon={FileText} />
+        <TabButton id="compliance" label="Compliance" icon={Shield} />
         <div className="w-px h-6 bg-white/5 mx-1" />
         <TabButton id="plans" label="Plans" icon={Crown} />
         <TabButton id="keys" label="API Keys" icon={Key} />
@@ -275,6 +277,7 @@ export default function AdminPage() {
               {activeTab === "scans" && <ScansPanel />}
               {activeTab === "analytics" && <AnalyticsPanel />}
               {activeTab === "reports" && <ReportGeneratorPanel />}
+              {activeTab === "compliance" && <CompliancePanel />}
               {activeTab === "plans" && <MembershipPlansPanel />}
               {activeTab === "keys" && <ApiKeysPanel />}
               {activeTab === "landing" && <LandingPageEditor />}

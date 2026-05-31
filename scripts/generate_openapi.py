@@ -46,7 +46,7 @@ def generate_openapi_spec(output_path: str = "openapi.json") -> None:
         len(methods)
         for methods in schema.get("paths", {}).values()
     )
-    print(f"✅ OpenAPI spec generated: {output_path}")
+    print(f"[SUCCESS] OpenAPI spec generated: {output_path}")
     print(f"   Version: {schema.get('info', {}).get('version', 'unknown')}")
     print(f"   Paths: {len(schema.get('paths', {}))}")
     print(f"   Operations: {route_count}")
