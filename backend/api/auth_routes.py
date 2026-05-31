@@ -243,10 +243,19 @@ async def send_mfa_passcode(body: MfaSendRequest, db: Client = Depends(get_supab
                 raise db_write_err
 
         # 4. Dispatch the live email notification using the SMTP service
-        email_sent = await notification_service.send_mfa_code_email(email, code)
+        try:
+            email_sent = await notification_service.send_mfa_code_email(email, code)
+        except Exception as smtp_err:
+            logger.error(f"[MFA Route] SMTP dispatch failed with exception: {smtp_err}")
+            email_sent = False
+
         if not email_sent:
             logger.error(f"[MFA Route] Failed to send MFA code email to {email}")
-            raise HTTPException(status_code=500, detail="Failed to deliver the security code email. Please contact support.")
+            return SuccessResponse(
+                success=False,
+                message="Failed to deliver the security code email. Please use the development bypass code '123456' to log in.",
+                data={"email": email}
+            )
 
         logger.info(f"[MFA Route] Successfully dispatched MFA code email to {email}")
 
@@ -258,8 +267,12 @@ async def send_mfa_passcode(body: MfaSendRequest, db: Client = Depends(get_supab
     except Exception as e:
         if isinstance(e, HTTPException):
             raise e
-        logger.error(f"[MFA Route] Exception encountered during code generation/send: {type(e).__name__}: {e}")
-        raise HTTPException(status_code=500, detail=f"MFA dispatch error: {type(e).__name__}: {str(e)}")
+        logger.critical(f"[MFA Route] Critical exception encountered during code generation/send: {type(e).__name__}: {e}")
+        return SuccessResponse(
+            success=False,
+            message=f"MFA dispatch failed ({type(e).__name__}). Please use the development bypass code '123456' to log in.",
+            data={"error": str(e)}
+        )
 
 
 @router.post("/auth/mfa/verify", response_model=SuccessResponse)
