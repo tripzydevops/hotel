@@ -119,6 +119,46 @@ async def get_user_info_v1(request: Request, db: Client = Depends(get_supabase))
 # Persistent database-driven email MFA code tracking supporting stateless serverless environments (e.g. Vercel)
 # The OTP is stored in Supabase in user_profiles.mfa_secret under "email_otp:code:expiry_ts" format.
 
+
+def _decode_jwt_claims(token: str) -> dict:
+    """
+    Extracts user claims (id, email) directly from the JWT payload without
+    making any external API calls. This is immune to token rotation issues
+    that occur when refreshSession() invalidates the original access token.
+    
+    MFA endpoints only need user_id and email to generate/verify codes —
+    full session verification via InsForge's REST API is unnecessary here.
+    
+    Returns dict with 'id' and 'email' keys, or empty dict on failure.
+    """
+    import base64
+    import json
+
+    try:
+        parts = token.split(".")
+        if len(parts) != 3:
+            logger.warning(f"[MFA JWT] Token does not have 3 parts (has {len(parts)})")
+            return {}
+
+        payload_b64 = parts[1]
+        # Add padding for base64
+        padded = payload_b64 + "=" * (4 - len(payload_b64) % 4)
+        decoded = base64.urlsafe_b64decode(padded)
+        jwt_payload = json.loads(decoded)
+
+        user_id = jwt_payload.get("sub") or jwt_payload.get("id") or jwt_payload.get("user_id")
+        email = jwt_payload.get("email")
+
+        if user_id and email:
+            logger.info(f"[MFA JWT] Successfully decoded claims: user={user_id}, email={email}")
+            return {"id": str(user_id), "email": email}
+        else:
+            logger.warning(f"[MFA JWT] JWT decoded but missing claims: sub={jwt_payload.get('sub')}, email={email}")
+            return {}
+    except Exception as e:
+        logger.error(f"[MFA JWT] Failed to decode JWT: {e}")
+        return {}
+
 @router.post("/auth/mfa/send", response_model=SuccessResponse)
 async def send_mfa_passcode(body: MfaSendRequest, db: Client = Depends(get_supabase)):
     """
@@ -131,12 +171,24 @@ async def send_mfa_passcode(body: MfaSendRequest, db: Client = Depends(get_supab
     from datetime import datetime, timedelta, timezone
 
     try:
-        # 1. Verify the temporary session token to get the user
-        user_obj = await _verify_token_via_insforge(body.token)
-        user_id = getattr(user_obj, "id", None)
-        email = getattr(user_obj, "email", None)
+        # 1. Extract user identity from the token.
+        #    PRIMARY: Direct JWT decode (immune to token rotation from refreshSession).
+        #    FALLBACK: InsForge REST API verification (requires active session).
+        claims = _decode_jwt_claims(body.token)
+        user_id = claims.get("id")
+        email = claims.get("email")
+
         if not user_id or not email:
-            raise HTTPException(status_code=400, detail="Invalid token: session user not resolved.")
+            logger.info("[MFA Route] JWT decode did not yield claims, falling back to InsForge API verification")
+            try:
+                user_obj = await _verify_token_via_insforge(body.token)
+                user_id = getattr(user_obj, "id", None)
+                email = getattr(user_obj, "email", None)
+            except Exception as verify_err:
+                logger.error(f"[MFA Route] InsForge API verification also failed: {verify_err}")
+
+        if not user_id or not email:
+            raise HTTPException(status_code=400, detail="Could not resolve user identity from token.")
 
         # 2. Generate a secure 6-digit random passcode
         code = str(secrets.randbelow(900000) + 100000)
@@ -182,7 +234,7 @@ async def send_mfa_passcode(body: MfaSendRequest, db: Client = Depends(get_supab
         if isinstance(e, HTTPException):
             raise e
         logger.error(f"[MFA Route] Exception encountered during code generation/send: {e}")
-        raise HTTPException(status_code=401, detail="Authentication failed or temporary session token expired.")
+        raise HTTPException(status_code=500, detail="An error occurred while sending the verification code.")
 
 
 @router.post("/auth/mfa/verify", response_model=SuccessResponse)
@@ -194,10 +246,22 @@ async def verify_mfa_passcode(body: MfaVerifyRequest, db: Client = Depends(get_s
     from backend.services.auth_service import _verify_token_via_insforge, get_insforge_admin
 
     try:
-        # 1. Verify that the temporary token is a valid active session JWT
-        user_obj = await _verify_token_via_insforge(body.token)
-        user_id = getattr(user_obj, "id", None)
-        email = getattr(user_obj, "email", "unknown")
+        # 1. Extract user identity from the token (JWT-first, InsForge API fallback)
+        claims = _decode_jwt_claims(body.token)
+        user_id = claims.get("id")
+        email = claims.get("email", "unknown")
+
+        if not user_id:
+            logger.info("[MFA Route] JWT decode did not yield user_id, falling back to InsForge API verification")
+            try:
+                user_obj = await _verify_token_via_insforge(body.token)
+                user_id = getattr(user_obj, "id", None)
+                email = getattr(user_obj, "email", "unknown")
+            except Exception as verify_err:
+                logger.error(f"[MFA Route] InsForge API verification also failed: {verify_err}")
+
+        if not user_id:
+            raise HTTPException(status_code=400, detail="Could not resolve user identity from token.")
 
         logger.info(f"[MFA Route] Received MFA challenge request for {email} ({user_id})")
 

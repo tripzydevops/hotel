@@ -76,12 +76,14 @@ export default function LoginPage() {
           const isProfileAdmin = profile?.role === "admin" || profile?.role === "market_admin" || profile?.role === "market admin";
           
           if (isProfileAdmin || isSystemAdmin) {
-            // CRITICAL: api.getProfile() above triggers refreshSession() which may
-            // rotate the access token. Re-acquire the FRESH token from the SDK
-            // instead of using the stale one from signInWithPassword result.
-            const freshToken = await api.getAccessToken();
-            const accessToken = freshToken || (result as any).data?.accessToken;
-            const uid = (result as any).data?.user?.id;
+            // Get the access token from the signInWithPassword result.
+            // The backend decodes JWT claims directly (no session API call needed),
+            // so any valid JWT from this session will work even after token rotation.
+            const accessToken = (result as any).data?.accessToken
+              || (result as any).data?.session?.access_token
+              || (result as any).data?.session?.accessToken;
+            const uid = (result as any).data?.user?.id
+              || (result as any).data?.session?.user?.id;
             if (accessToken) {
               setMfaToken(accessToken);
               setMfaUid(uid || "");
