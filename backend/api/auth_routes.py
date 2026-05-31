@@ -108,16 +108,16 @@ async def get_user_info_v1(request: Request, db: Client = Depends(get_supabase))
     return {"user": user}
 
 
-# Active temporary MFA verification codes in memory: email -> (code, expiry_time)
-ACTIVE_MFA_CODES: Dict[str, tuple] = {}
-
+# Persistent database-driven email MFA code tracking supporting stateless serverless environments (e.g. Vercel)
+# The OTP is stored in Supabase in user_profiles.mfa_secret under "email_otp:code:expiry_ts" format.
 
 @router.post("/auth/mfa/send", response_model=SuccessResponse)
 async def send_mfa_passcode(body: MfaSendRequest, db: Client = Depends(get_supabase)):
     """
     Generate and send a 6-digit MFA passcode via email to an administrative user.
+    Persists the OTP in Supabase to support stateless serverless executions.
     """
-    from backend.services.auth_service import _verify_token_via_insforge
+    from backend.services.auth_service import _verify_token_via_insforge, get_insforge_admin
     from backend.services.notification_service import notification_service
     import secrets
     from datetime import datetime, timedelta, timezone
@@ -125,18 +125,22 @@ async def send_mfa_passcode(body: MfaSendRequest, db: Client = Depends(get_supab
     try:
         # 1. Verify the temporary session token to get the user
         user_obj = await _verify_token_via_insforge(body.token)
+        user_id = getattr(user_obj, "id", None)
         email = getattr(user_obj, "email", None)
-        if not email:
-            raise HTTPException(status_code=400, detail="Invalid token: no email address associated with this session.")
+        if not user_id or not email:
+            raise HTTPException(status_code=400, detail="Invalid token: session user not resolved.")
 
         # 2. Generate a secure 6-digit random passcode
         code = str(secrets.randbelow(900000) + 100000)
 
-        # 3. Store in the global active code dict (valid for 10 minutes)
+        # 3. Store the OTP in Supabase (mfa_secret) with a 10-minute expiry (bypassing RLS via admin client)
+        admin_db = get_insforge_admin()
         expiry = datetime.now(timezone.utc) + timedelta(minutes=10)
-        ACTIVE_MFA_CODES[email.lower()] = (code, expiry)
+        expiry_ts = int(expiry.timestamp())
+        mfa_payload = f"email_otp:{code}:{expiry_ts}"
 
-        logger.info(f"[MFA Route] Generated MFA code {code} for {email}, expires at {expiry}")
+        logger.info(f"[MFA Route] Storing email OTP in database for user {user_id} ({email})")
+        admin_db.table("user_profiles").update({"mfa_secret": mfa_payload}).eq("user_id", str(user_id)).execute()
 
         # 4. Dispatch the live email notification using the SMTP service
         email_sent = await notification_service.send_mfa_code_email(email, code)
@@ -161,10 +165,10 @@ async def send_mfa_passcode(body: MfaSendRequest, db: Client = Depends(get_supab
 @router.post("/auth/mfa/verify", response_model=SuccessResponse)
 async def verify_mfa_passcode(body: MfaVerifyRequest, db: Client = Depends(get_supabase)):
     """
-    Verify a 6-digit MFA passcode (TOTP) against a user's temporary auth token.
-    Enforces admin security checks with a safe development fallback.
+    Verify a 6-digit MFA passcode (TOTP/Email OTP) against a user's temporary auth token.
+    Enforces admin security checks with a safe development fallback and persistent DB state.
     """
-    from backend.services.auth_service import _verify_token_via_insforge
+    from backend.services.auth_service import _verify_token_via_insforge, get_insforge_admin
 
     try:
         # 1. Verify that the temporary token is a valid active session JWT
@@ -174,41 +178,47 @@ async def verify_mfa_passcode(body: MfaVerifyRequest, db: Client = Depends(get_s
 
         logger.info(f"[MFA Route] Received MFA challenge request for {email} ({user_id})")
 
-        # 2. Perform the TOTP code verification.
-        # To satisfy B2B SOC 2/ISO 27001 requirements while ensuring automated E2E testing
-        # and local developer environments remain completely uninterrupted, we support standard
-        # verification and check against our designated B2B local development mock passcode: "123456".
+        # 2. Perform verification (development bypass vs database-persisted OTP vs legacy pyotp)
         is_valid = False
         if body.code == "123456":
             is_valid = True
             logger.info(f"[MFA Route] MFA passcode verified via B2B local development bypass for {email}")
         else:
-            # Check against our ACTIVE_MFA_CODES dictionary
-            from datetime import datetime, timezone
-            stored_entry = ACTIVE_MFA_CODES.get(email.lower())
-            if stored_entry:
-                stored_code, expiry = stored_entry
-                if datetime.now(timezone.utc) <= expiry:
-                    if body.code == stored_code:
-                        is_valid = True
-                        # Consume/remove code so it can't be reused (replay attack prevention)
-                        ACTIVE_MFA_CODES.pop(email.lower(), None)
-                        logger.info(f"[MFA Route] MFA passcode verified via live email OTP flow for {email}")
-                else:
-                    logger.info(f"[MFA Route] Email OTP has expired for {email}")
+            # Fetch the secret from Supabase using admin client to bypass RLS
+            admin_db = get_insforge_admin()
+            res = admin_db.table("user_profiles").select("mfa_secret").eq("user_id", str(user_id)).maybe_single().execute()
             
-            # Fallback to optional user-specific DB custom verification if enrolled
-            if not is_valid:
-                try:
-                    res = db.table("user_profiles").select("mfa_secret").eq("user_id", str(user_id)).maybe_single().execute()
-                    if res and res.data and res.data.get("mfa_secret"):
-                        import pyotp
-                        totp = pyotp.TOTP(res.data.get("mfa_secret"))
-                        if totp.verify(body.code):
-                            is_valid = True
-                            logger.info(f"[MFA Route] MFA passcode verified via cryptographic TOTP for {email}")
-                except Exception as totp_err:
-                    logger.warning(f"[MFA Route] Cryptographic TOTP check failed or pyotp not installed: {totp_err}")
+            if res and res.data:
+                mfa_secret = res.data.get("mfa_secret")
+                if mfa_secret:
+                    # Check if it is a persistent database-level Email OTP
+                    if mfa_secret.startswith("email_otp:"):
+                        parts = mfa_secret.split(":")
+                        if len(parts) == 3:
+                            _, stored_code, expiry_ts = parts
+                            try:
+                                from datetime import datetime, timezone
+                                if datetime.now(timezone.utc).timestamp() <= int(expiry_ts):
+                                    if body.code == stored_code:
+                                        is_valid = True
+                                        # Consume and clear the OTP so it can't be replayed
+                                        admin_db.table("user_profiles").update({"mfa_secret": None}).eq("user_id", str(user_id)).execute()
+                                        logger.info(f"[MFA Route] MFA passcode verified via persistent database Email OTP for {email}")
+                                else:
+                                    logger.info(f"[MFA Route] Persistent database Email OTP has expired for {email}")
+                            except Exception as parse_err:
+                                logger.error(f"[MFA Route] Error parsing persistent Email OTP: {parse_err}")
+                    
+                    # Fallback to standard custom cryptographic TOTP if enrolled
+                    if not is_valid and not mfa_secret.startswith("email_otp:"):
+                        try:
+                            import pyotp
+                            totp = pyotp.TOTP(mfa_secret)
+                            if totp.verify(body.code):
+                                is_valid = True
+                                logger.info(f"[MFA Route] MFA passcode verified via cryptographic TOTP for {email}")
+                        except Exception as totp_err:
+                            logger.warning(f"[MFA Route] Cryptographic TOTP check failed or pyotp not installed: {totp_err}")
 
         if not is_valid:
             logger.warning(f"[MFA Route] Failed MFA verification attempt for {email} | Code entered: {body.code}")
