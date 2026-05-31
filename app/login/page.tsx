@@ -56,25 +56,26 @@ export default function LoginPage() {
           await api.getProfile();
 
           // ── Issue app-domain session cookie for server-side middleware auth ──
-          // The InsForge SDK stores the access token in memory. We send it to
-          // our Route Handler which verifies it with InsForge and sets an
-          // HttpOnly `hp_sess` cookie on the app domain.
+          // signInWithPassword returns { data: { accessToken, user }, error }.
+          // We send the token to our Route Handler which verifies it server-to-
+          // server with InsForge and issues an HttpOnly `hp_sess` cookie on the
+          // app domain so the middleware can perform server-side auth checks.
           try {
-            const accessToken = await api.getAccessToken();
+            const accessToken = (result as any).data?.accessToken;
+            const uid = (result as any).data?.user?.id;
             if (accessToken) {
-              await fetch("/api/auth/session", {
+              const sessRes = await fetch("/api/auth/session", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  token: accessToken,
-                  uid: (result as any).data?.user?.id,
-                  email,
-                }),
+                body: JSON.stringify({ token: accessToken, uid, email }),
               });
+              if (!sessRes.ok) {
+                console.warn("[Login] Session cookie endpoint returned", sessRes.status);
+              }
+            } else {
+              console.warn("[Login] No accessToken in signInWithPassword result — hp_sess not set");
             }
           } catch (sessionErr) {
-            // Non-fatal: middleware falls back to pass-through if cookie missing.
-            // Client-side useAuth hook still guards the dashboard.
             console.warn("[Login] Could not set app session cookie:", sessionErr);
           }
 
