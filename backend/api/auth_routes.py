@@ -159,18 +159,43 @@ def _decode_jwt_claims(token: str) -> dict:
         logger.error(f"[MFA JWT] Failed to decode JWT: {e}")
         return {}
 
+@router.get("/auth/mfa/diag")
+async def mfa_diagnostic():
+    """Temporary diagnostic endpoint to check MFA dependencies on Vercel."""
+    import os
+    diag = {
+        "smtp_user_set": bool(os.getenv("SMTP_USER")),
+        "smtp_password_set": bool(os.getenv("SMTP_PASSWORD")),
+        "smtp_server": os.getenv("SMTP_SERVER", "not set"),
+        "smtp_port": os.getenv("SMTP_PORT", "not set"),
+        "sender_email_set": bool(os.getenv("SENDER_EMAIL")),
+    }
+    try:
+        from backend.services.notification_service import notification_service
+        diag["notification_import"] = "OK"
+        diag["smtp_enabled"] = notification_service.enabled
+    except Exception as e:
+        diag["notification_import"] = f"FAILED: {type(e).__name__}: {e}"
+    try:
+        from backend.services.auth_service import get_insforge_admin
+        admin = get_insforge_admin()
+        diag["admin_db"] = "OK" if admin else "None"
+    except Exception as e:
+        diag["admin_db"] = f"FAILED: {type(e).__name__}: {e}"
+    return diag
+
 @router.post("/auth/mfa/send", response_model=SuccessResponse)
 async def send_mfa_passcode(body: MfaSendRequest, db: Client = Depends(get_supabase)):
     """
     Generate and send a 6-digit MFA passcode via email to an administrative user.
     Persists the OTP in Supabase to support stateless serverless executions.
     """
-    from backend.services.auth_service import _verify_token_via_insforge, get_insforge_admin
-    from backend.services.notification_service import notification_service
-    import secrets
-    from datetime import datetime, timedelta, timezone
-
     try:
+        from backend.services.auth_service import _verify_token_via_insforge, get_insforge_admin
+        from backend.services.notification_service import notification_service
+        import secrets
+        from datetime import datetime, timedelta, timezone
+
         # 1. Extract user identity from the token.
         #    PRIMARY: Direct JWT decode (immune to token rotation from refreshSession).
         #    FALLBACK: InsForge REST API verification (requires active session).
@@ -243,9 +268,9 @@ async def verify_mfa_passcode(body: MfaVerifyRequest, db: Client = Depends(get_s
     Verify a 6-digit MFA passcode (TOTP/Email OTP) against a user's temporary auth token.
     Enforces admin security checks with a safe development fallback and persistent DB state.
     """
-    from backend.services.auth_service import _verify_token_via_insforge, get_insforge_admin
-
     try:
+        from backend.services.auth_service import _verify_token_via_insforge, get_insforge_admin
+
         # 1. Extract user identity from the token (JWT-first, InsForge API fallback)
         claims = _decode_jwt_claims(body.token)
         user_id = claims.get("id")
