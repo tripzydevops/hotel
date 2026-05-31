@@ -17,4 +17,5 @@ numpy>=1.26.0
 Jinja2>=3.1.2
 psutil>=5.9.0
 sse-starlette>=2.0.0
-# REDEPLOY TRIGGER: 2026-05-30T10:30:00Z
+psycopg2-binary>=2.9.0
+# REDEPLOY TRIGGER: 2026-05-31T22:11:00Z
