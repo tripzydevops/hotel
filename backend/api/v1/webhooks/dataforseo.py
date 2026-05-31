@@ -10,9 +10,9 @@ from backend.utils.webhook import get_webhook_payload
 router = APIRouter(prefix="/v1/webhooks/dataforseo", tags=["webhooks"])
 logger = logging.getLogger(__name__)
 
-@router.post("")
-@router.post("/")
-@router.post("/task-completed")
+@router.post("", operation_id="handle_dataforseo_webhook_root")
+@router.post("/", operation_id="handle_dataforseo_webhook_slash")
+@router.post("/task-completed", operation_id="handle_dataforseo_webhook_task_completed")
 async def handle_dataforseo_webhook(
     request: Request, db: Client = Depends(get_supabase_client)
 ):

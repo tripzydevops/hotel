@@ -31,14 +31,20 @@ async def get_user_info(request: Request, db: Client = Depends(get_supabase)):
         raise HTTPException(status_code=401, detail=str(e))
 
 
-@router.api_route("/auth", methods=["GET", "POST", "HEAD"], response_model=UserProfile)
-@router.api_route("/auth/", methods=["GET", "POST", "HEAD"], response_model=UserProfile)
+@router.get("/auth", operation_id="auth_root_sync_get", response_model=UserProfile)
+@router.post("/auth", operation_id="auth_root_sync_post", response_model=UserProfile)
+@router.head("/auth", operation_id="auth_root_sync_head", response_model=UserProfile)
+@router.get("/auth/", operation_id="auth_root_sync_slash_get", response_model=UserProfile)
+@router.post("/auth/", operation_id="auth_root_sync_slash_post", response_model=UserProfile)
+@router.head("/auth/", operation_id="auth_root_sync_slash_head", response_model=UserProfile)
 async def auth_root_sync(request: Request, db: Client = Depends(get_supabase)):
     """Unified endpoint for base /api/auth calls (SDK compatibility)."""
     return await sync_token(request, db)
 
 
-@router.api_route("/auth/sync-token", methods=["GET", "POST", "HEAD"], response_model=TokenResponse)
+@router.get("/auth/sync-token", operation_id="sync_token_get", response_model=TokenResponse)
+@router.post("/auth/sync-token", operation_id="sync_token_post", response_model=TokenResponse)
+@router.head("/auth/sync-token", operation_id="sync_token_head", response_model=TokenResponse)
 async def sync_token(request: Request, db: Client = Depends(get_supabase)):
     """Internal SDK endpoint for session synchronization."""
     from backend.services.auth_service import get_token
@@ -54,15 +60,15 @@ async def sync_token(request: Request, db: Client = Depends(get_supabase)):
         )
 
 
-@router.post("/auth/refresh", response_model=TokenResponse)
-@router.get("/auth/refresh", response_model=TokenResponse)
+@router.post("/auth/refresh", operation_id="refresh_token_post", response_model=TokenResponse)
+@router.get("/auth/refresh", operation_id="refresh_token_get", response_model=TokenResponse)
 async def refresh_token(request: Request, db: Client = Depends(get_supabase)):
     """SDK Token Refresh bridge."""
     return await sync_token(request, db)
 
 
-@router.get("/auth/sessions", response_model=List[Dict[str, Any]])
-@router.post("/auth/sessions", response_model=SuccessResponse)
+@router.get("/auth/sessions", operation_id="sessions_gate_get", response_model=List[Dict[str, Any]])
+@router.post("/auth/sessions", operation_id="sessions_gate_post", response_model=SuccessResponse)
 async def sessions_gate(request: Request, db: Client = Depends(get_supabase)):
     """SDK Session Management bridge."""
     return await sync_token(request, db)
@@ -81,7 +87,9 @@ async def get_current_session(request: Request, db: Client = Depends(get_supabas
         raise HTTPException(status_code=401, detail=str(e))
 
 
-@router.api_route("/auth/token", methods=["GET", "POST", "HEAD"], response_model=TokenResponse)
+@router.get("/auth/token", operation_id="auth_token_bridge_get", response_model=TokenResponse)
+@router.post("/auth/token", operation_id="auth_token_bridge_post", response_model=TokenResponse)
+@router.head("/auth/token", operation_id="auth_token_bridge_head", response_model=TokenResponse)
 async def auth_token_bridge(request: Request, db: Client = Depends(get_supabase)):
     """SDK Token Bridge for session synchronization."""
     return await sync_token(request, db)

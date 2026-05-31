@@ -204,66 +204,7 @@
         ],
         "summary": "Auth Root Sync",
         "description": "Unified endpoint for base /api/auth calls (SDK compatibility).",
-        "operationId": "auth_root_sync_api_auth__head",
-        "parameters": [
-          {
-            "name": "jwt",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Jwt"
-            }
-          },
-          {
-            "name": "admin",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Admin"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserProfile"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "Auth",
-          "Authentication"
-        ],
-        "summary": "Auth Root Sync",
-        "description": "Unified endpoint for base /api/auth calls (SDK compatibility).",
-        "operationId": "auth_root_sync_api_auth__head",
+        "operationId": "auth_root_sync_slash_head",
         "parameters": [
           {
             "name": "jwt",
@@ -322,7 +263,66 @@
         ],
         "summary": "Auth Root Sync",
         "description": "Unified endpoint for base /api/auth calls (SDK compatibility).",
-        "operationId": "auth_root_sync_api_auth__head",
+        "operationId": "auth_root_sync_slash_post",
+        "parameters": [
+          {
+            "name": "jwt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Jwt"
+            }
+          },
+          {
+            "name": "admin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Admin"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Auth",
+          "Authentication"
+        ],
+        "summary": "Auth Root Sync",
+        "description": "Unified endpoint for base /api/auth calls (SDK compatibility).",
+        "operationId": "auth_root_sync_slash_get",
         "parameters": [
           {
             "name": "jwt",
@@ -383,66 +383,7 @@
         ],
         "summary": "Auth Root Sync",
         "description": "Unified endpoint for base /api/auth calls (SDK compatibility).",
-        "operationId": "auth_root_sync_api_auth_head",
-        "parameters": [
-          {
-            "name": "jwt",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Jwt"
-            }
-          },
-          {
-            "name": "admin",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Admin"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserProfile"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "Auth",
-          "Authentication"
-        ],
-        "summary": "Auth Root Sync",
-        "description": "Unified endpoint for base /api/auth calls (SDK compatibility).",
-        "operationId": "auth_root_sync_api_auth_head",
+        "operationId": "auth_root_sync_head",
         "parameters": [
           {
             "name": "jwt",
@@ -501,7 +442,66 @@
         ],
         "summary": "Auth Root Sync",
         "description": "Unified endpoint for base /api/auth calls (SDK compatibility).",
-        "operationId": "auth_root_sync_api_auth_head",
+        "operationId": "auth_root_sync_post",
+        "parameters": [
+          {
+            "name": "jwt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Jwt"
+            }
+          },
+          {
+            "name": "admin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Admin"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Auth",
+          "Authentication"
+        ],
+        "summary": "Auth Root Sync",
+        "description": "Unified endpoint for base /api/auth calls (SDK compatibility).",
+        "operationId": "auth_root_sync_get",
         "parameters": [
           {
             "name": "jwt",
@@ -562,66 +562,7 @@
         ],
         "summary": "Sync Token",
         "description": "Internal SDK endpoint for session synchronization.",
-        "operationId": "sync_token_api_auth_sync_token_head",
-        "parameters": [
-          {
-            "name": "jwt",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Jwt"
-            }
-          },
-          {
-            "name": "admin",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Admin"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TokenResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "Auth",
-          "Authentication"
-        ],
-        "summary": "Sync Token",
-        "description": "Internal SDK endpoint for session synchronization.",
-        "operationId": "sync_token_api_auth_sync_token_head",
+        "operationId": "sync_token_head",
         "parameters": [
           {
             "name": "jwt",
@@ -680,7 +621,66 @@
         ],
         "summary": "Sync Token",
         "description": "Internal SDK endpoint for session synchronization.",
-        "operationId": "sync_token_api_auth_sync_token_head",
+        "operationId": "sync_token_post",
+        "parameters": [
+          {
+            "name": "jwt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Jwt"
+            }
+          },
+          {
+            "name": "admin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Admin"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Auth",
+          "Authentication"
+        ],
+        "summary": "Sync Token",
+        "description": "Internal SDK endpoint for session synchronization.",
+        "operationId": "sync_token_get",
         "parameters": [
           {
             "name": "jwt",
@@ -741,7 +741,7 @@
         ],
         "summary": "Refresh Token",
         "description": "SDK Token Refresh bridge.",
-        "operationId": "refresh_token_api_auth_refresh_get",
+        "operationId": "refresh_token_get",
         "parameters": [
           {
             "name": "jwt",
@@ -800,7 +800,7 @@
         ],
         "summary": "Refresh Token",
         "description": "SDK Token Refresh bridge.",
-        "operationId": "refresh_token_api_auth_refresh_post",
+        "operationId": "refresh_token_post",
         "parameters": [
           {
             "name": "jwt",
@@ -861,7 +861,7 @@
         ],
         "summary": "Sessions Gate",
         "description": "SDK Session Management bridge.",
-        "operationId": "sessions_gate_api_auth_sessions_post",
+        "operationId": "sessions_gate_post",
         "parameters": [
           {
             "name": "jwt",
@@ -920,7 +920,7 @@
         ],
         "summary": "Sessions Gate",
         "description": "SDK Session Management bridge.",
-        "operationId": "sessions_gate_api_auth_sessions_get",
+        "operationId": "sessions_gate_get",
         "parameters": [
           {
             "name": "jwt",
@@ -960,7 +960,7 @@
                     "type": "object",
                     "additionalProperties": true
                   },
-                  "title": "Response Sessions Gate Api Auth Sessions Get"
+                  "title": "Response Sessions Gate Get"
                 }
               }
             }
@@ -1048,66 +1048,7 @@
         ],
         "summary": "Auth Token Bridge",
         "description": "SDK Token Bridge for session synchronization.",
-        "operationId": "auth_token_bridge_api_auth_token_head",
-        "parameters": [
-          {
-            "name": "jwt",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Jwt"
-            }
-          },
-          {
-            "name": "admin",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "default": false,
-              "title": "Admin"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TokenResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "Auth",
-          "Authentication"
-        ],
-        "summary": "Auth Token Bridge",
-        "description": "SDK Token Bridge for session synchronization.",
-        "operationId": "auth_token_bridge_api_auth_token_head",
+        "operationId": "auth_token_bridge_head",
         "parameters": [
           {
             "name": "jwt",
@@ -1166,7 +1107,7 @@
         ],
         "summary": "Auth Token Bridge",
         "description": "SDK Token Bridge for session synchronization.",
-        "operationId": "auth_token_bridge_api_auth_token_head",
+        "operationId": "auth_token_bridge_post",
         "parameters": [
           {
             "name": "jwt",
@@ -1202,6 +1143,207 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Auth",
+          "Authentication"
+        ],
+        "summary": "Auth Token Bridge",
+        "description": "SDK Token Bridge for session synchronization.",
+        "operationId": "auth_token_bridge_get",
+        "parameters": [
+          {
+            "name": "jwt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Jwt"
+            }
+          },
+          {
+            "name": "admin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Admin"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/mfa/send": {
+      "post": {
+        "tags": [
+          "Auth",
+          "Authentication"
+        ],
+        "summary": "Send Mfa Passcode",
+        "description": "Generate and send a 6-digit MFA passcode via email to an administrative user.\nPersists the OTP in Supabase to support stateless serverless executions.",
+        "operationId": "send_mfa_passcode_api_auth_mfa_send_post",
+        "parameters": [
+          {
+            "name": "jwt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Jwt"
+            }
+          },
+          {
+            "name": "admin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Admin"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaSendRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/mfa/verify": {
+      "post": {
+        "tags": [
+          "Auth",
+          "Authentication"
+        ],
+        "summary": "Verify Mfa Passcode",
+        "description": "Verify a 6-digit MFA passcode (TOTP/Email OTP) against a user's temporary auth token.\nEnforces admin security checks with a safe development fallback and persistent DB state.",
+        "operationId": "verify_mfa_passcode_api_auth_mfa_verify_post",
+        "parameters": [
+          {
+            "name": "jwt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Jwt"
+            }
+          },
+          {
+            "name": "admin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Admin"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaVerifyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -4817,6 +4959,132 @@
         }
       }
     },
+    "/api/admin/compliance/documents": {
+      "get": {
+        "tags": [
+          "Admin",
+          "admin"
+        ],
+        "summary": "List Compliance Documents",
+        "description": "Lists all available compliance & audit-ready documents.",
+        "operationId": "list_compliance_documents_api_admin_compliance_documents_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/compliance/documents/{doc_id}": {
+      "get": {
+        "tags": [
+          "Admin",
+          "admin"
+        ],
+        "summary": "Get Compliance Document",
+        "description": "Retrieves raw content of a specific compliance document.",
+        "operationId": "get_compliance_document_api_admin_compliance_documents__doc_id__get",
+        "parameters": [
+          {
+            "name": "doc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Doc Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/compliance/security-audit": {
+      "get": {
+        "tags": [
+          "Admin",
+          "admin"
+        ],
+        "summary": "Run Security Configuration Audit",
+        "description": "Performs a deep defensive security configuration audit of the platform.\nVerifies Row-Level Security (RLS), HTTP response security headers, and\nbackend exception masking configurations.",
+        "operationId": "run_security_configuration_audit_api_admin_compliance_security_audit_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/compliance/logs/export": {
+      "get": {
+        "tags": [
+          "Admin",
+          "admin"
+        ],
+        "summary": "Export Admin Compliance Logs",
+        "description": "Streams a CSV file download of all system audit logs for SOC 2 Type II compliance evidence.",
+        "operationId": "export_admin_compliance_logs_api_admin_compliance_logs_export_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/compliance/verbis-draft": {
+      "get": {
+        "tags": [
+          "Admin",
+          "admin"
+        ],
+        "summary": "Get Verbis Draft",
+        "description": "Generates a pre-formatted KVKK VERBİS Filing draft mapping personal data categories,\nprocessing purposes, transfers, and safeguards for compliance registry.",
+        "operationId": "get_verbis_draft_api_admin_compliance_verbis_draft_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/monitor/sessions/{session_id}": {
       "get": {
         "tags": [
@@ -5616,7 +5884,7 @@
         ],
         "summary": "Handle Dataforseo Webhook",
         "description": "Unified Webhook handler for DataForSEO notifications.\nStandardized to handle Price Search and Hotel Info tasks.\nSupports legacy pulse tags and modern scan_task_id resolution.",
-        "operationId": "handle_dataforseo_webhook_api_v1_webhooks_dataforseo_task_completed_post",
+        "operationId": "handle_dataforseo_webhook_task_completed",
         "parameters": [
           {
             "name": "jwt",
@@ -5675,7 +5943,7 @@
         ],
         "summary": "Handle Dataforseo Webhook",
         "description": "Unified Webhook handler for DataForSEO notifications.\nStandardized to handle Price Search and Hotel Info tasks.\nSupports legacy pulse tags and modern scan_task_id resolution.",
-        "operationId": "handle_dataforseo_webhook_api_v1_webhooks_dataforseo__post",
+        "operationId": "handle_dataforseo_webhook_slash",
         "parameters": [
           {
             "name": "jwt",
@@ -5734,7 +6002,7 @@
         ],
         "summary": "Handle Dataforseo Webhook",
         "description": "Unified Webhook handler for DataForSEO notifications.\nStandardized to handle Price Search and Hotel Info tasks.\nSupports legacy pulse tags and modern scan_task_id resolution.",
-        "operationId": "handle_dataforseo_webhook_api_v1_webhooks_dataforseo_post",
+        "operationId": "handle_dataforseo_webhook_root",
         "parameters": [
           {
             "name": "jwt",
@@ -8911,6 +9179,42 @@
           "created_at"
         ],
         "title": "MembershipPlan"
+      },
+      "MfaSendRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token",
+            "description": "The temporary JWT access token from InsForge login"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token"
+        ],
+        "title": "MfaSendRequest"
+      },
+      "MfaVerifyRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token",
+            "description": "The temporary JWT access token from InsForge login"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 6,
+            "minLength": 6,
+            "title": "Code",
+            "description": "6-digit numerical TOTP passcode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "code"
+        ],
+        "title": "MfaVerifyRequest"
       },
       "PlanCreate": {
         "properties": {
