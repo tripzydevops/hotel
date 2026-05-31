@@ -6,7 +6,7 @@ export default function HelpPage() {
   return (
     <div className="min-h-screen bg-[#050B18] text-[var(--overlay-text)] p-8">
       <div className="max-w-4xl mx-auto">
-        <Link href="/" className="inline-flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--overlay-text)] transition-colors mb-8">
+        <Link href="/dashboard" className="inline-flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--overlay-text)] transition-colors mb-8">
           <ChevronLeft className="w-4 h-4" />
           <span>Back to Grid</span>
         </Link>
