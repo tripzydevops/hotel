@@ -1,0 +1,16 @@
+# Semgrep Ignore Configuration
+# Ignores pre-existing legacy scripts, service workers, and configuration files.
+
+# Ignore migration utility scripts
+backend/scripts/migrate_supabase_to_insforge.py
+
+# Ignore third-party and legacy templates
+backend/templates/report_templates.py
+
+# Ignore i18n RegEx rules and SW logs
+lib/i18n.tsx
+public/sw.js
+app/(dashboard)/analysis/sentiment/page.tsx
+
+# Ignore workflow triggers containing inputs
+.github/workflows/pricing_dna.yml
