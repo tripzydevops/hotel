@@ -181,7 +181,7 @@ export default function CompliancePanel() {
     html = html.replace(/^\*\s+(.*?)$/gm, "<li>$1</li>");
     html = html.replace(/^- \s*(.*?)$/gm, "<li>$1</li>");
     // Wrap lists
-    html = html.replace(/(<li>.*?<\/li>)/gs, "<ul>$1</ul>");
+    html = html.replace(/(<li>[\s\S]*?<\/li>)/g, "<ul>$1</ul>");
 
     // Blockquotes (Alerts)
     html = html.replace(/^&gt;\s*\[!IMPORTANT\](.*?)$/gm, "<blockquote><strong>IMPORTANT:</strong>$1</blockquote>");
