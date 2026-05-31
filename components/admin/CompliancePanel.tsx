@@ -13,6 +13,7 @@ import {
   HelpCircle,
   X,
   FileCode,
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/components/ui/ToastContext";
 
