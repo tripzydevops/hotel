@@ -92,6 +92,9 @@ export const en = {
     alreadyHaveCode: "Already have a code?",
     pendingTitle: "Access Pending Approval",
     pendingMessage: "Your account has been created successfully. For security reasons, a system administrator must manually verify your identity before you can access the dashboard. Please check back soon or contact support if this takes longer than 24 hours.",
+    mfaTitle: "Security Verification",
+    mfaDescription: "Please enter the 6-digit verification code from your authenticator application.",
+    mfaVerifyButton: "Verify Passcode",
   },
   dashboard: {
     title: "Rate Intelligence Grid",

@@ -92,6 +92,9 @@ export const tr = {
     alreadyHaveCode: "Zaten kodunuz mu var?",
     pendingTitle: "Erişim Onayı Bekleniyor",
     pendingMessage: "Hesabınız başarıyla oluşturuldu. Güvenlik nedenleriyle, kontrol paneline erişebilmeniz için bir sistem yöneticisinin kimliğinizi manuel olarak doğrulaması gerekir. Lütfen yakında tekrar kontrol edin veya bu işlem 24 saatten uzun sürerse destek ekibiyle iletişime geçin.",
+    mfaTitle: "Güvenlik Doğrulaması",
+    mfaDescription: "Lütfen kimlik doğrulayıcı uygulamanızdaki 6 haneli doğrulama kodunu girin.",
+    mfaVerifyButton: "Şifreyi Doğrula",
   },
   dashboard: {
     title: "Fiyat İstihbarat Matrisi",

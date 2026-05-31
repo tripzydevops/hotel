@@ -27,6 +27,44 @@ class NotificationService:
         self.sender_email = os.getenv("SENDER_EMAIL", self.smtp_user)
         self.enabled = bool(self.smtp_user and self.smtp_password)
 
+    def _write_to_mock_inbox(self, to_email: str, subject: str, body_html: str) -> None:
+        """
+        Writes the simulated HTML email to a local mock_email_inbox.md file in the docs/ directory.
+        Allows developers and administrators to instantly inspect generated emails during local testing.
+        """
+        import os
+        from datetime import datetime, timezone
+
+        try:
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            inbox_path = os.path.join(base_dir, "docs", "mock_email_inbox.md")
+
+            # Create docs directory if it doesn't exist
+            os.makedirs(os.path.dirname(inbox_path), exist_ok=True)
+
+            timestamp = datetime.now(timezone.utc).isoformat()
+
+            entry = f"""
+---
+### 📧 [MOCK EMAIL] Sent at: {timestamp}
+* **To:** `{to_email}`
+* **From:** `noreply@hotelplus.com`
+* **Subject:** **{subject}**
+
+#### Rendered Content:
+```html
+{body_html.strip()}
+```
+"""
+            # Append to file
+            mode = "a" if os.path.exists(inbox_path) else "w"
+            with open(inbox_path, mode, encoding="utf-8") as f:
+                f.write(entry)
+
+            logger.info(f"[Notification] Simulated email appended to mock inbox: docs/mock_email_inbox.md")
+        except Exception as e:
+            logger.error(f"[Notification] Failed to write to mock inbox: {e}")
+
     def _send_smtp_email(self, msg: MIMEMultipart) -> bool:
         """
         Synchronous helper to send email via SMTP.
@@ -134,37 +172,39 @@ class NotificationService:
         self, to_email: str, alerts: list, hotel_name_map: dict
     ) -> bool:
         """Sends a batched email report for multiple alerts."""
+        rows = ""
+        for a in alerts:
+            hname = hotel_name_map.get(a["hotel_id"], "Hotel")
+            rows += f"<tr><td>{hname}</td><td>{a['old_price']}</td><td>{a['new_price']}</td><td>{a['message']}</td></tr>"
+
+        body = f"""
+        <html>
+          <body>
+            <h2>Price Alert Summary</h2>
+            <p>Multiple price changes were detected during your last scan:</p>
+            <table border="1" cellpadding="5" style="border-collapse: collapse;">
+              <thead>
+                <tr style="background-color: #f2f2f2;">
+                  <th>Hotel</th><th>Old Price</th><th>New Price</th><th>Details</th>
+                </tr>
+              </thead>
+              <tbody>{rows}</tbody>
+            </table>
+            <p><a href="{os.getenv('FRONTEND_URL', 'http://localhost:3000')}">Open Dashboard</a></p>
+          </body>
+        </html>
+        """
+
         if not self.enabled:
-            return False
+            logger.info(f"[Notification] Email disabled. Simulating summary email to {to_email}")
+            self._write_to_mock_inbox(to_email, f"Price Alert Summary: {len(alerts)} updates found", body)
+            return True
 
         try:
             msg = MIMEMultipart()
             msg["From"] = self.sender_email
             msg["To"] = to_email
             msg["Subject"] = f"Price Alert Summary: {len(alerts)} updates found"
-
-            rows = ""
-            for a in alerts:
-                hname = hotel_name_map.get(a["hotel_id"], "Hotel")
-                rows += f"<tr><td>{hname}</td><td>{a['old_price']}</td><td>{a['new_price']}</td><td>{a['message']}</td></tr>"
-
-            body = f"""
-            <html>
-              <body>
-                <h2>Price Alert Summary</h2>
-                <p>Multiple price changes were detected during your last scan:</p>
-                <table border="1" cellpadding="5" style="border-collapse: collapse;">
-                  <thead>
-                    <tr style="background-color: #f2f2f2;">
-                      <th>Hotel</th><th>Old Price</th><th>New Price</th><th>Details</th>
-                    </tr>
-                  </thead>
-                  <tbody>{rows}</tbody>
-                </table>
-                <p><a href="{os.getenv('FRONTEND_URL', 'http://localhost:3000')}">Open Dashboard</a></p>
-              </body>
-            </html>
-            """
             msg.attach(MIMEText(body, "html"))
 
             # Offload to thread to prevent blocking the event loop
@@ -249,31 +289,30 @@ class NotificationService:
         """
         Send an alert email to the user.
         """
+        body = f"""
+        <html>
+          <body>
+            <h2>Price Change Alert for {hotel_name}</h2>
+            <p>{alert_message}</p>
+            <ul>
+              <li><strong>Current Price:</strong> {currency} {current_price}</li>
+              <li><strong>Previous Price:</strong> {currency} {previous_price}</li>
+            </ul>
+            <p><a href="{os.getenv('FRONTEND_URL', 'http://localhost:3000')}">View Dashboard</a></p>
+          </body>
+        </html>
+        """
+
         if not self.enabled:
-            logger.info(
-                f"[Notification] Email disabled. Would have sent to {to_email}: {alert_message}"
-            )
-            return False
+            logger.info(f"[Notification] Email disabled. Simulating email to {to_email}: {alert_message}")
+            self._write_to_mock_inbox(to_email, f"Price Alert: {hotel_name}", body)
+            return True
 
         try:
             msg = MIMEMultipart()
             msg["From"] = self.sender_email
             msg["To"] = to_email
             msg["Subject"] = f"Price Alert: {hotel_name}"
-
-            body = f"""
-            <html>
-              <body>
-                <h2>Price Change Alert for {hotel_name}</h2>
-                <p>{alert_message}</p>
-                <ul>
-                  <li><strong>Current Price:</strong> {currency} {current_price}</li>
-                  <li><strong>Previous Price:</strong> {currency} {previous_price}</li>
-                </ul>
-                <p><a href="{os.getenv('FRONTEND_URL', 'http://localhost:3000')}">View Dashboard</a></p>
-              </body>
-            </html>
-            """
             msg.attach(MIMEText(body, "html"))
 
             # Offload to thread to prevent blocking the event loop
