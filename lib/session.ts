@@ -1,20 +1,13 @@
 /**
  * lib/session.ts — App-Domain Session Cookie Utilities
  *
- * Signs and verifies the `hp_sess` HttpOnly cookie that is issued by
- * app/api/auth/session/route.ts after a successful InsForge login.
+ * Signs and verifies the `hp_sess` HttpOnly cookie issued after InsForge login.
  *
- * WHY THIS EXISTS:
- * InsForge sets its own httpOnly refresh cookie on the InsForge domain, not
- * the app domain. Next.js middleware can only see cookies on the app domain.
- * This module creates a second, app-domain session cookie so the middleware
- * can perform real server-side authentication checks.
- *
- * SECURITY:
- * - HMAC-SHA256 signed with SESSION_SECRET (server-side env var only)
- * - Cookie is HttpOnly + Secure + SameSite=Lax → not readable by JS
- * - Payload contains expiry — middleware rejects expired sessions
- * - Uses Web Crypto API (works in both Edge runtime and Node.js)
+ * IMPORTANT: Uses ONLY Web Crypto API + atob/btoa — NO Buffer, NO Node.js APIs.
+ * This is required because Next.js middleware runs in the Edge Runtime where
+ * Buffer.from(...).buffer returns a SharedArrayBuffer (not ArrayBuffer),
+ * which causes crypto.subtle.verify to silently throw and return null,
+ * causing the middleware to block all authenticated users.
  */
 
 export const SESSION_COOKIE = 'hp_sess';
@@ -23,34 +16,50 @@ export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 interface SessionPayload {
   uid: string;
   email: string;
-  exp: number; // Unix timestamp seconds
+  exp: number; // Unix timestamp (seconds)
 }
 
 // ---------------------------------------------------------------------------
-// Internal helpers
+// Edge-safe base64url helpers (atob/btoa — no Buffer dependency)
 // ---------------------------------------------------------------------------
-
-async function getKey(secret: string): Promise<CryptoKey> {
-  return crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(secret).buffer as ArrayBuffer,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign', 'verify']
-  );
-}
 
 function b64url(buf: ArrayBuffer): string {
-  return Buffer.from(buf)
-    .toString('base64')
+  const bytes = new Uint8Array(buf);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary)
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=/g, '');
 }
 
-function fromB64url(str: string): Buffer {
+function fromB64url(str: string): ArrayBuffer {
   const pad = str.length % 4 === 0 ? '' : '='.repeat(4 - (str.length % 4));
-  return Buffer.from(str.replace(/-/g, '+').replace(/_/g, '/') + pad, 'base64');
+  const b64 = str.replace(/-/g, '+').replace(/_/g, '/') + pad;
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  // Return a plain ArrayBuffer slice — not a SharedArrayBuffer
+  return bytes.buffer.slice(0);
+}
+
+// ---------------------------------------------------------------------------
+// HMAC key helper
+// ---------------------------------------------------------------------------
+
+async function getKey(secret: string): Promise<CryptoKey> {
+  const keyBytes = new TextEncoder().encode(secret);
+  return crypto.subtle.importKey(
+    'raw',
+    keyBytes.buffer.slice(0) as ArrayBuffer,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign', 'verify']
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -58,8 +67,8 @@ function fromB64url(str: string): Buffer {
 // ---------------------------------------------------------------------------
 
 /**
- * Creates a signed cookie value for the given user.
- * Format: <b64url_payload>.<b64url_hmac>
+ * Creates a signed cookie value.
+ * Format: <b64url(JSON payload)>.<b64url(HMAC-SHA256 signature)>
  */
 export async function signSession(
   uid: string,
@@ -72,22 +81,19 @@ export async function signSession(
     exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS,
   };
 
-  const payloadStr = JSON.stringify(payload);
-  const payloadB64 = b64url(new TextEncoder().encode(payloadStr).buffer as ArrayBuffer);
+  const payloadBytes = new TextEncoder().encode(JSON.stringify(payload));
+  const payloadBuf = payloadBytes.buffer.slice(0) as ArrayBuffer;
+  const payloadB64 = b64url(payloadBuf);
 
   const key = await getKey(secret);
-  const sig = await crypto.subtle.sign(
-    'HMAC',
-    key,
-    new TextEncoder().encode(payloadB64).buffer as ArrayBuffer
-  );
+  const sig = await crypto.subtle.sign('HMAC', key, payloadBuf);
 
   return `${payloadB64}.${b64url(sig)}`;
 }
 
 /**
  * Verifies and decodes a session cookie value.
- * Returns the payload if valid, null if tampered or expired.
+ * Returns the payload if valid and not expired, null otherwise.
  */
 export async function verifySession(
   cookieValue: string,
@@ -100,26 +106,20 @@ export async function verifySession(
     const payloadB64 = cookieValue.slice(0, dotIdx);
     const sigB64 = cookieValue.slice(dotIdx + 1);
 
-    // Verify signature
+    const payloadBuf = fromB64url(payloadB64);
+    const sigBuf = fromB64url(sigB64);
+
     const key = await getKey(secret);
-    const valid = await crypto.subtle.verify(
-      'HMAC',
-      key,
-      fromB64url(sigB64).buffer as ArrayBuffer,
-      new TextEncoder().encode(payloadB64).buffer as ArrayBuffer
-    );
+    const valid = await crypto.subtle.verify('HMAC', key, sigBuf, payloadBuf);
     if (!valid) return null;
 
-    // Decode payload
-    const payload: SessionPayload = JSON.parse(
-      new TextDecoder().decode(fromB64url(payloadB64))
-    );
+    const payload: SessionPayload = JSON.parse(new TextDecoder().decode(payloadBuf));
 
-    // Check expiry
     if (payload.exp < Math.floor(Date.now() / 1000)) return null;
 
     return payload;
-  } catch {
+  } catch (err) {
+    console.error('[session] verifySession error:', err);
     return null;
   }
 }
