@@ -141,14 +141,29 @@ async def send_mfa_passcode(body: MfaSendRequest, db: Client = Depends(get_supab
         # 2. Generate a secure 6-digit random passcode
         code = str(secrets.randbelow(900000) + 100000)
 
-        # 3. Store the OTP in Supabase (mfa_secret) with a 10-minute expiry (bypassing RLS via admin client)
-        admin_db = get_insforge_admin()
+        # 3. Store the OTP in Supabase (mfa_secret) with a 10-minute expiry (bypassing RLS via admin client fallback)
+        admin_db = get_insforge_admin() or db
+        if not admin_db:
+            logger.error("[MFA Route] Database client is completely unavailable!")
+            raise HTTPException(status_code=500, detail="Database client is unavailable.")
+
         expiry = datetime.now(timezone.utc) + timedelta(minutes=10)
         expiry_ts = int(expiry.timestamp())
         mfa_payload = f"email_otp:{code}:{expiry_ts}"
 
-        logger.info(f"[MFA Route] Storing email OTP in database for user {user_id} ({email})")
-        admin_db.table("user_profiles").update({"mfa_secret": mfa_payload}).eq("user_id", str(user_id)).execute()
+        client_tag = "admin" if getattr(admin_db, "is_admin", False) else "anon"
+        logger.info(f"[MFA Route] Storing email OTP in database for user {user_id} ({email}) using {client_tag} client")
+        
+        try:
+            admin_db.table("user_profiles").update({"mfa_secret": mfa_payload}).eq("user_id", str(user_id)).execute()
+        except Exception as db_write_err:
+            logger.warning(f"[MFA Route] Database update failed using preferred client: {db_write_err}")
+            # Try to write using the standard anon db client if preferred client failed
+            if admin_db != db and db:
+                logger.info("[MFA Route] Retrying DB update using standard client fallback")
+                db.table("user_profiles").update({"mfa_secret": mfa_payload}).eq("user_id", str(user_id)).execute()
+            else:
+                raise db_write_err
 
         # 4. Dispatch the live email notification using the SMTP service
         email_sent = await notification_service.send_mfa_code_email(email, code)
@@ -192,9 +207,22 @@ async def verify_mfa_passcode(body: MfaVerifyRequest, db: Client = Depends(get_s
             is_valid = True
             logger.info(f"[MFA Route] MFA passcode verified via B2B local development bypass for {email}")
         else:
-            # Fetch the secret from Supabase using admin client to bypass RLS
-            admin_db = get_insforge_admin()
-            res = admin_db.table("user_profiles").select("mfa_secret").eq("user_id", str(user_id)).maybe_single().execute()
+            # Fetch the secret from Supabase using admin client fallback to bypass RLS
+            admin_db = get_insforge_admin() or db
+            if not admin_db:
+                logger.error("[MFA Route] Database client is completely unavailable!")
+                raise HTTPException(status_code=500, detail="Database client is unavailable.")
+
+            res = None
+            try:
+                res = admin_db.table("user_profiles").select("mfa_secret").eq("user_id", str(user_id)).maybe_single().execute()
+            except Exception as db_read_err:
+                logger.warning(f"[MFA Route] Database read failed using preferred client: {db_read_err}")
+                if admin_db != db and db:
+                    logger.info("[MFA Route] Retrying DB read using standard client fallback")
+                    res = db.table("user_profiles").select("mfa_secret").eq("user_id", str(user_id)).maybe_single().execute()
+                else:
+                    raise db_read_err
             
             if res and res.data:
                 mfa_secret = res.data.get("mfa_secret")
@@ -210,7 +238,12 @@ async def verify_mfa_passcode(body: MfaVerifyRequest, db: Client = Depends(get_s
                                     if body.code == stored_code:
                                         is_valid = True
                                         # Consume and clear the OTP so it can't be replayed
-                                        admin_db.table("user_profiles").update({"mfa_secret": None}).eq("user_id", str(user_id)).execute()
+                                        try:
+                                            admin_db.table("user_profiles").update({"mfa_secret": None}).eq("user_id", str(user_id)).execute()
+                                        except Exception as db_clear_err:
+                                            logger.warning(f"[MFA Route] Failed to clear OTP using preferred client: {db_clear_err}")
+                                            if admin_db != db and db:
+                                                db.table("user_profiles").update({"mfa_secret": None}).eq("user_id", str(user_id)).execute()
                                         logger.info(f"[MFA Route] MFA passcode verified via persistent database Email OTP for {email}")
                                 else:
                                     logger.info(f"[MFA Route] Persistent database Email OTP has expired for {email}")
