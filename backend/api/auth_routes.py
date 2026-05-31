@@ -189,11 +189,11 @@ async def mfa_diagnostic():
 async def mfa_db_migrate():
     """Temporary endpoint to add missing mfa_secret column to user_profiles table on InsForge."""
     import os
-    import psycopg2
     db_url = os.getenv("DATABASE_URL") or os.getenv("SUPABASE_DB_URL")
     if not db_url:
         return {"status": "error", "message": "No DATABASE_URL or SUPABASE_DB_URL found in Vercel environment variables."}
     try:
+        import psycopg2
         conn = psycopg2.connect(db_url)
         conn.autocommit = True
         cursor = conn.cursor()
@@ -201,6 +201,8 @@ async def mfa_db_migrate():
         cursor.close()
         conn.close()
         return {"status": "success", "message": "Successfully executed DDL: Added mfa_secret to user_profiles."}
+    except ImportError as imp_err:
+        return {"status": "error", "message": f"DDL migration failed due to missing driver: {str(imp_err)}. Vercel build may still be in progress."}
     except Exception as e:
         return {"status": "error", "message": f"DDL migration failed: {type(e).__name__}: {str(e)}"}
 
