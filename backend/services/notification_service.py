@@ -347,9 +347,11 @@ class NotificationService:
         """
 
         if not self.enabled:
-            logger.info(f"[Notification] Email disabled. Simulating MFA code email to {to_email}: {code}")
-            self._write_to_mock_inbox(to_email, f"Security Verification Code: {code}", body)
-            return True
+            logger.critical(f"[Notification] SMTP IS DISABLED — cannot deliver MFA security code to {to_email}. "
+                          f"Set SMTP_USER and SMTP_PASSWORD environment variables to enable email delivery.")
+            # MFA codes are security-critical. Unlike alert emails, a simulated/mocked
+            # MFA email means the user can NEVER log in. Return False to trigger error handling.
+            return False
 
         try:
             msg = MIMEMultipart()

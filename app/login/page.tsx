@@ -91,8 +91,13 @@ export default function LoginPage() {
               setIsLoading(false);
               
               // Automatically trigger the email MFA verification code dispatch
-              api.sendMfaCode(accessToken).catch((mfaSendErr) => {
+              api.sendMfaCode(accessToken).then((res) => {
+                if (!res?.success) {
+                  setError(res?.message || "Failed to send verification code. Please try 'Resend Code via Email'.");
+                }
+              }).catch((mfaSendErr) => {
                 console.error("[Login] Automatic MFA dispatch failed:", mfaSendErr);
+                setError("Could not send verification code. Please try 'Resend Code via Email'.");
               });
               return;
             }
