@@ -184,22 +184,6 @@ async def mfa_diagnostic():
         diag["admin_db"] = f"FAILED: {type(e).__name__}: {e}"
     return diag
 
-@router.get("/auth/mfa/migrate")
-@router.post("/auth/mfa/migrate")
-async def mfa_db_migrate():
-    """Temporary endpoint to add missing mfa_secret column to user_profiles table on InsForge."""
-    try:
-        from backend.utils.db import get_insforge_db
-        admin_db = get_insforge_db(admin=True)
-        if not admin_db:
-            return {"status": "error", "message": "Failed to initialize InsForge database client."}
-        
-        # Execute DDL using the database's pre-configured 'exec_sql' RPC function
-        sql = "ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS mfa_secret TEXT;"
-        admin_db.rpc("exec_sql", {"query": sql}).execute()
-        return {"status": "success", "message": "Successfully executed DDL via RPC: Added mfa_secret to user_profiles."}
-    except Exception as e:
-        return {"status": "error", "message": f"DDL migration failed via RPC: {type(e).__name__}: {str(e)}"}
 
 
 @router.post("/auth/mfa/send", response_model=SuccessResponse)
