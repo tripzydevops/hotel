@@ -36,7 +36,12 @@ Deep dives into the platform core:
 ### 🛡️ Compliance & Certification Readiness
 As part of onboarding readiness for major enterprise hotel chains (e.g., Marriott, Hilton, IHG):
 -   **[PCI Scope Exclusion Statement](PCI_SCOPE_EXCLUSION.md)**: Declaration and mapping criteria for SAQ-A scope exclusion.
--   **[Bilingual Privacy Policy Page](file:///C:/Users/elif/.gemini/antigravity/scratch/hotel/app/(landing)/privacy/page.tsx)**: GDPR/KVKK and CCPA compliant privacy disclosure integrated into the B2B landing environment.
+-   **[Access Control & Auth Policy](docs/ACCESS_CONTROL_POLICY.md)**: Formal PoLP rules, active user-tenant RLS boundaries, and strict administrative/operator MFA TOTP enforcements.
+-   **[Data Retention & Purge Policy](docs/DATA_RETENTION.md)**: Details of data scrubbers and automated GDPR/KVKK DSAR anonymization + erasure logic.
+-   **[Incident Response Plan](docs/INCIDENT_RESPONSE_PLAN.md)**: SLA containment runbook and security breach notification protocols (GDPR Art. 33).
+-   **[Bilingual Data Processing Agreement (DPA)](app/(landing)/dpa/page.tsx)**: Standard B2B processor agreement integrated into the landing environment.
+-   **[Security Scan & SAST Vulnerability Audit Report](scan_results_report.md)**: Comprehensive static safety audit records.
+-   **[Bilingual Privacy Policy Page](app/(landing)/privacy/page.tsx)**: GDPR/KVKK and CCPA compliant privacy disclosure integrated into the B2B landing environment.
 
 
 ## 🚀 Getting Started
@@ -83,4 +88,4 @@ Track background scan progress via the `scan_sessions` table in Supabase or the 
 
 _Hotel Rate Sentinel R&D - 2026_
 ❤️ for the future of Autonomous Travel Intelligence.
-**Last Updated:** 2026-05-30 (Bilingual Privacy Policy & PCI Scope Exclusion documentation added for compliance readiness)
+**Last Updated:** 2026-05-31 (B2B GDPR DSAR erasures, SOC 2 audit logs, DPA, WCAG outlines, and administrative MFA enforcements added for full compliance readiness)
