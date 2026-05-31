@@ -937,6 +937,7 @@ class ApiClient {
     return this.fetch<any>(`/api/auth/mfa/verify`, {
       method: "POST",
       body: JSON.stringify({ token, code }),
+      authenticated: false, // Token is in body; avoid refreshSession() rotating it
     });
   }
 
@@ -944,6 +945,7 @@ class ApiClient {
     return this.fetch<any>(`/api/auth/mfa/send`, {
       method: "POST",
       body: JSON.stringify({ token }),
+      authenticated: false, // Token is in body; avoid refreshSession() rotating it
     });
   }
 }

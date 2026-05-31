@@ -76,7 +76,11 @@ export default function LoginPage() {
           const isProfileAdmin = profile?.role === "admin" || profile?.role === "market_admin" || profile?.role === "market admin";
           
           if (isProfileAdmin || isSystemAdmin) {
-            const accessToken = (result as any).data?.accessToken;
+            // CRITICAL: api.getProfile() above triggers refreshSession() which may
+            // rotate the access token. Re-acquire the FRESH token from the SDK
+            // instead of using the stale one from signInWithPassword result.
+            const freshToken = await api.getAccessToken();
+            const accessToken = freshToken || (result as any).data?.accessToken;
             const uid = (result as any).data?.user?.id;
             if (accessToken) {
               setMfaToken(accessToken);
@@ -200,7 +204,13 @@ export default function LoginPage() {
     setMfaResendSuccess(false);
     try {
       const { api } = await import("@/lib/api");
-      const result = await api.sendMfaCode(mfaToken);
+      // Re-acquire fresh token in case session was rotated since login
+      const freshToken = await api.getAccessToken();
+      const tokenToUse = freshToken || mfaToken;
+      if (freshToken && freshToken !== mfaToken) {
+        setMfaToken(freshToken); // Update state with latest token
+      }
+      const result = await api.sendMfaCode(tokenToUse);
       if (result && result.success) {
         setMfaResendSuccess(true);
       } else {
@@ -282,8 +292,12 @@ export default function LoginPage() {
     try {
       const { api } = await import("@/lib/api");
       
+      // Re-acquire fresh token in case session was rotated
+      const freshToken = await api.getAccessToken();
+      const tokenToUse = freshToken || mfaToken;
+      
       // 1. Verify code on FastAPI backend
-      const verifyRes = await api.verifyMfaCode(mfaToken, fullCode);
+      const verifyRes = await api.verifyMfaCode(tokenToUse, fullCode);
       
       if (!verifyRes || !verifyRes.success) {
         setError(verifyRes?.message || "Invalid passcode.");
@@ -296,7 +310,7 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          token: mfaToken, 
+          token: tokenToUse, 
           uid: mfaUid, 
           email: emailForVerification 
         }),
