@@ -188,23 +188,18 @@ async def mfa_diagnostic():
 @router.post("/auth/mfa/migrate")
 async def mfa_db_migrate():
     """Temporary endpoint to add missing mfa_secret column to user_profiles table on InsForge."""
-    import os
-    db_url = os.getenv("DATABASE_URL") or os.getenv("SUPABASE_DB_URL")
-    if not db_url:
-        return {"status": "error", "message": "No DATABASE_URL or SUPABASE_DB_URL found in Vercel environment variables."}
     try:
-        import psycopg2
-        conn = psycopg2.connect(db_url)
-        conn.autocommit = True
-        cursor = conn.cursor()
-        cursor.execute("ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS mfa_secret TEXT;")
-        cursor.close()
-        conn.close()
-        return {"status": "success", "message": "Successfully executed DDL: Added mfa_secret to user_profiles."}
-    except ImportError as imp_err:
-        return {"status": "error", "message": f"DDL migration failed due to missing driver: {str(imp_err)}. Vercel build may still be in progress."}
+        from backend.utils.db import get_insforge_db
+        admin_db = get_insforge_db(admin=True)
+        if not admin_db:
+            return {"status": "error", "message": "Failed to initialize InsForge database client."}
+        
+        # Execute DDL using the database's pre-configured 'exec_sql' RPC function
+        sql = "ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS mfa_secret TEXT;"
+        admin_db.rpc("exec_sql", {"query": sql}).execute()
+        return {"status": "success", "message": "Successfully executed DDL via RPC: Added mfa_secret to user_profiles."}
     except Exception as e:
-        return {"status": "error", "message": f"DDL migration failed: {type(e).__name__}: {str(e)}"}
+        return {"status": "error", "message": f"DDL migration failed via RPC: {type(e).__name__}: {str(e)}"}
 
 
 @router.post("/auth/mfa/send", response_model=SuccessResponse)
