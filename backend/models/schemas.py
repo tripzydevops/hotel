@@ -693,3 +693,8 @@ class MarketBriefingRequest(BaseModel):
 class MfaVerifyRequest(BaseModel):
     token: str = Field(..., description="The temporary JWT access token from InsForge login")
     code: str = Field(..., min_length=6, max_length=6, description="6-digit numerical TOTP passcode")
+
+
+class MfaSendRequest(BaseModel):
+    token: str = Field(..., description="The temporary JWT access token from InsForge login")
+

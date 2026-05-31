@@ -322,6 +322,47 @@ class NotificationService:
             logger.error(f"[Notification] Email preparation failed: {e}")
             return False
 
+    async def send_mfa_code_email(self, to_email: str, code: str) -> bool:
+        """
+        Sends the 6-digit MFA security verification code email.
+        """
+        body = f"""
+        <html>
+          <body style="font-family: Arial, sans-serif; background-color: #0b132b; color: #ffffff; padding: 30px;">
+            <div style="max-width: 500px; margin: 0 auto; background-color: #1c2541; padding: 40px; border-radius: 20px; border: 1px solid #c5a880; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+              <h2 style="color: #c5a880; text-align: center; font-style: italic; font-weight: 900; margin-top: 0;">HotelPlus Security</h2>
+              <hr style="border-color: rgba(197, 168, 128, 0.2); margin: 20px 0;">
+              <p style="font-size: 14px; line-height: 1.6; color: #a5b4fc;">
+                A multi-factor authentication (MFA) challenge was requested for your administrative account. Please use the following 6-digit verification code to complete your secure login:
+              </p>
+              <div style="background-color: rgba(197, 168, 128, 0.1); border: 1px solid rgba(197, 168, 128, 0.3); border-radius: 12px; padding: 20px; margin: 30px 0; text-align: center;">
+                <span style="font-size: 36px; font-weight: 900; letter-spacing: 10px; color: #c5a880; font-family: monospace;">{code}</span>
+              </div>
+              <p style="font-size: 11px; color: #64748b; line-height: 1.6; text-align: center; margin-bottom: 0;">
+                This code is valid for 10 minutes. If you did not request this code, please secure your credentials immediately.
+              </p>
+            </div>
+          </body>
+        </html>
+        """
+
+        if not self.enabled:
+            logger.info(f"[Notification] Email disabled. Simulating MFA code email to {to_email}: {code}")
+            self._write_to_mock_inbox(to_email, f"Security Verification Code: {code}", body)
+            return True
+
+        try:
+            msg = MIMEMultipart()
+            msg["From"] = self.sender_email
+            msg["To"] = to_email
+            msg["Subject"] = f"HotelPlus MFA Verification Code: {code}"
+            msg.attach(MIMEText(body, "html"))
+
+            return await asyncio.to_thread(self._send_smtp_email, msg)
+        except Exception as e:
+            logger.error(f"[Notification] MFA code email failed: {e}")
+            return False
+
 
 # Singleton instance
 notification_service = NotificationService()

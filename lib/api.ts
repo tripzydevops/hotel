@@ -939,6 +939,13 @@ class ApiClient {
       body: JSON.stringify({ token, code }),
     });
   }
+
+  async sendMfaCode(token: string): Promise<any> {
+    return this.fetch<any>(`/api/auth/mfa/send`, {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    });
+  }
 }
 
 export const api = new ApiClient();

@@ -23,6 +23,8 @@ export default function LoginPage() {
   const [mfaToken, setMfaToken] = useState("");
   const [mfaUid, setMfaUid] = useState("");
   const [mfaCode, setMfaCode] = useState<string[]>(Array(6).fill(""));
+  const [mfaResendSuccess, setMfaResendSuccess] = useState(false);
+
 
   const handleSubmit = async (formData: FormData) => {
     setIsLoading(true);
@@ -81,7 +83,13 @@ export default function LoginPage() {
               setMfaUid(uid || "");
               setEmailForVerification(email);
               setIsMfaRequired(true);
+              setMfaResendSuccess(false);
               setIsLoading(false);
+              
+              // Automatically trigger the email MFA verification code dispatch
+              api.sendMfaCode(accessToken).catch((mfaSendErr) => {
+                console.error("[Login] Automatic MFA dispatch failed:", mfaSendErr);
+              });
               return;
             }
           }
@@ -182,6 +190,25 @@ export default function LoginPage() {
       setIsLoading(false);
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");
+      setIsLoading(false);
+    }
+  };
+
+  const handleMfaResend = async () => {
+    setIsLoading(true);
+    setError(null);
+    setMfaResendSuccess(false);
+    try {
+      const { api } = await import("@/lib/api");
+      const result = await api.sendMfaCode(mfaToken);
+      if (result && result.success) {
+        setMfaResendSuccess(true);
+      } else {
+        setError(result?.message || "Failed to resend MFA code.");
+      }
+      setIsLoading(false);
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred while resending the code.");
       setIsLoading(false);
     }
   };
@@ -421,8 +448,14 @@ export default function LoginPage() {
                 {t("auth.mfaTitle") || "Security Verification"}
               </label>
               <p className="text-[var(--text-secondary)] text-xs mb-4">
-                {t("auth.mfaDescription") || "Please enter the 6-digit verification code from your authenticator application."}
+                {t("auth.mfaDescriptionEmail") || "Please enter the 6-digit verification code sent to your registered email address."}
               </p>
+              
+              {mfaResendSuccess && (
+                <div className="mb-4 text-xs font-bold text-[var(--soft-gold)] uppercase tracking-wider bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 py-2.5 px-3 rounded-xl animate-pulse">
+                  ✓ {t("auth.mfaResendSuccess") || "A new security code has been sent to your email address."}
+                </div>
+              )}
               
               <div className="flex justify-center gap-2" dir="ltr">
                 {Array(6).fill(0).map((_, idx) => (
@@ -461,13 +494,23 @@ export default function LoginPage() {
               
               <button
                 type="button"
+                onClick={handleMfaResend}
+                disabled={isLoading}
+                className="text-[var(--text-muted)] text-xs font-bold uppercase tracking-widest hover:text-[var(--overlay-text)] transition-colors mt-2"
+              >
+                {t("auth.mfaResendButton") || "Resend Code via Email"}
+              </button>
+
+              <button
+                type="button"
                 onClick={() => {
                   setIsMfaRequired(false);
                   setMfaCode(Array(6).fill(""));
+                  setMfaResendSuccess(false);
                   setError(null);
                 }}
                 disabled={isLoading}
-                className="text-[var(--text-muted)] text-xs font-bold uppercase tracking-widest hover:text-[var(--overlay-text)] transition-colors mt-2"
+                className="text-[var(--text-muted)] text-xs font-bold uppercase tracking-widest hover:text-[var(--overlay-text)] transition-colors mt-1"
               >
                 {t("auth.backToLogin") || "Back to Login"}
               </button>
