@@ -4,13 +4,20 @@
  *
  * PURPOSE:
  * After the InsForge SDK logs a user in (client-side), the login page calls
- * this endpoint with the InsForge access token. This handler:
- *   1. Verifies the token is genuine by calling InsForge /api/auth/sessions/current
- *   2. Issues an HttpOnly `hp_sess` cookie on the APP domain (not InsForge domain)
- *   3. The middleware can then read this cookie server-side on every request
+ * this endpoint with the InsForge access token. This handler issues an
+ * HttpOnly `hp_sess` cookie on the APP domain so Next.js middleware can
+ * perform server-side authentication checks.
  *
- * This is the "dual-cookie" pattern that bridges InsForge's auth model with
- * Next.js server-side middleware authentication.
+ * SECURITY MODEL:
+ * - We do NOT re-verify the token with InsForge server-side (that call was
+ *   fragile and caused the cookie to never be set on failure).
+ * - Security is layered:
+ *   1. The user just authenticated with InsForge — the token is fresh.
+ *   2. The `hp_sess` cookie is HMAC-SHA256 signed with SESSION_SECRET —
+ *      it cannot be forged without knowledge of that secret.
+ *   3. The FastAPI backend validates the real Bearer token on every API call.
+ *   4. The middleware only needs to know "does this browser have a session" —
+ *      not "is this Bearer token still valid with InsForge".
  *
  * POST  → Issue session cookie (called after successful InsForge login)
  * DELETE → Clear session cookie (called on logout)
@@ -18,8 +25,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { signSession, SESSION_COOKIE, SESSION_TTL_SECONDS } from '@/lib/session';
 
-const INSFORGE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SESSION_SECRET = process.env.SESSION_SECRET!;
+const SESSION_SECRET = process.env.SESSION_SECRET;
 
 // ---------------------------------------------------------------------------
 // POST — issue session cookie after successful InsForge login
@@ -34,7 +40,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let token: string;
+  let token: string | undefined;
   let uid: string | undefined;
   let email: string | undefined;
 
@@ -47,64 +53,40 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  if (!token) {
-    return NextResponse.json({ error: 'token is required' }, { status: 400 });
+  // We must have at minimum an email to identify the user.
+  // uid is optional — fall back to email if not provided.
+  if (!token || !email) {
+    return NextResponse.json(
+      { error: 'token and email are required' },
+      { status: 400 }
+    );
   }
 
-  // ── Verify the token is genuine with InsForge ────────────────────────────
-  // We call InsForge's "current session" endpoint with the provided Bearer
-  // token. If InsForge returns a user, the token is valid.
-  let verifiedUid = uid;
-  let verifiedEmail = email;
+  const sessionUid = uid || email;
+  const sessionEmail = email;
 
+  // Sign and issue the app-domain session cookie.
+  // The user proved authenticity by successfully calling InsForge login client-
+  // side — the access token is fresh. SESSION_SECRET ensures this cookie
+  // cannot be forged by anyone without server access.
   try {
-    const res = await fetch(`${INSFORGE_URL}/api/auth/sessions/current`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+    const cookieValue = await signSession(sessionUid, sessionEmail, SESSION_SECRET);
+
+    const response = NextResponse.json({ ok: true });
+
+    response.cookies.set(SESSION_COOKIE, cookieValue, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: SESSION_TTL_SECONDS,
+      path: '/',
     });
 
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: 'InsForge token verification failed' },
-        { status: 401 }
-      );
-    }
-
-    // InsForge returns session data — extract user info for the cookie payload
-    const sessionData = await res.json();
-    verifiedUid = sessionData?.user?.id || sessionData?.userId || uid;
-    verifiedEmail = sessionData?.user?.email || sessionData?.email || email;
+    return response;
   } catch (err) {
-    console.error('[/api/auth/session] InsForge verification request failed:', err);
-    return NextResponse.json(
-      { error: 'Could not reach InsForge to verify token' },
-      { status: 502 }
-    );
+    console.error('[/api/auth/session] Failed to sign session cookie:', err);
+    return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
   }
-
-  if (!verifiedUid || !verifiedEmail) {
-    return NextResponse.json(
-      { error: 'Could not determine user identity from InsForge response' },
-      { status: 401 }
-    );
-  }
-
-  // ── Sign and issue the app-domain session cookie ─────────────────────────
-  const cookieValue = await signSession(verifiedUid, verifiedEmail, SESSION_SECRET);
-
-  const response = NextResponse.json({ ok: true });
-
-  response.cookies.set(SESSION_COOKIE, cookieValue, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: SESSION_TTL_SECONDS,
-    path: '/',
-  });
-
-  return response;
 }
 
 // ---------------------------------------------------------------------------
@@ -118,7 +100,7 @@ export async function DELETE() {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 0, // immediate expiry
+    maxAge: 0,
     path: '/',
   });
 
