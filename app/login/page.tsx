@@ -19,6 +19,11 @@ export default function LoginPage() {
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [showDebug, setShowDebug] = useState(false);
 
+  const [isMfaRequired, setIsMfaRequired] = useState(false);
+  const [mfaToken, setMfaToken] = useState("");
+  const [mfaUid, setMfaUid] = useState("");
+  const [mfaCode, setMfaCode] = useState<string[]>(Array(6).fill(""));
+
   const handleSubmit = async (formData: FormData) => {
     setIsLoading(true);
     setError(null);
@@ -53,7 +58,33 @@ export default function LoginPage() {
         // [KAİZEN] Perform Profile Sanity Check
         try {
           const { api } = await import("@/lib/api");
-          await api.getProfile();
+          const profile = await api.getProfile();
+
+          // Intercept administrative and enterprise accounts for MFA verification
+          const adminEmails = [
+            "admin@hotel.plus",
+            "selcuk@rate-sentinel.com",
+            "asknsezen@gmail.com",
+            "askinsezen@gmail.com",
+            "yusuf@tripzy.travel",
+            "elif@tripzy.travel",
+            "tripzydevops@gmail.com"
+          ];
+          const isSystemAdmin = email.endsWith("@hotel.plus") || adminEmails.includes(email.toLowerCase());
+          const isProfileAdmin = profile?.role === "admin" || profile?.role === "market_admin" || profile?.role === "market admin";
+          
+          if (isProfileAdmin || isSystemAdmin) {
+            const accessToken = (result as any).data?.accessToken;
+            const uid = (result as any).data?.user?.id;
+            if (accessToken) {
+              setMfaToken(accessToken);
+              setMfaUid(uid || "");
+              setEmailForVerification(email);
+              setIsMfaRequired(true);
+              setIsLoading(false);
+              return;
+            }
+          }
 
           // ── Issue app-domain session cookie for server-side middleware auth ──
           // signInWithPassword returns { data: { accessToken, user }, error }.
@@ -151,6 +182,112 @@ export default function LoginPage() {
       setIsLoading(false);
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");
+      setIsLoading(false);
+    }
+  };
+
+  const handleMfaDigitChange = (index: number, val: string) => {
+    const numericVal = val.replace(/[^0-9]/g, "");
+    if (!numericVal && val !== "") return; // Allow empty to delete but block non-numeric
+
+    const newCode = [...mfaCode];
+    newCode[index] = numericVal.substring(numericVal.length - 1); // Get last digit typed
+    setMfaCode(newCode);
+
+    // Auto-tab to the next box if a digit was entered
+    if (numericVal && index < 5) {
+      const nextInput = document.getElementById(`mfa-digit-${index + 1}`) as HTMLInputElement;
+      if (nextInput) {
+        nextInput.focus();
+        nextInput.select();
+      }
+    }
+  };
+
+  const handleMfaDigitKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Backspace handling
+    if (e.key === "Backspace") {
+      const newCode = [...mfaCode];
+      
+      // If current is empty, clear the previous box and move focus back
+      if (!newCode[index] && index > 0) {
+        newCode[index - 1] = "";
+        setMfaCode(newCode);
+        const prevInput = document.getElementById(`mfa-digit-${index - 1}`) as HTMLInputElement;
+        if (prevInput) {
+          prevInput.focus();
+          prevInput.select();
+        }
+      } else {
+        newCode[index] = "";
+        setMfaCode(newCode);
+      }
+    }
+  };
+
+  const handleMfaPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").trim();
+    if (!/^\d{6}$/.test(pastedData)) return; // Assert exactly 6 digits
+
+    const digits = pastedData.split("");
+    setMfaCode(digits);
+
+    // Auto-focus the last field
+    const lastInput = document.getElementById(`mfa-digit-5`) as HTMLInputElement;
+    if (lastInput) {
+      lastInput.focus();
+    }
+  };
+
+  const handleMfaVerify = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    const fullCode = mfaCode.join("");
+    if (fullCode.length !== 6) {
+      setError("Please enter the complete 6-digit verification code.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const { api } = await import("@/lib/api");
+      
+      // 1. Verify code on FastAPI backend
+      const verifyRes = await api.verifyMfaCode(mfaToken, fullCode);
+      
+      if (!verifyRes || !verifyRes.success) {
+        setError(verifyRes?.message || "Invalid passcode.");
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. Code verified! Proceed to set the session cookie on Next.js domain
+      const sessRes = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          token: mfaToken, 
+          uid: mfaUid, 
+          email: emailForVerification 
+        }),
+      });
+
+      if (!sessRes.ok) {
+        const errText = await sessRes.text();
+        setError(`Failed to establish session: ${errText}`);
+        setIsLoading(false);
+        return;
+      }
+
+      // 3. Complete dashboard entry redirect
+      const params = new URLSearchParams(window.location.search);
+      const redirectTo = params.get("redirectTo") || "/dashboard";
+      router.push(redirectTo);
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred during MFA verification");
       setIsLoading(false);
     }
   };
@@ -274,6 +411,68 @@ export default function LoginPage() {
                 {t("auth.wrongEmail")}
             </button>
           </form>
+        ) : isMfaRequired ? (
+          <form onSubmit={handleMfaVerify} className="space-y-6 relative z-10 text-center animate-in fade-in zoom-in duration-500">
+            <div className="space-y-2">
+              <label
+                htmlFor="mfa-digit-0"
+                className="block text-xs font-bold text-[var(--soft-gold)] uppercase tracking-widest"
+              >
+                {t("auth.mfaTitle") || "Security Verification"}
+              </label>
+              <p className="text-[var(--text-secondary)] text-xs mb-4">
+                {t("auth.mfaDescription") || "Please enter the 6-digit verification code from your authenticator application."}
+              </p>
+              
+              <div className="flex justify-center gap-2" dir="ltr">
+                {Array(6).fill(0).map((_, idx) => (
+                  <input
+                    key={idx}
+                    id={`mfa-digit-${idx}`}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={1}
+                    value={mfaCode[idx] || ""}
+                    onChange={(e) => handleMfaDigitChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleMfaDigitKeyDown(idx, e)}
+                    onPaste={handleMfaPaste}
+                    className="w-12 h-14 bg-white/5 border border-[var(--overlay-border)] rounded-xl text-center text-2xl font-black text-[var(--overlay-text)] focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)] focus:border-transparent transition-all hover:bg-white/10"
+                    autoFocus={idx === 0}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button
+                disabled={isLoading}
+                className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 font-black text-lg transition-all transform hover:scale-[1.02] active:scale-95 shadow-xl ${isLoading
+                  ? "bg-white/10 text-[var(--text-muted)] cursor-not-allowed"
+                  : "bg-gradient-to-r from-[var(--soft-gold)] to-[#e6b800] text-[var(--deep-ocean)] hover:shadow-[var(--soft-gold)]/20"
+                  }`}
+              >
+                {isLoading ? (
+                  <div className="w-6 h-6 border-3 border-[var(--deep-ocean)]/30 border-t-[var(--deep-ocean)] rounded-full animate-spin" />
+                ) : (
+                  t("auth.mfaVerifyButton") || "Verify Passcode"
+                )}
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMfaRequired(false);
+                  setMfaCode(Array(6).fill(""));
+                  setError(null);
+                }}
+                disabled={isLoading}
+                className="text-[var(--text-muted)] text-xs font-bold uppercase tracking-widest hover:text-[var(--overlay-text)] transition-colors mt-2"
+              >
+                {t("auth.backToLogin") || "Back to Login"}
+              </button>
+            </div>
+          </form>
         ) : (
           <form 
             onSubmit={(e) => {
@@ -336,7 +535,7 @@ export default function LoginPage() {
         )}
 
         {/* Toggle Section */}
-        {!isVerifying && !isPendingApproval && (
+        {!isVerifying && !isPendingApproval && !isMfaRequired && (
           <div className="mt-8 pt-6 border-t border-[var(--overlay-border)] text-center relative z-10">
             <p className="text-[var(--text-muted)] text-sm mb-4">
               {isLogin ? t("auth.newToPlatform") : t("auth.alreadyHaveAccount")}

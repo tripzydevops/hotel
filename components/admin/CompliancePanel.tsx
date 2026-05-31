@@ -54,6 +54,31 @@ export default function CompliancePanel() {
     }
   };
 
+  const [verbisLoading, setVerbisLoading] = useState(false);
+  const [verbisDraft, setVerbisDraft] = useState<any | null>(null);
+  const [copiedSection, setCopiedSection] = useState<string | null>(null);
+
+  const handleGenerateVerbis = async () => {
+    setVerbisLoading(true);
+    try {
+      const data = await api.getVerbisDraft();
+      setVerbisDraft(data);
+      toast.success("VERBİS Filing Draft generated successfully.");
+    } catch (err: any) {
+      console.error("Failed to generate VERBİS draft:", err);
+      toast.error("Failed to generate VERBİS draft: " + err.message);
+    } finally {
+      setVerbisLoading(false);
+    }
+  };
+
+  const handleCopySection = (sectionId: string, content: string) => {
+    navigator.clipboard.writeText(content);
+    setCopiedSection(sectionId);
+    toast.success("Copied to clipboard!");
+    setTimeout(() => setCopiedSection(null), 2000);
+  };
+
   useEffect(() => {
     loadDocuments();
   }, []);
@@ -479,6 +504,127 @@ export default function CompliancePanel() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── KVKK VERBİS Filing Helper ──────────────────────────────────── */}
+      <div className="glass-card border border-[var(--overlay-border)] p-6 space-y-6 shadow-2xl transition-all duration-500 hover:border-[var(--soft-gold)]/10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/5 border border-[var(--overlay-border)] flex items-center justify-center text-[var(--soft-gold)]">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-[var(--overlay-text)] uppercase tracking-widest flex items-center gap-2">
+                <span>KVKK VERBİS Filing Helper</span>
+                <span className="px-2 py-0.5 rounded text-[8px] bg-red-500/10 text-red-400 font-bold border border-red-500/20">TR Legal</span>
+              </h4>
+              <p className="text-[10px] text-[var(--text-muted)] font-mono uppercase tracking-tighter opacity-50">
+                Automated e-Devlet VERBİS registry mapping evidence
+              </p>
+            </div>
+          </div>
+          
+          <button
+            onClick={handleGenerateVerbis}
+            disabled={verbisLoading}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-[var(--overlay-border)] hover:border-[var(--soft-gold)]/30 text-[var(--soft-gold)] font-bold text-xs uppercase tracking-wider hover:bg-[var(--soft-gold)]/5 active:scale-95 transition-all shadow-lg disabled:opacity-50"
+          >
+            {verbisLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            <span>{verbisLoading ? "Mapping..." : "Generate VERBİS Draft"}</span>
+          </button>
+        </div>
+
+        {!verbisDraft ? (
+          <div className="p-12 text-center text-[var(--text-muted)] font-mono text-xs uppercase tracking-widest bg-black/10 rounded-xl border border-white/5">
+            <Server className="w-8 h-8 mx-auto mb-3 opacity-20" />
+            Click "Generate VERBİS Draft" to analyze schema structures.
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {/* Dynamic Metadata Summary */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 text-xs gap-3">
+              <div>
+                <span className="text-[var(--text-muted)]">Veri Sorumlusu: </span>
+                <strong className="text-[var(--overlay-text)]">{verbisDraft.metadata.data_controller}</strong>
+              </div>
+              <div className="flex gap-4">
+                <div>
+                  <span className="text-[var(--text-muted)]">Active Nodes: </span>
+                  <span className="font-mono text-blue-300 font-bold">{verbisDraft.metadata.database_evidence.active_user_nodes} Users</span>
+                </div>
+                <div>
+                  <span className="text-[var(--text-muted)]">Monitored: </span>
+                  <span className="font-mono text-blue-300 font-bold">{verbisDraft.metadata.database_evidence.monitored_hotels} Hotels</span>
+                </div>
+              </div>
+            </div>
+
+            {/* VERBİS Sections Accordions */}
+            <div className="space-y-6">
+              {verbisDraft.sections.map((section: any) => {
+                // Prepare copy-paste text for the section
+                const copyText = section.fields.map((f: any) => {
+                  return `[${f.key_tr} / ${f.key_en}]\nDetay: ${f.value_tr}\nAmaç/Gerekçe: ${f.purpose_tr || 'Sistem işlerliği'}`;
+                }).join('\n\n');
+
+                return (
+                  <div key={section.id} className="p-5 rounded-2xl bg-white/5 border border-[var(--overlay-border)] space-y-4">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                      <div>
+                        <h5 className="text-xs font-black uppercase text-[var(--overlay-text)] tracking-wider">
+                          {section.title_tr}
+                        </h5>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
+                          {section.description_tr}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleCopySection(section.id, copyText)}
+                        className="p-2 text-xs font-black uppercase tracking-widest text-[var(--soft-gold)] hover:text-white bg-[var(--soft-gold)]/10 hover:bg-[var(--soft-gold)]/20 border border-[var(--soft-gold)]/20 rounded-lg flex items-center gap-1.5 transition-all"
+                        title="Copy Section Content for VERBİS Portal"
+                      >
+                        {copiedSection === section.id ? (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="text-emerald-400">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Copy Draft</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {section.fields.map((f: any, idx: number) => (
+                        <div key={idx} className="p-4 bg-black/20 rounded-xl border border-white/5 space-y-2 text-xs">
+                          <div className="flex justify-between items-center border-b border-white/5 pb-1">
+                            <span className="font-bold text-[var(--soft-gold)]">{f.key_tr}</span>
+                            <span className="text-[9px] text-[var(--text-muted)] font-mono uppercase">{f.key_en}</span>
+                          </div>
+                          <div className="text-[var(--overlay-text)] font-semibold leading-relaxed">
+                            {f.value_tr}
+                          </div>
+                          {f.purpose_tr && (
+                            <div className="text-[10px] text-[var(--text-muted)] pt-1">
+                              <strong>Amaç:</strong> {f.purpose_tr}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

@@ -139,6 +139,12 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-transparent transition-colors duration-500">
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:p-4 focus:bg-[var(--soft-gold)] focus:text-[var(--deep-ocean)] focus:z-[9999] font-bold rounded-lg outline-none border border-[var(--soft-gold)] transition-all"
+      >
+        Skip to main content
+      </a>
       {/* Ghost Mode Indicator */}
       <AnimatePresence>
         {profile?.is_impersonating && (
@@ -262,7 +268,7 @@ export default function DashboardLayout({
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden relative custom-scrollbar">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto overflow-x-hidden relative custom-scrollbar outline-none">
           {/* Enhanced Background Effects */}
           <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-[var(--soft-gold)]/5 blur-[120px] rounded-full -z-10 pointer-events-none" />
           <div className="fixed bottom-0 left-0 w-[600px] h-[600px] bg-[var(--alert-red)]/5 blur-[150px] rounded-full -z-10 pointer-events-none" />

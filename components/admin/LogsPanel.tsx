@@ -4,13 +4,29 @@ import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { AdminLog } from "@/types";
 import { formatDistanceToNow } from "date-fns";
-import { Loader2, Terminal, AlertCircle, Shield, FileText } from "lucide-react";
+import { Loader2, Terminal, AlertCircle, Shield, FileText, Download } from "lucide-react";
+import { useToast } from "@/components/ui/ToastContext";
 
 import SystemTerminal from "./SystemTerminal";
 
 const LogsPanel = () => {
+  const { toast } = useToast();
   const [logs, setLogs] = useState<AdminLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exportingLogs, setExportingLogs] = useState(false);
+
+  const handleExportAuditTrail = async () => {
+    setExportingLogs(true);
+    try {
+      await api.exportSecurityLogs();
+      toast.success("Security audit logs exported successfully.");
+    } catch (err: any) {
+      console.error("Failed to export security logs:", err);
+      toast.error("Failed to export security logs: " + err.message);
+    } finally {
+      setExportingLogs(false);
+    }
+  };
 
   useEffect(() => {
     loadLogs();
@@ -45,12 +61,26 @@ const LogsPanel = () => {
               </p>
             </div>
           </div>
-          <button
-            onClick={loadLogs}
-            className="text-[10px] font-black uppercase tracking-widest bg-white/5 hover:bg-[var(--soft-gold)]/10 px-4 py-2 rounded-lg flex items-center gap-2 text-[var(--soft-gold)] border border-[var(--overlay-border)] transition-all active:scale-95"
-          >
-            Refresh Logs
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportAuditTrail}
+              disabled={exportingLogs}
+              className="text-[10px] font-black uppercase tracking-widest bg-[var(--soft-gold)]/10 hover:bg-[var(--soft-gold)]/20 px-4 py-2 rounded-lg flex items-center gap-2 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {exportingLogs ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+              <span>{exportingLogs ? "Exporting..." : "Export Audit Trail (CSV)"}</span>
+            </button>
+            <button
+              onClick={loadLogs}
+              className="text-[10px] font-black uppercase tracking-widest bg-white/5 hover:bg-[var(--soft-gold)]/10 px-4 py-2 rounded-lg flex items-center gap-2 text-[var(--soft-gold)] border border-[var(--overlay-border)] transition-all active:scale-95"
+            >
+              Refresh Logs
+            </button>
+          </div>
         </div>
 
         <div className="glass-card border border-[var(--overlay-border)] overflow-hidden shadow-2xl transition-all duration-500 hover:border-[var(--soft-gold)]/10">

@@ -903,6 +903,42 @@ class ApiClient {
   async runSecurityAudit(): Promise<{ timestamp: string; status: string; checks: Array<{ name: string; description: string; status: string; details: any }> }> {
     return this.fetch<{ timestamp: string; status: string; checks: Array<{ name: string; description: string; status: string; details: any }> }>(`/api/admin/compliance/security-audit`);
   }
+
+  async exportSecurityLogs(): Promise<void> {
+    const token = await this.getToken();
+    const headers: any = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const url = `${API_BASE_URL}/api/admin/compliance/logs/export`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) throw new Error("Security logs export failed");
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    a.download = `system_audit_trail_${timestamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    document.body.removeChild(a);
+  }
+
+  async getVerbisDraft(): Promise<any> {
+    return this.fetch<any>(`/api/admin/compliance/verbis-draft`);
+  }
+
+  async verifyMfaCode(token: string, code: string): Promise<any> {
+    return this.fetch<any>(`/api/auth/mfa/verify`, {
+      method: "POST",
+      body: JSON.stringify({ token, code }),
+    });
+  }
 }
 
 export const api = new ApiClient();

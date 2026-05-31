@@ -287,6 +287,96 @@ async def get_admin_logs_logic(db: Client, limit: int = 50) -> List[AdminLog]:
         return []
 
 
+async def get_admin_logs_export_logic(db: Client) -> StreamingResponse:
+    """
+    Export all system activity logs as CSV for SOC 2 / ISO 27001 evidence.
+    Streams the response to prevent OOM errors.
+    """
+    try:
+        result = (
+            db.table("scan_sessions")
+            .select("*")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        
+        sessions = cast(List[Dict[str, Any]], result.data or [])
+        
+        user_ids = list(set(s["user_id"] for s in sessions if s.get("user_id")))
+        users_map = {}
+        if user_ids:
+            profiles = (
+                db.table("user_profiles")
+                .select("user_id, display_name")
+                .in_("user_id", user_ids)
+                .execute()
+            )
+            users_map = {
+                p["user_id"]: p.get("display_name", "Unknown") 
+                for p in cast(List[Dict[str, Any]], profiles.data or [])
+            }
+            
+        formatted_logs = []
+        for s in sessions:
+            level = "INFO"
+            if s["status"] == "failed":
+                level = "ERROR"
+            elif s["status"] == "completed":
+                level = "SUCCESS"
+                
+            formatted_logs.append({
+                "log_id": s["id"],
+                "timestamp": s["created_at"],
+                "level": level,
+                "action": f"Scan Session ({s['session_type']})",
+                "details": f"Checked {s.get('hotels_count', 0)} hotels",
+                "user_id": s.get("user_id"),
+                "user_name": users_map.get(s.get("user_id"), "System/Anonymous"),
+                "status": s["status"],
+                "hotels_count": s.get("hotels_count", 0),
+                "completed_at": s.get("completed_at"),
+            })
+            
+        df = pd.DataFrame(formatted_logs)
+        if df.empty:
+            df = pd.DataFrame(columns=[
+                "log_id", "timestamp", "level", "action", "details", 
+                "user_id", "user_name", "status", "hotels_count", "completed_at"
+            ])
+            
+        async def csv_generator():
+            output = io.StringIO()
+            df.head(0).to_csv(output, index=False)
+            yield output.getvalue().encode("utf-8")
+            output.truncate(0)
+            output.seek(0)
+            
+            chunk_size = 500
+            for i in range(0, len(df), chunk_size):
+                chunk = df.iloc[i : i + chunk_size]
+                chunk.to_csv(output, index=False, header=False)
+                yield output.getvalue().encode("utf-8")
+                output.truncate(0)
+                output.seek(0)
+                
+        from datetime import datetime, timezone
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        return StreamingResponse(
+            csv_generator(),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f"attachment; filename=system_audit_trail_{timestamp}.csv",
+                "X-Export-Rows": str(len(df)),
+            },
+        )
+    except PostgRESTError as e:
+        logger.error(f"PostgREST error exporting admin logs: {e}", exc_info=True)
+        raise HTTPException(500, f"Database error during admin log export: {e}")
+    except Exception as e:
+        logger.error(f"Error exporting admin logs: {e}", exc_info=True)
+        raise HTTPException(500, f"Failed to export admin logs: {str(e)}")
+
+
 async def get_admin_feed_logic(
     limit: int = 50, db: Optional[Client] = None
 ) -> List[Dict[str, Any]]:

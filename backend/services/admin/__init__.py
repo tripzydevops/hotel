@@ -39,6 +39,7 @@ from backend.services.admin.scan_admin import (
     get_admin_scan_details_logic,
     get_admin_scan_export_logic,
     get_admin_logs_logic,
+    get_admin_logs_export_logic,
     get_admin_feed_logic,
     cleanup_empty_scans_logic,
     get_admin_batches_logic,
@@ -57,6 +58,9 @@ from backend.services.admin.system_stats import (
     get_admin_settings_logic,
     update_admin_settings_logic,
 )
+
+# KVKK VERBİS Filing Mapper
+from backend.services.admin.verbis_mapper import generate_verbis_draft_logic
 
 # Membership Plans
 from backend.services.admin.plan_admin import (
@@ -109,6 +113,7 @@ __all__ = [
     "get_admin_scan_details_logic",
     "get_admin_scan_export_logic",
     "get_admin_logs_logic",
+    "get_admin_logs_export_logic",
     "get_admin_feed_logic",
     "cleanup_empty_scans_logic",
     "get_admin_batches_logic",
@@ -145,4 +150,5 @@ __all__ = [
     "get_competitor_matrix_logic",
     "get_alert_summary_logic",
     "get_admin_market_intelligence_logic",
+    "generate_verbis_draft_logic",
 ]

@@ -24,8 +24,14 @@ export default function LandingGroupLayout({
 
   return (
     <div className={theme === "light" ? "light-theme" : ""}>
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:p-4 focus:bg-[var(--soft-gold)] focus:text-[var(--deep-ocean)] focus:z-[9999] font-bold rounded-lg outline-none border border-[var(--soft-gold)] transition-all"
+      >
+        Skip to main content
+      </a>
       <LandingNavbar />
-      <main className="min-h-screen bg-[var(--deep-ocean)] transition-all duration-500">
+      <main id="main-content" tabIndex={-1} className="min-h-screen bg-[var(--deep-ocean)] transition-all duration-500 outline-none">
         {children}
       </main>
       <LandingFooter />

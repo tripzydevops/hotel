@@ -227,3 +227,10 @@ h1, h2, h3, h4, h5, h6 {
 .animate-pulse-subtle {
   animation: pulse-subtle 3s ease-in-out infinite;
 }
+
+/* ===== WCAG 2.1 AA ACCESSIBILITY OUTLINES ===== */
+*:focus-visible {
+  outline: 2px solid var(--soft-gold) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px var(--soft-gold-glow) !important;
+}

@@ -45,7 +45,7 @@ To guarantee robust tenant isolation in a multi-tenant B2B model:
 ---
 
 ## 5. Password Security & Authentication Standards
-*   **MFA (Multi-Factor Authentication):** Strongly recommended for all enterprise roles and mandatory for administrators access.
+*   **MFA (Multi-Factor Authentication):** Strictly enforced for all system administrator and operator roles. Upon password verification, the login pipeline halts and prompts the user for a 6-digit TOTP token, which is validated cryptographically on our secure FastAPI backend. Session cookies (`hp_sess`) are only issued after successful MFA verification.
 *   **Token Expiration:** JSON Web Tokens (JWT) are valid for a maximum of 24 hours. Refresh sessions require secure, HTTP-only verification keys.
 *   **Failed Logins:** Accounts are automatically locked out for 15 minutes after 5 consecutive failed login attempts to prevent brute-force attacks.
 

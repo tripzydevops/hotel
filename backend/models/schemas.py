@@ -688,3 +688,8 @@ class HealthMetrics(BaseModel):
 class MarketBriefingRequest(BaseModel):
     city: str
     user_id: Optional[str] = None
+
+
+class MfaVerifyRequest(BaseModel):
+    token: str = Field(..., description="The temporary JWT access token from InsForge login")
+    code: str = Field(..., min_length=6, max_length=6, description="6-digit numerical TOTP passcode")

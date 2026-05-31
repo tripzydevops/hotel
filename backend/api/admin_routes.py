@@ -35,8 +35,10 @@ from backend.services.admin import (
     get_admin_feed_logic,
     get_admin_hotels_logic,
     get_admin_logs_logic,
+    get_admin_logs_export_logic,
     get_system_logs_logic,
     get_admin_market_intelligence_logic,
+    generate_verbis_draft_logic,
     get_admin_plans_logic,
     get_admin_providers_logic,
     get_admin_scan_details_logic,
@@ -570,7 +572,9 @@ COMPLIANCE_DOCS = {
     "backup": {"path": "docs/BACKUP_RESTORE_PROCEDURES.md", "title": "Backup & Disaster Recovery Procedures", "format": "markdown"},
     "deployment": {"path": "docs/DEPLOYMENT_RUNBOOK.md", "title": "CI/CD & Deployment Runbook", "format": "markdown"},
     "pci": {"path": "PCI_SCOPE_EXCLUSION.md", "title": "PCI DSS Scope Exclusion Statement", "format": "markdown"},
-    "openapi": {"path": "docs/openapi.json", "title": "OpenAPI v3 System Specification", "format": "json"}
+    "openapi": {"path": "docs/openapi.json", "title": "OpenAPI v3 System Specification", "format": "json"},
+    "progress": {"path": "docs/certification_progress_report.md", "title": "Compliance & Certification Progress Report", "format": "markdown"},
+    "scan": {"path": "scan_results_report.md", "title": "Security Scan & SAST Vulnerability Audit Report", "format": "markdown"}
 }
 
 
@@ -718,4 +722,29 @@ async def run_security_configuration_audit(
         audit_results["status"] = "FAIL"
 
     return audit_results
+
+
+@router.get("/compliance/logs/export")
+async def export_admin_compliance_logs(
+    db: Client = Depends(get_supabase_admin),
+    admin=Depends(get_current_admin_user),
+):
+    """
+    Streams a CSV file download of all system audit logs for SOC 2 Type II compliance evidence.
+    """
+    return await get_admin_logs_export_logic(db)
+
+
+@router.get("/compliance/verbis-draft")
+async def get_verbis_draft(
+    db: Client = Depends(get_supabase_admin),
+    admin=Depends(get_current_admin_user),
+):
+    """
+    Generates a pre-formatted KVKK VERBİS Filing draft mapping personal data categories,
+    processing purposes, transfers, and safeguards for compliance registry.
+    """
+    return await generate_verbis_draft_logic(db)
+
+
 
