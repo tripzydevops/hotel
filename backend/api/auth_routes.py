@@ -233,8 +233,8 @@ async def send_mfa_passcode(body: MfaSendRequest, db: Client = Depends(get_supab
     except Exception as e:
         if isinstance(e, HTTPException):
             raise e
-        logger.error(f"[MFA Route] Exception encountered during code generation/send: {e}")
-        raise HTTPException(status_code=500, detail="An error occurred while sending the verification code.")
+        logger.error(f"[MFA Route] Exception encountered during code generation/send: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=500, detail=f"MFA dispatch error: {type(e).__name__}: {str(e)}")
 
 
 @router.post("/auth/mfa/verify", response_model=SuccessResponse)

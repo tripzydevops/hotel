@@ -348,21 +348,29 @@ class NotificationService:
 
         if not self.enabled:
             logger.critical(f"[Notification] SMTP IS DISABLED — cannot deliver MFA security code to {to_email}. "
-                          f"Set SMTP_USER and SMTP_PASSWORD environment variables to enable email delivery.")
+                          f"SMTP_USER={bool(self.smtp_user)}, SMTP_PASSWORD={bool(self.smtp_password)}")
             # MFA codes are security-critical. Unlike alert emails, a simulated/mocked
             # MFA email means the user can NEVER log in. Return False to trigger error handling.
             return False
 
         try:
+            logger.info(f"[Notification] Preparing MFA email to {to_email} via {self.smtp_server}:{self.smtp_port}")
             msg = MIMEMultipart()
             msg["From"] = self.sender_email
             msg["To"] = to_email
             msg["Subject"] = f"HotelPlus MFA Verification Code: {code}"
             msg.attach(MIMEText(body, "html"))
 
-            return await asyncio.to_thread(self._send_smtp_email, msg)
+            # Use synchronous SMTP directly — asyncio.to_thread may not work
+            # correctly in Vercel's serverless Python runtime
+            result = self._send_smtp_email(msg)
+            if result:
+                logger.info(f"[Notification] MFA code email successfully sent to {to_email}")
+            else:
+                logger.error(f"[Notification] MFA SMTP send returned False for {to_email}")
+            return result
         except Exception as e:
-            logger.error(f"[Notification] MFA code email failed: {e}")
+            logger.error(f"[Notification] MFA code email failed with exception: {type(e).__name__}: {e}")
             return False
 
 
