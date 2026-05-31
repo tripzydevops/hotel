@@ -870,6 +870,25 @@ class ApiClient {
       }),
     });
   }
+
+  // ── GDPR / DSAR Compliance ──────────────────────────────────────────────
+
+  async exportProfileData(): Promise<any> {
+    return this.fetch<any>(`/api/profile/dsar/export`);
+  }
+
+  async purgeProfileData(): Promise<any> {
+    return this.fetch<any>(`/api/profile/dsar/purge`, {
+      method: "DELETE",
+    });
+  }
+
+  async recordConsent(accepted: boolean): Promise<void> {
+    return this.fetch<void>(`/api/profile/consent`, {
+      method: "POST",
+      body: JSON.stringify({ accepted }),
+    });
+  }
 }
 
 export const api = new ApiClient();

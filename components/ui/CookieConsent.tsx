@@ -10,6 +10,7 @@
 import { useState, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import { Shield, X } from "lucide-react";
+import { api } from "@/lib/api";
 
 export default function CookieConsent() {
   const { t } = useI18n();
@@ -33,6 +34,8 @@ export default function CookieConsent() {
     if (typeof window !== "undefined") {
       localStorage.setItem("hotelplus_cookie_consent", "accepted");
       setShowBanner(false);
+      // Fire-and-forget consent audit trail
+      try { api.recordConsent(true); } catch {}
     }
   };
 
@@ -40,6 +43,8 @@ export default function CookieConsent() {
     if (typeof window !== "undefined") {
       localStorage.setItem("hotelplus_cookie_consent", "declined");
       setShowBanner(false);
+      // Fire-and-forget consent audit trail
+      try { api.recordConsent(false); } catch {}
     }
   };
 

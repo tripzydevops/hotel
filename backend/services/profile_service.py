@@ -316,3 +316,259 @@ async def update_profile_logic(
 
     # After update, always re-enrich the data so the UI gets the correct plan status immediately
     return await get_enriched_profile_logic(user_id, result.data[0], db, email=email or update_data.get("email"))
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# GDPR / KVKK — Data Subject Access Request (DSAR) Operations
+# ═══════════════════════════════════════════════════════════════════════
+
+
+async def export_user_data_dsar(user_id: str, db: Client) -> Dict[str, Any]:
+    """
+    GDPR Article 15 / KVKK Article 11 — Right of Access (Data Portability).
+
+    Compiles a comprehensive JSON export of ALL personal data the platform
+    holds for a given user. This intentionally excludes pricing/scan result
+    data which is classified as aggregated business intelligence, not personal
+    data belonging to the data subject.
+
+    Returns a structured dict suitable for JSON serialization and delivery
+    to the data subject.
+    """
+    from backend.utils.db import get_supabase_client
+
+    admin_db = get_supabase_client(admin=True)
+    if not admin_db:
+        raise HTTPException(
+            status_code=503,
+            detail="Admin database connection unavailable for DSAR export",
+        )
+
+    export: Dict[str, Any] = {
+        "metadata": {
+            "export_timestamp": datetime.now(timezone.utc).isoformat(),
+            "platform": "HotelPlus by Tripzy.travel",
+            "data_controller": "Tripzy Travel Teknoloji A.Ş.",
+            "data_subject_id": user_id,
+            "legal_basis": "GDPR Art. 15 / KVKK Art. 11 — Right of Access",
+        },
+        "user_profile": None,
+        "settings": None,
+        "monitored_hotels": [],
+        "alerts": [],
+    }
+
+    # 1. User Profile
+    try:
+        res = (
+            admin_db.table("user_profiles")
+            .select("*")
+            .eq("user_id", user_id)
+            .maybe_single()
+            .execute()
+        )
+        if res.data:
+            export["user_profile"] = res.data
+    except Exception as e:
+        logger.error(f"DSAR export — user_profiles fetch failed for {user_id}: {e}")
+        export["user_profile"] = {"error": "Failed to retrieve profile data"}
+
+    # 2. Settings
+    try:
+        res = (
+            admin_db.table("settings")
+            .select("*")
+            .eq("user_id", user_id)
+            .maybe_single()
+            .execute()
+        )
+        if res.data:
+            export["settings"] = res.data
+    except Exception as e:
+        logger.error(f"DSAR export — settings fetch failed for {user_id}: {e}")
+        export["settings"] = {"error": "Failed to retrieve settings data"}
+
+    # 3. Monitored Hotels (join with hotels table to include hotel names)
+    try:
+        res = (
+            admin_db.table("user_hotels")
+            .select("*, hotels(id, name, location)")
+            .eq("user_id", user_id)
+            .execute()
+        )
+        if res.data:
+            export["monitored_hotels"] = [
+                {
+                    "hotel_id": str(row.get("hotel_id", "")),
+                    "hotel_name": (row.get("hotels") or {}).get("name", "Unknown"),
+                    "hotel_location": (row.get("hotels") or {}).get("location"),
+                    "is_target": row.get("is_target", False),
+                    "is_monitored": row.get("is_monitored", True),
+                    "preferred_currency": row.get("preferred_currency"),
+                    "created_at": row.get("created_at"),
+                }
+                for row in res.data
+            ]
+    except Exception as e:
+        logger.error(f"DSAR export — user_hotels fetch failed for {user_id}: {e}")
+        export["monitored_hotels"] = [{"error": "Failed to retrieve hotel associations"}]
+
+    # 4. Alerts (most recent 100)
+    try:
+        res = (
+            admin_db.table("alerts")
+            .select("*")
+            .eq("user_id", user_id)
+            .order("created_at", desc=True)
+            .limit(100)
+            .execute()
+        )
+        if res.data:
+            export["alerts"] = res.data
+    except Exception as e:
+        logger.error(f"DSAR export — alerts fetch failed for {user_id}: {e}")
+        export["alerts"] = [{"error": "Failed to retrieve alerts data"}]
+
+    logger.info(
+        f"DSAR EXPORT completed for user {user_id}: "
+        f"profile={'yes' if export['user_profile'] else 'no'}, "
+        f"settings={'yes' if export['settings'] else 'no'}, "
+        f"hotels={len(export['monitored_hotels'])}, "
+        f"alerts={len(export['alerts'])}"
+    )
+
+    return export
+
+
+async def purge_user_data_dsar(user_id: str, db: Client) -> Dict[str, Any]:
+    """
+    GDPR Article 17 / KVKK Article 7 — Right to Erasure ("Right to be Forgotten").
+
+    Performs a complete account deletion with anonymization strategy:
+      - ANONYMIZE: scan_sessions and query_logs (set user_id = NULL) to
+        preserve aggregate business intelligence while removing PII linkage.
+      - HARD DELETE: alerts, user_hotels, settings, user_profiles.
+      - AUTH DELETE: Removes the InsForge/Supabase auth record entirely.
+
+    Uses admin_db (service role) for all operations since RLS would block
+    cross-table deletes on behalf of the user being removed.
+
+    Returns a summary dict of operations performed.
+    """
+    from backend.utils.db import get_supabase_client
+
+    admin_db = get_supabase_client(admin=True)
+    if not admin_db:
+        raise HTTPException(
+            status_code=503,
+            detail="Admin database connection unavailable for DSAR purge",
+        )
+
+    summary: Dict[str, Any] = {
+        "user_id": user_id,
+        "purge_timestamp": datetime.now(timezone.utc).isoformat(),
+        "operations": {},
+    }
+
+    # ── Step 1: ANONYMIZE scan_sessions (set user_id = NULL) ──
+    try:
+        res = (
+            admin_db.table("scan_sessions")
+            .update({"user_id": None})
+            .eq("user_id", user_id)
+            .execute()
+        )
+        count = len(res.data) if res.data else 0
+        summary["operations"]["scan_sessions_anonymized"] = count
+        logger.info(f"DSAR PURGE — Anonymized {count} scan_sessions for {user_id}")
+    except Exception as e:
+        logger.error(f"DSAR PURGE — scan_sessions anonymization failed for {user_id}: {e}")
+        summary["operations"]["scan_sessions_anonymized"] = f"ERROR: {e}"
+
+    # ── Step 2: ANONYMIZE query_logs (set user_id = NULL) ──
+    try:
+        res = (
+            admin_db.table("query_logs")
+            .update({"user_id": None})
+            .eq("user_id", user_id)
+            .execute()
+        )
+        count = len(res.data) if res.data else 0
+        summary["operations"]["query_logs_anonymized"] = count
+        logger.info(f"DSAR PURGE — Anonymized {count} query_logs for {user_id}")
+    except Exception as e:
+        logger.error(f"DSAR PURGE — query_logs anonymization failed for {user_id}: {e}")
+        summary["operations"]["query_logs_anonymized"] = f"ERROR: {e}"
+
+    # ── Step 3: HARD DELETE alerts ──
+    try:
+        res = (
+            admin_db.table("alerts")
+            .delete()
+            .eq("user_id", user_id)
+            .execute()
+        )
+        count = len(res.data) if res.data else 0
+        summary["operations"]["alerts_deleted"] = count
+        logger.info(f"DSAR PURGE — Deleted {count} alerts for {user_id}")
+    except Exception as e:
+        logger.error(f"DSAR PURGE — alerts deletion failed for {user_id}: {e}")
+        summary["operations"]["alerts_deleted"] = f"ERROR: {e}"
+
+    # ── Step 4: HARD DELETE user_hotels ──
+    try:
+        res = (
+            admin_db.table("user_hotels")
+            .delete()
+            .eq("user_id", user_id)
+            .execute()
+        )
+        count = len(res.data) if res.data else 0
+        summary["operations"]["user_hotels_deleted"] = count
+        logger.info(f"DSAR PURGE — Deleted {count} user_hotels for {user_id}")
+    except Exception as e:
+        logger.error(f"DSAR PURGE — user_hotels deletion failed for {user_id}: {e}")
+        summary["operations"]["user_hotels_deleted"] = f"ERROR: {e}"
+
+    # ── Step 5: HARD DELETE settings ──
+    try:
+        res = (
+            admin_db.table("settings")
+            .delete()
+            .eq("user_id", user_id)
+            .execute()
+        )
+        count = len(res.data) if res.data else 0
+        summary["operations"]["settings_deleted"] = count
+        logger.info(f"DSAR PURGE — Deleted {count} settings for {user_id}")
+    except Exception as e:
+        logger.error(f"DSAR PURGE — settings deletion failed for {user_id}: {e}")
+        summary["operations"]["settings_deleted"] = f"ERROR: {e}"
+
+    # ── Step 6: HARD DELETE user_profiles ──
+    try:
+        res = (
+            admin_db.table("user_profiles")
+            .delete()
+            .eq("user_id", user_id)
+            .execute()
+        )
+        count = len(res.data) if res.data else 0
+        summary["operations"]["user_profiles_deleted"] = count
+        logger.info(f"DSAR PURGE — Deleted {count} user_profiles for {user_id}")
+    except Exception as e:
+        logger.error(f"DSAR PURGE — user_profiles deletion failed for {user_id}: {e}")
+        summary["operations"]["user_profiles_deleted"] = f"ERROR: {e}"
+
+    # ── Step 7: DELETE InsForge Auth Record ──
+    try:
+        admin_db.auth.admin.delete_user(user_id)
+        summary["operations"]["auth_record_deleted"] = True
+        logger.info(f"DSAR PURGE — Deleted auth record for {user_id}")
+    except Exception as e:
+        logger.error(f"DSAR PURGE — auth record deletion failed for {user_id}: {e}")
+        summary["operations"]["auth_record_deleted"] = f"ERROR: {e}"
+
+    logger.info(f"DSAR PURGE completed for user {user_id}: {summary['operations']}")
+
+    return summary

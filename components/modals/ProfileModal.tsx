@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, User, Building2, Briefcase, Phone, Globe } from "lucide-react";
+import { X, User, Building2, Briefcase, Phone, Globe, Shield, Download, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { insforge } from "@/lib/insforge";
 import { useI18n } from "@/lib/i18n";
 import { useToast } from "@/components/ui/ToastContext";
 
@@ -36,6 +37,10 @@ export default function ProfileModal({
   const { toast } = useToast();
   const [loading, setLoading] = useState(!initialData);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteInput, setDeleteInput] = useState("");
   const [profile, setProfile] = useState({
     display_name: "",
     company_name: "",
@@ -59,6 +64,11 @@ export default function ProfileModal({
         setLoading(true);
       }
       loadProfile();
+    }
+    // Reset delete confirmation state when modal opens/closes
+    if (!isOpen) {
+      setShowDeleteConfirm(false);
+      setDeleteInput("");
     }
   }, [isOpen, userId, !!initialData]);
 
@@ -110,11 +120,60 @@ export default function ProfileModal({
     }
   };
 
+  const handleExportData = async () => {
+    setExporting(true);
+    try {
+      const data = await api.exportProfileData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const timestamp = new Date().toISOString().split("T")[0];
+      a.download = `hotelplus_data_export_${timestamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success(t("profile.exportSuccess") || "Your data export has been downloaded.");
+    } catch (err: any) {
+      console.error("[ProfileModal] Failed to export data:", err);
+      toast.error(err.message || "Failed to export data. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteInput !== "DELETE") return;
+
+    setDeleting(true);
+    try {
+      await api.purgeProfileData();
+      toast.success(t("profile.deleteSuccess") || "Your account has been permanently deleted.");
+
+      // Sign out and redirect
+      try {
+        await insforge.auth.signOut();
+      } catch {}
+      try {
+        await fetch("/api/auth/session", { method: "DELETE" });
+      } catch {}
+
+      window.location.href = "/login";
+    } catch (err: any) {
+      console.error("[ProfileModal] Failed to delete account:", err);
+      toast.error(err.message || "Failed to delete account. Please try again.");
+      setDeleting(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="glass-card w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
+      <div className="glass-card w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -247,6 +306,87 @@ export default function ProfileModal({
                     </option>
                   ))}
                 </select>
+              </div>
+            </div>
+
+            {/* ── Privacy & Data Section ──────────────────────────────── */}
+            <div className="border-t border-[var(--overlay-border)] pt-4 mt-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="w-4 h-4 text-[var(--soft-gold)]" />
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">
+                  {t("profile.privacyTitle") || "Privacy & Data"}
+                </h3>
+              </div>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed mb-4">
+                {t("profile.privacyDescription") || "You have the right to export or delete your personal data at any time in accordance with GDPR and KVKK regulations."}
+              </p>
+
+              {/* Export Personal Data */}
+              <div className="mb-3">
+                <p className="text-[10px] text-[var(--text-muted)] mb-1.5">
+                  {t("profile.exportDataDesc") || "Download a copy of all your personal data stored on our platform."}
+                </p>
+                <button
+                  onClick={handleExportData}
+                  disabled={exporting}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[var(--overlay-border)] bg-white/5 text-[var(--text-primary)] text-sm font-semibold hover:bg-white/10 transition-all disabled:opacity-50"
+                >
+                  <Download className="w-4 h-4" />
+                  {exporting
+                    ? (t("reports.exporting") || "Exporting...")
+                    : (t("profile.exportData") || "Export Personal Data")}
+                </button>
+              </div>
+
+              {/* Danger Zone — Delete Account */}
+              <div className="border border-rose-500/20 rounded-xl p-3 mt-3">
+                <p className="text-[10px] text-rose-400 mb-1.5">
+                  {t("profile.deleteAccountDesc") || "This action is irreversible. All your personal data will be permanently removed."}
+                </p>
+
+                {!showDeleteConfirm ? (
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-rose-500/10 text-rose-400 text-sm font-semibold hover:bg-rose-500/20 transition-all"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {t("profile.deleteAccount") || "Permanently Delete Account"}
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold text-rose-400 uppercase tracking-widest">
+                      {t("profile.deleteConfirmPrompt") || "Type DELETE to confirm"}
+                    </label>
+                    <input
+                      type="text"
+                      value={deleteInput}
+                      onChange={(e) => setDeleteInput(e.target.value)}
+                      placeholder="DELETE"
+                      className="w-full bg-white/5 border border-rose-500/30 rounded-lg py-2 px-3 text-[var(--text-primary)] placeholder:text-rose-400/30 focus:outline-none focus:ring-2 focus:ring-rose-500/50 text-sm"
+                      autoFocus
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setShowDeleteConfirm(false);
+                          setDeleteInput("");
+                        }}
+                        className="flex-1 py-2 rounded-xl bg-white/5 text-[var(--text-primary)] text-sm font-semibold hover:bg-white/10 transition-all"
+                      >
+                        {t("common.cancel") || "Cancel"}
+                      </button>
+                      <button
+                        onClick={handleDeleteAccount}
+                        disabled={deleteInput !== "DELETE" || deleting}
+                        className="flex-1 py-2 rounded-xl bg-rose-500/10 text-rose-400 text-sm font-semibold hover:bg-rose-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        {deleting
+                          ? (t("common.loading") || "Loading...")
+                          : (t("profile.deleteConfirmButton") || "Confirm Deletion")}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
