@@ -899,6 +899,10 @@ class ApiClient {
   async getComplianceDocument(id: string): Promise<{ id: string; title: string; content: string; format: string }> {
     return this.fetch<{ id: string; title: string; content: string; format: string }>(`/api/admin/compliance/documents/${id}`);
   }
+
+  async runSecurityAudit(): Promise<{ timestamp: string; status: string; checks: Array<{ name: string; description: string; status: string; details: any }> }> {
+    return this.fetch<{ timestamp: string; status: string; checks: Array<{ name: string; description: string; status: string; details: any }> }>(`/api/admin/compliance/security-audit`);
+  }
 }
 
 export const api = new ApiClient();

@@ -14,6 +14,9 @@ import {
   X,
   FileCode,
   Loader2,
+  Lock,
+  RefreshCw,
+  Server,
 } from "lucide-react";
 import { useToast } from "@/components/ui/ToastContext";
 
@@ -34,6 +37,22 @@ export default function CompliancePanel() {
   const [selectedDoc, setSelectedDoc] = useState<DocContent | null>(null);
   const [viewingDoc, setViewingDoc] = useState(false);
   const [loadingDocId, setLoadingDocId] = useState<string | null>(null);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditResults, setAuditResults] = useState<any | null>(null);
+
+  const handleRunAudit = async () => {
+    setAuditLoading(true);
+    try {
+      const data = await api.runSecurityAudit();
+      setAuditResults(data);
+      toast.success("Security configuration audit completed successfully.");
+    } catch (err: any) {
+      console.error("Failed to run security audit:", err);
+      toast.error("Failed to run security audit: " + err.message);
+    } finally {
+      setAuditLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadDocuments();
@@ -371,6 +390,98 @@ export default function CompliancePanel() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* ── Security Configuration Auditor ──────────────────────────────── */}
+      <div className="glass-card border border-[var(--overlay-border)] p-6 space-y-6 shadow-2xl transition-all duration-500 hover:border-[var(--soft-gold)]/10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/5 border border-[var(--overlay-border)] flex items-center justify-center text-[var(--soft-gold)]">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-[var(--overlay-text)] uppercase tracking-widest">
+                Security Configuration Auditor
+              </h4>
+              <p className="text-[10px] text-[var(--text-muted)] font-mono uppercase tracking-tighter opacity-50">
+                On-demand defensive system architecture checks
+              </p>
+            </div>
+          </div>
+          
+          <button
+            onClick={handleRunAudit}
+            disabled={auditLoading}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--soft-gold)] text-[var(--deep-ocean)] font-bold text-xs uppercase tracking-wider hover:bg-[var(--soft-gold-hover)] active:scale-95 transition-all shadow-lg disabled:opacity-50"
+          >
+            {auditLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            <span>{auditLoading ? "Auditing..." : "Run Security Audit"}</span>
+          </button>
+        </div>
+
+        {!auditResults ? (
+          <div className="p-12 text-center text-[var(--text-muted)] font-mono text-xs uppercase tracking-widest bg-black/10 rounded-xl border border-white/5">
+            <Server className="w-8 h-8 mx-auto mb-3 opacity-20" />
+            Click "Run Security Audit" to execute configuration scans.
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Audit Executive Summary */}
+            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
+              <div className="text-xs">
+                <span className="text-[var(--text-muted)]">Last Verified: </span>
+                <span className="font-mono text-[var(--overlay-text)]">{new Date(auditResults.timestamp).toLocaleString()}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-bold text-[var(--text-muted)]">Overall Status:</span>
+                <span className={`px-3 py-1 rounded-lg text-xs font-black tracking-widest ${
+                  auditResults.status === "PASS" 
+                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                    : "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/20"
+                }`}>
+                  {auditResults.status}
+                </span>
+              </div>
+            </div>
+
+            {/* List of Checks */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {auditResults.checks.map((check: any, idx: number) => (
+                <div key={idx} className="p-5 rounded-2xl bg-white/5 border border-[var(--overlay-border)] space-y-3 hover:border-white/10 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <h5 className="text-xs font-black uppercase text-[var(--overlay-text)] tracking-wider">
+                      {check.name}
+                    </h5>
+                    <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${
+                      check.status === "PASS"
+                        ? "bg-emerald-500/10 text-emerald-400"
+                        : "bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]"
+                    }`}>
+                      {check.status}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+                    {check.description}
+                  </p>
+                  
+                  {/* Key-Value details */}
+                  <div className="p-3 bg-black/30 rounded-xl border border-white/5 space-y-1.5 font-mono text-[10px]">
+                    {Object.entries(check.details).map(([key, val]: [string, any]) => (
+                      <div key={key} className="flex justify-between items-start gap-2">
+                        <span className="text-[var(--text-muted)] shrink-0">{key}:</span>
+                        <span className="text-blue-300 text-right break-all">{String(val)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Online Document Reader Modal */}
