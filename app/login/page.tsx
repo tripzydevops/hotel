@@ -63,20 +63,25 @@ export default function LoginPage() {
           try {
             const accessToken = (result as any).data?.accessToken;
             const uid = (result as any).data?.user?.id;
+            console.log("[Login] accessToken present:", !!accessToken, "| uid:", uid, "| email:", email);
             if (accessToken) {
               const sessRes = await fetch("/api/auth/session", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ token: accessToken, uid, email }),
               });
+              console.log("[Login] /api/auth/session status:", sessRes.status);
               if (!sessRes.ok) {
-                console.warn("[Login] Session cookie endpoint returned", sessRes.status);
+                const errBody = await sessRes.text();
+                console.error("[Login] Session cookie endpoint error:", sessRes.status, errBody);
+              } else {
+                console.log("[Login] hp_sess cookie should now be set ✓");
               }
             } else {
-              console.warn("[Login] No accessToken in signInWithPassword result — hp_sess not set");
+              console.error("[Login] FATAL: No accessToken in signInWithPassword result — hp_sess not set. result.data:", (result as any).data);
             }
           } catch (sessionErr) {
-            console.warn("[Login] Could not set app session cookie:", sessionErr);
+            console.error("[Login] Exception setting app session cookie:", sessionErr);
           }
 
           // Redirect to originally requested page if available
