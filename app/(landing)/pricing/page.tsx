@@ -50,6 +50,28 @@ function XIcon() {
 export default function PricingPage() {
   const { t, locale } = useI18n();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [rooms, setRooms] = useState(120);
+  const [adr, setAdr] = useState(locale === "tr" ? 2500 : 120);
+
+  // Sync ADR on locale shift to avoid slider overflow
+  useEffect(() => {
+    setAdr(locale === "tr" ? 2500 : 120);
+  }, [locale]);
+
+  // Yield calculations
+  const monthlyRooms = rooms;
+  const avgAdr = adr;
+  const occupancy = 0.70;
+  const directBookingLift = 0.038;
+  const monthlyRecovered = Math.round(monthlyRooms * avgAdr * 30 * occupancy * directBookingLift);
+  const monthlySubscriptionCost = locale === "tr" ? 3499 : 149;
+  const roiMultiple = (monthlyRecovered / monthlySubscriptionCost).toFixed(1);
+
+  const formatCurrency = (val: number) => {
+    return locale === "tr"
+      ? `₺${val.toLocaleString("tr-TR")}`
+      : `$${val.toLocaleString("en-US")}`;
+  };
 
   const plans = [
     {
@@ -178,6 +200,100 @@ export default function PricingPage() {
               </div>
             </RevealSection>
           ))}
+        </div>
+      </section>
+
+      {/* B2B Yield ROI Calculator */}
+      <section className="relative z-10 py-16 px-6">
+        <div className="max-w-4xl mx-auto">
+          <RevealSection>
+            <div className="command-card p-8 md:p-10 bg-[#050e1b]/80 backdrop-blur-xl border border-[var(--soft-gold)]/20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--soft-gold)]/5 rounded-full blur-3xl pointer-events-none" />
+              
+              <div className="text-center mb-8 relative z-10">
+                <span className="text-[var(--soft-gold)] text-xs font-bold uppercase tracking-[0.2em] mb-2 block">
+                  {t("pricingPage.roi.subtitle")}
+                </span>
+                <h2 className="text-2xl md:text-3xl font-black text-[var(--text-primary)]">
+                  {t("pricingPage.roi.title")}
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+                {/* Sliders panel */}
+                <div className="space-y-6">
+                  {/* Slider 1: Rooms */}
+                  <div>
+                    <div className="flex justify-between text-sm font-bold text-[var(--text-primary)] mb-2">
+                      <span>{t("pricingPage.roi.roomsLabel")}</span>
+                      <span className="text-[var(--soft-gold)] font-black">{rooms}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="10"
+                      max="500"
+                      step="5"
+                      value={rooms}
+                      onChange={(e) => setRooms(Number(e.target.value))}
+                      className="w-full h-2 bg-[#0c1e36] rounded-lg appearance-none cursor-pointer accent-[var(--soft-gold)]"
+                    />
+                    <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-semibold mt-1">
+                      <span>10</span>
+                      <span>250</span>
+                      <span>500</span>
+                    </div>
+                  </div>
+
+                  {/* Slider 2: ADR */}
+                  <div>
+                    <div className="flex justify-between text-sm font-bold text-[var(--text-primary)] mb-2">
+                      <span>{t("pricingPage.roi.adrLabel")}</span>
+                      <span className="text-[var(--soft-gold)] font-black">{formatCurrency(adr)}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={locale === "tr" ? 500 : 40}
+                      max={locale === "tr" ? 15000 : 600}
+                      step={locale === "tr" ? 100 : 5}
+                      value={adr}
+                      onChange={(e) => setAdr(Number(e.target.value))}
+                      className="w-full h-2 bg-[#0c1e36] rounded-lg appearance-none cursor-pointer accent-[var(--soft-gold)]"
+                    />
+                    <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-semibold mt-1">
+                      <span>{locale === "tr" ? "₺500" : "$40"}</span>
+                      <span>{locale === "tr" ? "₺7.500" : "$320"}</span>
+                      <span>{locale === "tr" ? "₺15.000" : "$600"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Calculation Results Card */}
+                <div className="bg-[#030a15]/80 rounded-2xl p-6 border border-white/5 flex flex-col justify-between h-full">
+                  <div>
+                    <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest block mb-2">
+                      {t("pricingPage.roi.estMonthly")}
+                    </span>
+                    <div className="text-3xl md:text-4xl font-black text-emerald-400 gold-glow-text mb-4">
+                      {formatCurrency(monthlyRecovered)}
+                    </div>
+                    
+                    <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest block mb-1">
+                      {t("pricingPage.roi.roiMultiple")}
+                    </span>
+                    <div className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-xs font-extrabold border border-emerald-500/30">
+                        {t("pricingPage.roi.multipleValue").replace("{val}", roiMultiple)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] text-[var(--text-muted)] leading-relaxed mt-6 border-t border-white/5 pt-4">
+                    {t("pricingPage.roi.disclaimer")}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </RevealSection>
         </div>
       </section>
 

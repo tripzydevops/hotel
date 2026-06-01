@@ -151,6 +151,69 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* Visual Sentinel Core Loop */}
+      <section className="relative z-10 py-20 px-6 border-t border-[var(--overlay-border)] bg-[#030a15]/30">
+        <div className="max-w-5xl mx-auto">
+          <RevealSection>
+            <div className="text-center mb-16">
+              <span className="text-[var(--soft-gold)] text-xs font-bold uppercase tracking-[0.2em] mb-3 block">
+                {t("aboutPage.topLabel")} • ARCHITECTURAL SYSTEM
+              </span>
+              <h2 className="text-3xl md:text-4xl font-black text-[var(--text-primary)]">
+                Autonomous Sentinel Core Loop
+              </h2>
+              <p className="text-[var(--text-secondary)] mt-4 max-w-2xl mx-auto leading-relaxed text-sm md:text-base">
+                How our distributed rate collection nodes and Gemini intelligence agents protect your bottom-line 24/7.
+              </p>
+            </div>
+          </RevealSection>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
+            {/* Connection line helper for desktop */}
+            <div className="hidden md:block absolute top-1/2 left-4 right-4 h-0.5 bg-gradient-to-r from-[var(--soft-gold)]/10 via-blue-500/20 to-[var(--soft-gold)]/10 -translate-y-12 z-0 pointer-events-none" />
+
+            {[
+              {
+                title: "1. Distributed Scrapes",
+                desc: "Distributed scraping nodes collect rate packages globally without triggering OTA blocks.",
+                badge: "24/7 Active",
+                color: "border-blue-500/30 text-blue-400 bg-blue-500/5",
+              },
+              {
+                title: "2. pgvector Alignment",
+                desc: "pgvector matches non-standard room listings with 99.4% database accuracy.",
+                badge: "pgvector DB",
+                color: "border-[var(--soft-gold)]/30 text-[var(--soft-gold)] bg-[var(--soft-gold)]/5",
+              },
+              {
+                title: "3. AnalystAgent AI",
+                desc: "Gemini agents evaluate occupancy, competitor compression, and local fair impact.",
+                badge: "Gemini AI",
+                color: "border-emerald-500/30 text-emerald-400 bg-emerald-500/5",
+              },
+              {
+                title: "4. Dispatch Engine",
+                desc: "Slack, SMS, and push dispatches fire instantly on parity leakage detection.",
+                badge: "WebHook / SMS",
+                color: "border-purple-500/30 text-purple-400 bg-purple-500/5",
+              }
+            ].map((node, i) => (
+              <RevealSection key={i} delay={i * 100} className="relative z-10">
+                <div className="command-card p-6 h-full flex flex-col justify-between hover:border-[var(--soft-gold)]/30 transition-all duration-300">
+                  <div>
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider mb-4 border ${node.color}`}>
+                      {node.badge}
+                    </span>
+                    <h4 className="text-base font-extrabold text-[var(--text-primary)] mb-2.5">{node.title}</h4>
+                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{node.desc}</p>
+                  </div>
+                </div>
+              </RevealSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="relative z-10 py-20 px-6">
         <div className="max-w-3xl mx-auto text-center">

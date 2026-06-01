@@ -30,12 +30,12 @@ function RevealSection({ children, className = "", delay = 0 }: { children: Reac
 }
 
 export default function ContactPage() {
-  const { t } = useI18n();
-  const [formState, setFormState] = "idle" as "idle" | "sending" | "sent" | "error";
+  const { t, locale } = useI18n();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     hotelName: "",
+    propertyScale: "midscale",
     message: "",
   });
   
@@ -49,7 +49,7 @@ export default function ContactPage() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       setStatus("sent");
-      setFormData({ name: "", email: "", hotelName: "", message: "" });
+      setFormData({ name: "", email: "", hotelName: "", propertyScale: "midscale", message: "" });
     } catch {
       setStatus("error");
     }
@@ -188,6 +188,23 @@ export default function ContactPage() {
                         className={inputClasses}
                         placeholder={t("contactPage.form.hotelPlaceholder")}
                       />
+                    </div>
+                    <div>
+                      <label htmlFor="scale" className="block text-xs font-bold text-[var(--soft-gold)] uppercase tracking-widest mb-2 ml-1">
+                        {locale === "tr" ? "Tesis Kapasitesi / Segmenti" : "Property Scale & Capacity"}
+                      </label>
+                      <select
+                        id="scale"
+                        value={formData.propertyScale}
+                        onChange={(e) => setFormData({ ...formData, propertyScale: e.target.value })}
+                        className={inputClasses}
+                        style={{ colorScheme: "dark" }}
+                      >
+                        <option value="boutique" className="bg-[#050e1b]">{locale === "tr" ? "Butik / Özel Tesis (<50 Oda)" : "Boutique / Specialty (<50 Rooms)"}</option>
+                        <option value="midscale" className="bg-[#050e1b]">{locale === "tr" ? "Orta Ölçekli Otel (50-150 Oda)" : "Mid-Scale Property (50-150 Rooms)"}</option>
+                        <option value="resort" className="bg-[#050e1b]">{locale === "tr" ? "Büyük Tesis / Resort (150-500 Oda)" : "Large Scale / Resort (150-500 Rooms)"}</option>
+                        <option value="chain" className="bg-[#050e1b]">{locale === "tr" ? "Zincir / Çoklu Tesis Portföyü" : "Chain / Multi-Property Portfolio"}</option>
+                      </select>
                     </div>
                     <div>
                       <label htmlFor="message" className="block text-xs font-bold text-[var(--soft-gold)] uppercase tracking-widest mb-2 ml-1">

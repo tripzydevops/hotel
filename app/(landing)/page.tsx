@@ -209,6 +209,7 @@ export default function LandingHome() {
   // Interactive Widgets State
   const [undercutActive, setUndercutActive] = useState(false);
   const [marketCompression, setMarketCompression] = useState(30);
+  const [parityViewMode, setParityViewMode] = useState<"single" | "portfolio">("single");
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -370,105 +371,219 @@ export default function LandingHome() {
               <div className="relative command-card p-1">
                 <div className="bg-[#050e1b] rounded-[18px] p-6 md:p-8">
                   
-                  {/* Grid Header & Simulator Controls */}
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 pb-4 border-b border-[var(--overlay-border)]">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-                      <span className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
-                        {locale === "tr" ? "Parite Denetim Nabzı" : "Live Parity Audit Pulse"}
-                      </span>
+                  {/* View Mode Switcher */}
+                  <div className="flex justify-center mb-6 border-b border-white/5 pb-5">
+                    <div className="glass rounded-full p-1 border border-[var(--overlay-border)] flex gap-1">
+                      <button
+                        onClick={() => setParityViewMode("single")}
+                        className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${parityViewMode === "single" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                      >
+                        {locale === "tr" ? "Münferit Tesis Görünümü" : "Single Property View"}
+                      </button>
+                      <button
+                        onClick={() => setParityViewMode("portfolio")}
+                        className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${parityViewMode === "portfolio" ? "bg-[var(--soft-gold)] text-[var(--deep-ocean)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                      >
+                        {locale === "tr" ? "Çoklu Portföy Görünümü (Zincir)" : "Multi-Property Chain View"}
+                      </button>
                     </div>
-
-                    <button
-                      onClick={() => setUndercutActive(!undercutActive)}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-2 border ${
-                        undercutActive
-                          ? "btn-gold border-[var(--soft-gold)] text-[var(--deep-ocean)]"
-                          : "border-white/10 text-[var(--text-secondary)] hover:bg-white/5"
-                      }`}
-                    >
-                      <Zap className={`w-3.5 h-3.5 ${undercutActive ? "fill-current" : ""}`} />
-                      {undercutActive
-                        ? (locale === "tr" ? "Komplo Aktif (İhlal Tespit Edildi)" : "Active Undercut (Violation Caught)")
-                        : (locale === "tr" ? "OTA İhlali Simüle Et" : "Simulate OTA Price Undercut")}
-                    </button>
                   </div>
 
-                  {/* Pricing Comparison Grid */}
-                  <div className="grid grid-cols-4 gap-3 text-left text-xs mb-6">
-                    <div className="text-[var(--text-muted)] font-semibold">{locale === "tr" ? "Kanal / Tesis" : "Booking Channel"}</div>
-                    <div className="text-center text-[var(--text-muted)] font-semibold">{locale === "tr" ? "Standart Oda" : "Standard Double"}</div>
-                    <div className="text-center text-[var(--text-muted)] font-semibold">{locale === "tr" ? "Fark Oranı" : "Discrepancy"}</div>
-                    <div className="text-right text-[var(--text-muted)] font-semibold">{locale === "tr" ? "Durum" : "Status"}</div>
-
-                    {/* Direct rate row */}
-                    <div className="contents font-bold">
-                      <div className="py-3 border-t border-[var(--overlay-border)] text-[var(--soft-gold)] flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[var(--soft-gold)]" />
-                        {locale === "tr" ? "Otel Web Siteniz (Doğrudan)" : "Your Official Site (Direct)"}
-                      </div>
-                      <div className="py-3 text-center border-t border-[var(--overlay-border)] text-[var(--soft-gold)]">
-                        {locale === "tr" ? "₺4.500" : "$150"}
-                      </div>
-                      <div className="py-3 text-center border-t border-[var(--overlay-border)] text-[var(--text-muted)]">-</div>
-                      <div className="py-3 text-right border-t border-[var(--overlay-border)] text-emerald-400 uppercase tracking-widest text-[10px]">
-                        {locale === "tr" ? "Doğru Fiyat" : "Best Rate"}
-                      </div>
-                    </div>
-
-                    {/* Booking.com row */}
-                    <div className="contents">
-                      <div className="py-3 border-t border-[var(--overlay-border)] text-[var(--text-secondary)]">Booking.com</div>
-                      <div className="py-3 text-center border-t border-[var(--overlay-border)] text-[var(--text-primary)]">
-                        {locale === "tr" ? "₺4.500" : "$150"}
-                      </div>
-                      <div className="py-3 text-center border-t border-[var(--overlay-border)] text-emerald-400">0%</div>
-                      <div className="py-3 text-right border-t border-[var(--overlay-border)] text-emerald-400/80 text-[10px] uppercase font-medium">
-                        {locale === "tr" ? "Senkronize" : "Parity Match"}
-                      </div>
-                    </div>
-
-                    {/* Expedia row (undercut target) */}
-                    <div className={`contents transition-all duration-500 ${undercutActive ? "bg-red-500/10 text-red-200" : ""}`}>
-                      <div className={`py-3 border-t border-[var(--overlay-border)] text-[var(--text-secondary)] font-medium ${undercutActive ? "text-red-400 font-bold" : ""}`}>
-                        Expedia
-                      </div>
-                      <div className={`py-3 text-center border-t border-[var(--overlay-border)] text-[var(--text-primary)] ${undercutActive ? "text-red-400 font-black scale-105" : ""}`}>
-                        {undercutActive
-                          ? (locale === "tr" ? "₺3.800" : "$126")
-                          : (locale === "tr" ? "₺4.500" : "$150")}
-                      </div>
-                      <div className={`py-3 text-center border-t border-[var(--overlay-border)] ${undercutActive ? "text-red-400 font-bold" : "text-[var(--text-muted)]"}`}>
-                        {undercutActive ? "-16%" : "0%"}
-                      </div>
-                      <div className="py-3 text-right border-t border-[var(--overlay-border)]">
-                        {undercutActive ? (
-                          <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-400 text-[9px] uppercase font-bold tracking-widest animate-pulse border border-red-500/30">
-                            {locale === "tr" ? "İHLAL VAR" : "VIOLATION"}
+                  {parityViewMode === "single" ? (
+                    <>
+                      {/* Grid Header & Simulator Controls */}
+                      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 pb-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                          <span className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
+                            {locale === "tr" ? "Münferit Parite Denetim Nabzı" : "Single Property Parity Audit"}
                           </span>
-                        ) : (
-                          <span className="text-emerald-400/80 text-[10px] uppercase font-medium">
+                        </div>
+
+                        <button
+                          onClick={() => setUndercutActive(!undercutActive)}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer flex items-center gap-2 border ${
+                            undercutActive
+                              ? "btn-gold border-[var(--soft-gold)] text-[var(--deep-ocean)]"
+                              : "border-white/10 text-[var(--text-secondary)] hover:bg-white/5"
+                          }`}
+                        >
+                          <Zap className={`w-3.5 h-3.5 ${undercutActive ? "fill-current" : ""}`} />
+                          {undercutActive
+                            ? (locale === "tr" ? "İhlal Simülatörü Aktif" : "Undercut Simulator Active")
+                            : (locale === "tr" ? "OTA İhlali Simüle Et" : "Simulate OTA Undercut")}
+                        </button>
+                      </div>
+
+                      {/* Pricing Comparison Grid */}
+                      <div className="grid grid-cols-4 gap-3 text-left text-xs mb-6">
+                        <div className="text-[var(--text-muted)] font-semibold">{locale === "tr" ? "Kanal / Tesis" : "Booking Channel"}</div>
+                        <div className="text-center text-[var(--text-muted)] font-semibold">{locale === "tr" ? "Standart Oda" : "Standard Double"}</div>
+                        <div className="text-center text-[var(--text-muted)] font-semibold">{locale === "tr" ? "Fark Oranı" : "Discrepancy"}</div>
+                        <div className="text-right text-[var(--text-muted)] font-semibold">{locale === "tr" ? "Durum" : "Status"}</div>
+
+                        {/* Direct rate row */}
+                        <div className="contents font-bold">
+                          <div className="py-3 border-t border-[var(--overlay-border)] text-[var(--soft-gold)] flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-[var(--soft-gold)]" />
+                            {locale === "tr" ? "Doğrudan Web Siteniz (Resmi)" : "Your Official Site (Direct)"}
+                          </div>
+                          <div className="py-3 text-center border-t border-[var(--overlay-border)] text-[var(--soft-gold)]">
+                            {locale === "tr" ? "₺4.500" : "$150"}
+                          </div>
+                          <div className="py-3 text-center border-t border-[var(--overlay-border)] text-[var(--text-muted)]">-</div>
+                          <div className="py-3 text-right border-t border-[var(--overlay-border)] text-emerald-400 uppercase tracking-widest text-[10px]">
+                            {locale === "tr" ? "Doğru Fiyat" : "Best Rate"}
+                          </div>
+                        </div>
+
+                        {/* Booking.com row */}
+                        <div className="contents">
+                          <div className="py-3 border-t border-[var(--overlay-border)] text-[var(--text-secondary)]">Booking.com</div>
+                          <div className="py-3 text-center border-t border-[var(--overlay-border)] text-[var(--text-primary)]">
+                            {locale === "tr" ? "₺4.500" : "$150"}
+                          </div>
+                          <div className="py-3 text-center border-t border-[var(--overlay-border)] text-emerald-400">0%</div>
+                          <div className="py-3 text-right border-t border-[var(--overlay-border)] text-emerald-400/80 text-[10px] uppercase font-medium">
                             {locale === "tr" ? "Senkronize" : "Parity Match"}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                          </div>
+                        </div>
 
-                  {/* Pulsing Alert banner when undercut active */}
-                  {undercutActive && (
-                    <div className="p-4 rounded-xl border border-red-500/30 bg-red-950/20 text-red-300 text-xs md:text-sm font-semibold flex items-center gap-3 animate-fade-in text-left">
-                      <div className="w-3.5 h-3.5 rounded-full bg-red-500 animate-pulse shrink-0" />
-                      <div>
-                        <p className="font-bold text-red-200 uppercase tracking-wide">
-                          {locale === "tr" ? "Sentinel Engelleyici Uyarısı: Fiyat Kaybı Tespit Edildi" : "Sentinel Action Triggered: Parity Leak Found"}
-                        </p>
-                        <p className="text-xs text-[var(--text-secondary)] mt-0.5 font-normal">
-                          {locale === "tr" 
-                            ? "Expedia fiyatı resmi sitenizin 700 ₺ altında! AI Sentinel otomatik olarak log kaydı tuttu ve parite ihlali alarmını gelir ekibine iletti."
-                            : "Expedia is undercutting your direct rate by $24. The otonom ParityAgent has captured the logs and dispatched an alert to your revenue management slack channel."
-                          }
-                        </p>
+                        {/* Expedia row (undercut target) */}
+                        <div className={`contents transition-all duration-500 ${undercutActive ? "bg-red-500/10 text-red-200" : ""}`}>
+                          <div className={`py-3 border-t border-[var(--overlay-border)] text-[var(--text-secondary)] font-medium ${undercutActive ? "text-red-400 font-bold" : ""}`}>
+                            Expedia
+                          </div>
+                          <div className={`py-3 text-center border-t border-[var(--overlay-border)] text-[var(--text-primary)] ${undercutActive ? "text-red-400 font-black scale-105" : ""}`}>
+                            {undercutActive
+                              ? (locale === "tr" ? "₺3.800" : "$126")
+                              : (locale === "tr" ? "₺4.500" : "$150")}
+                          </div>
+                          <div className={`py-3 text-center border-t border-[var(--overlay-border)] ${undercutActive ? "text-red-400 font-bold" : "text-[var(--text-muted)]"}`}>
+                            {undercutActive ? "-16%" : "0%"}
+                          </div>
+                          <div className="py-3 text-right border-t border-[var(--overlay-border)]">
+                            {undercutActive ? (
+                              <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-400 text-[9px] uppercase font-bold tracking-widest animate-pulse border border-red-500/30">
+                                {locale === "tr" ? "İHLAL VAR" : "VIOLATION"}
+                              </span>
+                            ) : (
+                              <span className="text-emerald-400/80 text-[10px] uppercase font-medium">
+                                {locale === "tr" ? "Senkronize" : "Parity Match"}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Pulsing Alert banner when undercut active */}
+                      {undercutActive && (
+                        <div className="p-4 rounded-xl border border-red-500/30 bg-red-950/20 text-red-300 text-xs md:text-sm font-semibold flex items-center gap-3 animate-fade-in text-left">
+                          <div className="w-3.5 h-3.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                          <div>
+                            <p className="font-bold text-red-200 uppercase tracking-wide">
+                              {locale === "tr" ? "Sentinel Engelleyici Uyarısı: Fiyat Kaybı Tespit Edildi" : "Sentinel Action Triggered: Parity Leak Found"}
+                            </p>
+                            <p className="text-xs text-[var(--text-secondary)] mt-0.5 font-normal">
+                              {locale === "tr" 
+                                ? "Expedia fiyatı resmi sitenizin 700 ₺ altında! AI Sentinel otomatik olarak log kaydı tuttu ve parite ihlali alarmını gelir ekibine iletti."
+                                : "Expedia is undercutting your direct rate by $24. The otonom ParityAgent has captured the logs and dispatched an alert to your revenue management slack channel."
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="animate-fade-in text-left">
+                      {/* Cluster Portfolio Header */}
+                      <div className="flex items-center gap-2.5 mb-6">
+                        <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
+                        <span className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
+                          {locale === "tr" ? "Çoklu Portföy Gelir & Parite Tablosu" : "Multi-Property Yield & Parity Hub"}
+                        </span>
+                      </div>
+
+                      {/* Cluster Portfolio Table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="text-[var(--text-muted)] font-semibold border-b border-[var(--overlay-border)]">
+                              <th className="pb-3 text-left">{locale === "tr" ? "Tesis Adı" : "Property"}</th>
+                              <th className="pb-3 text-center">{locale === "tr" ? "Resmi Site" : "Direct Rate"}</th>
+                              <th className="pb-3 text-center">Booking.com</th>
+                              <th className="pb-3 text-center">Expedia</th>
+                              <th className="pb-3 text-center">{locale === "tr" ? "Parite Sağlığı" : "Parity Score"}</th>
+                              <th className="pb-3 text-right">{locale === "tr" ? "Durum" : "Status"}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {/* Hotel 1 */}
+                            <tr className="border-b border-[var(--overlay-border)]/50 last:border-0 hover:bg-white/5 transition-all">
+                              <td className="py-4 font-bold text-[var(--text-primary)] flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                                Istanbul Grand Palace
+                              </td>
+                              <td className="py-4 text-center text-[var(--soft-gold)] font-bold">{locale === "tr" ? "₺8.500" : "$280"}</td>
+                              <td className="py-4 text-center text-[var(--text-secondary)]">{locale === "tr" ? "₺8.500" : "$280"}</td>
+                              <td className="py-4 text-center text-[var(--text-secondary)]">{locale === "tr" ? "₺8.500" : "$280"}</td>
+                              <td className="py-4 text-center font-bold text-emerald-400">100%</td>
+                              <td className="py-4 text-right">
+                                <span className="px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[9px] uppercase font-bold tracking-wider border border-emerald-500/20">
+                                  {locale === "tr" ? "TAM UYUM" : "MATCH"}
+                                </span>
+                              </td>
+                            </tr>
+                            {/* Hotel 2 */}
+                            <tr className="border-b border-[var(--overlay-border)]/50 last:border-0 bg-red-500/5 hover:bg-red-500/10 transition-all">
+                              <td className="py-4 font-bold text-red-300 flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0 animate-pulse" />
+                                Bodrum Azure Retreat
+                              </td>
+                              <td className="py-4 text-center text-[var(--soft-gold)] font-bold">{locale === "tr" ? "₺12.000" : "$400"}</td>
+                              <td className="py-4 text-center text-[var(--text-secondary)]">{locale === "tr" ? "₺12.000" : "$400"}</td>
+                              <td className="py-4 text-center text-red-400 font-extrabold scale-105">{locale === "tr" ? "₺9.800" : "$326"}</td>
+                              <td className="py-4 text-center font-bold text-red-400">82%</td>
+                              <td className="py-4 text-right">
+                                <span className="px-2.5 py-0.5 rounded bg-red-500/25 text-red-300 text-[9px] uppercase font-black tracking-wider animate-pulse border border-red-500/40">
+                                  Expedia -18%
+                                </span>
+                              </td>
+                            </tr>
+                            {/* Hotel 3 */}
+                            <tr className="border-b border-[var(--overlay-border)]/50 last:border-0 hover:bg-white/5 transition-all">
+                              <td className="py-4 font-bold text-[var(--text-primary)] flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                                Antalya Marina Resort
+                              </td>
+                              <td className="py-4 text-center text-[var(--soft-gold)] font-bold">{locale === "tr" ? "₺6.200" : "$200"}</td>
+                              <td className="py-4 text-center text-[var(--text-secondary)]">{locale === "tr" ? "₺6.200" : "$200"}</td>
+                              <td className="py-4 text-center text-[var(--text-secondary)]">{locale === "tr" ? "₺6.200" : "$200"}</td>
+                              <td className="py-4 text-center font-bold text-emerald-400">100%</td>
+                              <td className="py-4 text-right">
+                                <span className="px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[9px] uppercase font-bold tracking-wider border border-emerald-500/20">
+                                  {locale === "tr" ? "TAM UYUM" : "MATCH"}
+                                </span>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Chain Advisor Alert box */}
+                      <div className="p-4 rounded-xl border border-red-500/30 bg-red-950/20 text-red-300 text-xs md:text-sm font-semibold mt-4 flex items-center gap-3">
+                        <div className="w-3.5 h-3.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                        <div>
+                          <p className="font-bold text-red-200 uppercase tracking-wide">
+                            {locale === "tr" ? "Zincir Parite İhlali Uyarısı: Bodrum" : "Chain Parity Alert: Bodrum Azure Retreat"}
+                          </p>
+                          <p className="text-xs text-[var(--text-secondary)] mt-0.5 font-normal">
+                            {locale === "tr" 
+                              ? "Bodrum Azure Retreat tesisinde Expedia parite ihlali tespit etti (Fark: %18). Parite sağlığı %82'ye geriledi. Sentinel Enterprise otomatik olarak logları sakladı."
+                              : "Expedia has bypassed the rate barrier at Bodrum Azure Retreat (Diff: -18%). Cluster parity score dropped to 82%. Sentinel has queued automated logs."
+                            }
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}

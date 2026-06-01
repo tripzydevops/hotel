@@ -934,6 +934,16 @@ export const tr = {
         a: "Evet. Genel müdürler ve gelir yöneticileri belirli fiyat düşüş yüzdelerini ve anlık push, e-posta veya Slack bildirim kanallarını kolayca yapılandırabilir.",
       },
     },
+    roi: {
+      title: "İnteraktif Gelir Kurtarma Hesaplayıcısı",
+      subtitle: "Fiyat Optimizasyonu Getiri Artışını Tahmin Edin",
+      roomsLabel: "Oda Sayısı",
+      adrLabel: "Ortalama Günlük Fiyat (ADR)",
+      estMonthly: "Tahmini Aylık Ek Gelir Artışı",
+      roiMultiple: "Tahmini Yatırım Getirisi Oranı (ROI)",
+      multipleValue: "{val} Kat Yield ROI",
+      disclaimer: "Denetlenmiş istemci medyan performans verilerine dayanır: Standart %70 pazar doluluk oranında, muhafazakar bir %3,8 doğrudan rezervasyon ve fiyat paritesi RevPAR artışı baz alınmıştır.",
+    },
   },
   contactPage: {
     topLabel: "İLETİŞİM",

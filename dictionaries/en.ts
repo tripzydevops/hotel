@@ -929,6 +929,16 @@ export const en = {
         a: "Yes. GMs can configure specific percentage thresholds and direct push, Slack, or email notifications for rate cuts.",
       },
     },
+    roi: {
+      title: "Interactive Revenue Recovery Calculator",
+      subtitle: "Estimate Your Yield Optimization Lift",
+      roomsLabel: "Number of Rooms",
+      adrLabel: "Average Daily Rate (ADR)",
+      estMonthly: "Estimated Monthly Revenue Recovered",
+      roiMultiple: "Expected Return on Investment (ROI)",
+      multipleValue: "{val}x Yield ROI",
+      disclaimer: "Based on our audited client median performance: a conservative 3.8% direct booking and rate-parity RevPAR lift on a standard 70% baseline occupancy.",
+    },
   },
   contactPage: {
     topLabel: "CONTACT",
