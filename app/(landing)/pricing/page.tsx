@@ -1,16 +1,8 @@
-/**
- * EXPLANATION: Dedicated Pricing Page (Fiyatlandırma)
- * 
- * An expanded version of the pricing section with a detailed
- * feature comparison table and FAQ section for objection handling.
- * 
- * Per page-cro skill: pricing pages need clarity + risk reduction.
- * FAQ addresses common objections (commitment, setup, support).
- */
 "use client";
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import { useI18n } from "@/lib/i18n";
 
 /* ===== SCROLL REVEAL (shared pattern) ===== */
 function useScrollReveal() {
@@ -56,72 +48,70 @@ function XIcon() {
 }
 
 export default function PricingPage() {
-  /* FAQ accordion state */
+  const { t, locale } = useI18n();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const plans = [
     {
-      name: "Başlangıç",
-      price: "₺2.490",
-      period: "/ay",
-      description: "Tek otel için temel izleme",
+      name: t("subscription.starter.name"),
+      price: t("subscription.price.starter"),
+      period: t("subscription.period.mo"),
+      description: t("pricingPage.planStarterDesc"),
       popular: false,
-      cta: "Başlayın",
+      cta: t("common.getStarted"),
     },
     {
-      name: "Profesyonel",
-      price: "₺4.990",
-      period: "/ay",
-      description: "Büyüyen oteller için gelişmiş analiz",
+      name: t("subscription.pro.name"),
+      price: t("subscription.price.pro"),
+      period: t("subscription.period.mo"),
+      description: t("pricingPage.planProDesc"),
       popular: true,
-      cta: "En Popüler",
+      cta: t("subscription.mostPopular"),
     },
     {
-      name: "Kurumsal",
-      price: "Özel",
-      period: "",
-      description: "Otel zincirleri için tam çözüm",
+      name: t("subscription.enterprise.name"),
+      price: t("subscription.price.enterprise"),
+      period: t("subscription.period.custom"),
+      description: t("pricingPage.planEntDesc"),
       popular: false,
-      cta: "İletişime Geçin",
+      cta: t("subscription.contactSales"),
     },
   ];
 
-  /* EXPLANATION: Feature comparison rows for the pricing table.
-     true = included, false = not included */
   const features = [
-    { name: "Ekli Otel Takibi", values: ["5", "25", "100"] },
-    { name: "Pazar Karşılaştırma", values: ["5", "5", "10"] },
-    { name: "Tarama sıklığı", values: ["Günlük", "Saatlik", "Gerçek zamanlı"] },
-    { name: "E-posta uyarıları", values: [true, true, true] },
-    { name: "Push bildirimleri", values: [false, true, true] },
-    { name: "AI destekli raporlar", values: [false, true, true] },
-    { name: "Keşif motoru", values: [false, true, true] },
-    { name: "Pazar analizi", values: [false, true, true] },
-    { name: "Global Pulse ağı", values: [false, false, true] },
-    { name: "API erişimi", values: [false, false, true] },
-    { name: "Öncelikli destek", values: [false, false, true] },
+    { name: locale === "tr" ? "Ekli Otel Takibi" : "Competitors Tracked", values: ["5", "25", "100"] },
+    { name: locale === "tr" ? "Pazar Karşılaştırma" : "Market Comparisons", values: ["5", "5", "10"] },
+    { name: locale === "tr" ? "Tarama Sıklığı" : "Scan Frequency", values: [locale === "tr" ? "Günlük" : "Daily", locale === "tr" ? "Saatlik" : "Hourly", locale === "tr" ? "Gerçek Zamanlı" : "Real-time"] },
+    { name: locale === "tr" ? "E-posta Uyarıları" : "Email Alerts", values: [true, true, true] },
+    { name: locale === "tr" ? "Mobil Push Bildirimleri" : "Mobile Push Alerts", values: [false, true, true] },
+    { name: locale === "tr" ? "Fuar ve Etkinlik Radarı" : "Event & Fair Radar", values: [false, true, true] },
+    { name: locale === "tr" ? "Keşif Motoru (pgvector)" : "Discovery Engine (pgvector)", values: [false, true, true] },
+    { name: locale === "tr" ? "AI Pazar Analisti Ajanı" : "AI Market Analyst Agent", values: [false, true, true] },
+    { name: locale === "tr" ? "Çapraz Dil Memnuniyet Takibi" : "Cross-Language Sentiment Memory", values: [false, false, true] },
+    { name: locale === "tr" ? "API Erişimi & Entegrasyonlar" : "API Access & Integrations", values: [false, false, true] },
+    { name: locale === "tr" ? "Kurumsal Destek & SLA" : "Enterprise Support & SLA", values: [false, false, true] },
   ];
 
   const faqs = [
     {
-      question: "Sözleşme süresi ne kadar?",
-      answer: "Aylık veya yıllık abonelik seçeneklerimiz mevcuttur. Yıllık planlarda %20 indirim uygulanır. İstediğiniz zaman iptal edebilirsiniz.",
+      question: t("pricingPage.objections.0.q"),
+      answer: t("pricingPage.objections.0.a"),
     },
     {
-      question: "Kurulum ne kadar sürer?",
-      answer: "Hotel Plus kurulumu ortalama 3 dakika sürer. Otelinizi eklediğiniz anda sistem otomatik olarak rakiplerinizi tespit eder ve taramaya başlar.",
+      question: t("pricingPage.objections.1.q"),
+      answer: t("pricingPage.objections.1.a"),
     },
     {
-      question: "Deneme süresi var mı?",
-      answer: "Evet, tüm planlarımızda 14 günlük ücretsiz deneme süresi mevcuttur. Kredi kartı bilgisi gerekmez.",
+      question: t("pricingPage.objections.2.q"),
+      answer: t("pricingPage.objections.2.a"),
     },
     {
-      question: "Verilerim güvende mi?",
-      answer: "Evet. Tüm veriler SSL ile şifrelenir ve InsForge altyapısında güvenli bir şekilde saklanır. Verilerinize yalnızca siz erişebilirsiniz.",
+      question: t("pricingPage.objections.3.q"),
+      answer: t("pricingPage.objections.3.a"),
     },
     {
-      question: "Planımı değiştirebilir miyim?",
-      answer: "Evet, istediğiniz zaman planınızı yükseltebilir veya düşürebilirsiniz. Değişiklik bir sonraki fatura döneminde geçerli olur.",
+      question: t("pricingPage.objections.4.q"),
+      answer: t("pricingPage.objections.4.a"),
     },
   ];
 
@@ -141,19 +131,18 @@ export default function PricingPage() {
         <div className="max-w-4xl mx-auto text-center">
           <RevealSection>
             <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-6">
-              Fiyatlandırma
+              {t("pricingPage.topLabel")}
             </p>
           </RevealSection>
           <RevealSection delay={100}>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-[var(--overlay-text)] leading-[1.1] tracking-tight mb-6">
-              Şeffaf ve{" "}
-              <span className="text-[var(--soft-gold)] gold-glow-text">Adil Fiyatlandırma</span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-[var(--text-primary)] leading-[1.1] tracking-tight mb-6">
+              {t("pricingPage.titleMain")}{" "}
+              <span className="text-[var(--soft-gold)] gold-glow-text">{t("pricingPage.titleHighlight")}</span>
             </h1>
           </RevealSection>
           <RevealSection delay={200}>
             <p className="text-lg text-[var(--text-secondary)] max-w-2xl mx-auto leading-relaxed">
-              Her büyüklükteki otel için uygun planlar. 14 gün ücretsiz deneme,
-              kredi kartı gerekmez.
+              {t("pricingPage.desc")}
             </p>
           </RevealSection>
         </div>
@@ -165,18 +154,18 @@ export default function PricingPage() {
           {plans.map((plan, i) => (
             <RevealSection key={i} delay={i * 100}>
               <div
-                className={`command-card p-8 h-full flex flex-col relative ${plan.popular ? "border-[var(--soft-gold)]/30 ring-1 ring-[var(--soft-gold)]/20" : ""
+                className={`command-card p-8 h-full flex flex-col relative hover:border-[var(--soft-gold)]/20 transition-all duration-300 ${plan.popular ? "border-[var(--soft-gold)]/30 ring-1 ring-[var(--soft-gold)]/20" : ""
                   }`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[var(--soft-gold)] to-[#e6b800] text-[var(--deep-ocean)] text-xs font-bold px-4 py-1 rounded-full">
-                    En Popüler
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[var(--soft-gold)] to-[#e6b800] text-[var(--deep-ocean)] text-xs font-bold px-4 py-1 rounded-full uppercase tracking-wider">
+                    {t("subscription.mostPopular")}
                   </div>
                 )}
-                <h3 className="text-lg font-bold text-[var(--overlay-text)] mb-1">{plan.name}</h3>
-                <p className="text-sm text-[var(--text-muted)] mb-6">{plan.description}</p>
+                <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{plan.name}</h3>
+                <p className="text-sm text-[var(--text-muted)] mb-6 min-h-[40px]">{plan.description}</p>
                 <div className="mb-6">
-                  <span className="text-4xl font-black text-[var(--overlay-text)]">{plan.price}</span>
+                  <span className="text-4xl font-black text-[var(--text-primary)]">{plan.price}</span>
                   <span className="text-[var(--text-muted)] text-sm">{plan.period}</span>
                 </div>
                 <Link
@@ -196,8 +185,8 @@ export default function PricingPage() {
       <section className="relative z-10 py-20 px-6">
         <div className="max-w-4xl mx-auto">
           <RevealSection>
-            <h2 className="text-2xl font-bold text-[var(--overlay-text)] text-center mb-10">
-              Özellik Karşılaştırması
+            <h2 className="text-2xl font-bold text-[var(--text-primary)] text-center mb-10">
+              {t("pricingPage.comparisonTitle")}
             </h2>
           </RevealSection>
           <RevealSection delay={100}>
@@ -205,9 +194,9 @@ export default function PricingPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[var(--overlay-border)]">
+                    <tr className="border-b border-[var(--overlay-border)] bg-white/5">
                       <th className="text-left p-4 text-[var(--text-muted)] font-bold uppercase tracking-wider text-xs">
-                        Özellik
+                        {t("pricingPage.featureCol")}
                       </th>
                       {plans.map((plan, i) => (
                         <th key={i} className={`text-center p-4 font-bold text-xs uppercase tracking-wider ${plan.popular ? "text-[var(--soft-gold)]" : "text-[var(--text-muted)]"
@@ -219,14 +208,14 @@ export default function PricingPage() {
                   </thead>
                   <tbody>
                     {features.map((feature, i) => (
-                      <tr key={i} className="border-b border-[var(--overlay-border)] last:border-0">
-                        <td className="p-4 text-[var(--text-secondary)]">{feature.name}</td>
+                      <tr key={i} className="border-b border-[var(--overlay-border)] last:border-0 hover:bg-white/5 transition-all">
+                        <td className="p-4 text-[var(--text-secondary)] font-medium">{feature.name}</td>
                         {feature.values.map((val, j) => (
                           <td key={j} className="text-center p-4">
                             {typeof val === "boolean" ? (
                               val ? <span className="inline-flex justify-center"><CheckIcon /></span> : <span className="inline-flex justify-center"><XIcon /></span>
                             ) : (
-                              <span className="text-[var(--overlay-text)] font-medium">{val}</span>
+                              <span className="text-[var(--text-primary)] font-bold">{val}</span>
                             )}
                           </td>
                         ))}
@@ -241,17 +230,15 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ Section */}
-      {/* EXPLANATION: FAQ handles common objections per page-cro skill.
-          Accordion pattern keeps page clean while exposing information. */}
       <section className="relative z-10 py-20 px-6 bg-[#030a15]/30">
         <div className="max-w-3xl mx-auto">
           <RevealSection>
             <div className="text-center mb-12">
               <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-3">
-                SSS
+                {t("pricingPage.faqTitle")}
               </p>
-              <h2 className="text-3xl font-black text-[var(--overlay-text)]">
-                Sık Sorulan Sorular
+              <h2 className="text-3xl font-black text-[var(--text-primary)]">
+                {t("pricingPage.faqSubtitle")}
               </h2>
             </div>
           </RevealSection>
@@ -262,9 +249,9 @@ export default function PricingPage() {
                 <div className="command-card overflow-hidden">
                   <button
                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                    className="w-full flex items-center justify-between p-5 text-left cursor-pointer"
+                    className="w-full flex items-center justify-between p-5 text-left cursor-pointer hover:bg-white/5 transition-all"
                   >
-                    <span className="text-sm font-bold text-[var(--overlay-text)] pr-4">{faq.question}</span>
+                    <span className="text-sm font-bold text-[var(--text-primary)] pr-4">{faq.question}</span>
                     <svg
                       width="20"
                       height="20"
@@ -297,14 +284,14 @@ export default function PricingPage() {
       <section className="relative z-10 py-20 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <RevealSection>
-            <h2 className="text-3xl font-black text-[var(--overlay-text)] mb-6">
-              Hala Kararsız mısınız?
+            <h2 className="text-3xl font-black text-[var(--text-primary)] mb-6">
+              {t("pricingPage.objectionTitle")}
             </h2>
             <p className="text-lg text-[var(--text-secondary)] mb-8">
-              Ücretsiz demo ile Hotel Plus&apos;ı risk almadan deneyin.
+              {t("pricingPage.objectionDesc")}
             </p>
             <Link href="/contact" className="btn-gold text-base py-4 px-8 cursor-pointer">
-              Ücretsiz Demo Talep Edin
+              {t("pricingPage.objectionCta")}
             </Link>
           </RevealSection>
         </div>

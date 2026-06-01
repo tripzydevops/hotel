@@ -1,19 +1,8 @@
-/**
- * EXPLANATION: About Page (Hakkımızda)
- * 
- * Tells the Hotel Plus story and explains the technology behind
- * the AI-powered rate intelligence platform.
- * 
- * Sections:
- * 1. Hero - Company mission statement
- * 2. Story - How and why Hotel Plus was built  
- * 3. How It Works - 3-step simplified process
- * 4. Values - Core company values
- */
 "use client";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 /* ===== SCROLL REVEAL HOOK (shared pattern) ===== */
 function useScrollReveal() {
@@ -42,6 +31,8 @@ function RevealSection({ children, className = "", delay = 0 }: { children: Reac
 }
 
 export default function AboutPage() {
+  const { t } = useI18n();
+
   return (
     <div className="relative overflow-hidden">
       {/* Background */}
@@ -59,20 +50,18 @@ export default function AboutPage() {
         <div className="max-w-4xl mx-auto text-center">
           <RevealSection>
             <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-6">
-              Hakkımızda
+              {t("aboutPage.topLabel")}
             </p>
           </RevealSection>
           <RevealSection delay={100}>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-[var(--overlay-text)] leading-[1.1] tracking-tight mb-6">
-              Otelcilikte{" "}
-              <span className="text-[var(--soft-gold)] gold-glow-text">Veri Devrimi</span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-[var(--text-primary)] leading-[1.1] tracking-tight mb-6">
+              {t("aboutPage.titleMain")}{" "}
+              <span className="text-[var(--soft-gold)] gold-glow-text">{t("aboutPage.titleHighlight")}</span>
             </h1>
           </RevealSection>
           <RevealSection delay={200}>
             <p className="text-lg text-[var(--text-secondary)] max-w-2xl mx-auto leading-relaxed">
-              Hotel Plus, otel sektöründeki fiyatlandırma kararlarını veriye dayalı hale getirmek
-              amacıyla kurulmuştur. Yapay zeka ve gerçek zamanlı veri analizi ile
-              otelinizin gelirini maksimize etmenize yardımcı oluyoruz.
+              {t("aboutPage.desc")}
             </p>
           </RevealSection>
         </div>
@@ -83,20 +72,12 @@ export default function AboutPage() {
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           <RevealSection>
             <div>
-              <h2 className="text-3xl font-black text-[var(--overlay-text)] mb-6">
-                Neden <span className="text-[var(--soft-gold)]">Hotel Plus</span>?
+              <h2 className="text-3xl font-black text-[var(--text-primary)] mb-6">
+                {t("aboutPage.whyTitle")} <span className="text-[var(--soft-gold)]">{t("aboutPage.whyHighlight")}</span>
               </h2>
-              <div className="space-y-4 text-[var(--text-secondary)] leading-relaxed">
-                <p>
-                  Otel fiyatlandırması karmaşık bir süreçtir. Onlarca rakibi, birden fazla OTA 
-                  platformunu ve sürekli değişen pazar koşullarını takip etmek insan gücüyle 
-                  neredeyse imkansızdır.
-                </p>
-                <p>
-                  Hotel Plus, bu sorunu yapay zeka ile çözer. Platformumuz 7/24 otomatik tarama 
-                  yaparak rakip fiyatlarını toplar, trendleri analiz eder ve anlamlı içgörüler 
-                  sunar — böylece siz stratejik kararlara odaklanabilirsiniz.
-                </p>
+              <div className="space-y-4 text-[var(--text-secondary)] leading-relaxed text-sm md:text-base">
+                <p>{t("aboutPage.whyDesc1")}</p>
+                <p>{t("aboutPage.whyDesc2")}</p>
               </div>
             </div>
           </RevealSection>
@@ -104,17 +85,17 @@ export default function AboutPage() {
             <div className="command-card p-8 text-center">
               <div className="text-5xl font-black text-[var(--soft-gold)] mb-2">%15</div>
               <p className="text-sm text-[var(--text-secondary)]">
-                Ortalama gelir artışı — Hotel Plus kullanan otellerde
+                {t("aboutPage.statLabel")}
               </p>
               <div className="mt-6 h-px bg-white/5" />
               <div className="mt-6 grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-2xl font-bold text-[var(--overlay-text)]">3dk</p>
-                  <p className="text-xs text-[var(--text-muted)]">Kurulum süresi</p>
+                  <p className="text-2xl font-bold text-[var(--text-primary)]">{t("aboutPage.setupTime")}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{t("aboutPage.setupLabel")}</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-[var(--overlay-text)]">7/24</p>
-                  <p className="text-xs text-[var(--text-muted)]">Otomatik tarama</p>
+                  <p className="text-2xl font-bold text-[var(--text-primary)]">{t("aboutPage.autoScans")}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{t("aboutPage.autoLabel")}</p>
                 </div>
               </div>
             </div>
@@ -128,10 +109,10 @@ export default function AboutPage() {
           <RevealSection>
             <div className="text-center mb-16">
               <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-3">
-                Nasıl Çalışır
+                {t("aboutPage.howItWorks")}
               </p>
-              <h2 className="text-3xl md:text-4xl font-black text-[var(--overlay-text)]">
-                3 Adımda <span className="text-[var(--soft-gold)]">Başlayın</span>
+              <h2 className="text-3xl md:text-4xl font-black text-[var(--text-primary)]">
+                {t("aboutPage.howItWorksSubtitle")}
               </h2>
             </div>
           </RevealSection>
@@ -140,18 +121,18 @@ export default function AboutPage() {
             {[
               {
                 step: "01",
-                title: "Otelinizi Ekleyin",
-                description: "Otelinizin adını girin, sistem otomatik olarak rakiplerinizi ve OTA kanallarını tespit eder.",
+                title: t("aboutPage.step1Title"),
+                description: t("aboutPage.step1Desc"),
               },
               {
                 step: "02",
-                title: "AI Tarama Başlasın",
-                description: "Yapay zeka motorumuz 7/24 fiyat taraması yapar, değişiklikleri kaydeder ve trendleri analiz eder.",
+                title: t("aboutPage.step2Title"),
+                description: t("aboutPage.step2Desc"),
               },
               {
                 step: "03",
-                title: "Aksiyon Alın",
-                description: "Anlık uyarılar ve akıllı raporlarla doğru zamanda doğru fiyatlandırma kararları verin.",
+                title: t("aboutPage.step3Title"),
+                description: t("aboutPage.step3Desc"),
               },
             ].map((item, i) => (
               <RevealSection key={i} delay={i * 150}>
@@ -159,7 +140,7 @@ export default function AboutPage() {
                   <div className="text-5xl font-black text-[var(--soft-gold)]/20 mb-4">
                     {item.step}
                   </div>
-                  <h3 className="text-xl font-bold text-[var(--overlay-text)] mb-3">{item.title}</h3>
+                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-3">{item.title}</h3>
                   <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
                     {item.description}
                   </p>
@@ -174,14 +155,14 @@ export default function AboutPage() {
       <section className="relative z-10 py-20 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <RevealSection>
-            <h2 className="text-3xl font-black text-[var(--overlay-text)] mb-6">
-              Hemen <span className="text-[var(--soft-gold)]">Deneyimleyin</span>
+            <h2 className="text-3xl font-black text-[var(--text-primary)] mb-6">
+              {t("aboutPage.ctaTitle")} <span className="text-[var(--soft-gold)]">{t("aboutPage.ctaHighlight")}</span>
             </h2>
             <p className="text-lg text-[var(--text-secondary)] mb-8">
-              Ücretsiz demo ile Hotel Plus&apos;ın gücünü keşfedin.
+              {t("aboutPage.ctaDesc")}
             </p>
             <Link href="/contact" className="btn-gold text-base py-4 px-8 cursor-pointer">
-              Ücretsiz Demo Talep Edin
+              {t("aboutPage.ctaButton")}
             </Link>
           </RevealSection>
         </div>

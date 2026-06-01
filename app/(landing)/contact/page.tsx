@@ -1,16 +1,7 @@
-/**
- * EXPLANATION: Contact Page (İletişim) with Demo Request Form
- * 
- * This is a key conversion page. The form captures demo requests
- * with minimal friction (Name, Email, Hotel Name, Message).
- * 
- * Per copywriting skill: "Low commitment CTA" — asking for a demo,
- * not a payment or signup. Per CRO skill: minimal form fields
- * to reduce friction.
- */
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useI18n } from "@/lib/i18n";
 
 /* ===== SCROLL REVEAL (shared pattern) ===== */
 function useScrollReveal() {
@@ -39,32 +30,33 @@ function RevealSection({ children, className = "", delay = 0 }: { children: Reac
 }
 
 export default function ContactPage() {
-  const [formState, setFormState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const { t } = useI18n();
+  const [formState, setFormState] = "idle" as "idle" | "sending" | "sent" | "error";
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     hotelName: "",
     message: "",
   });
+  
+  // Create state natively to avoid destructuring bugs
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormState("sending");
+    setStatus("sending");
 
-    /* EXPLANATION: In production, this would POST to /api/demo-request
-       which triggers an email notification via the NotifierAgent.
-       For now, we simulate success after a short delay. */
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      setFormState("sent");
+      setStatus("sent");
       setFormData({ name: "", email: "", hotelName: "", message: "" });
     } catch {
-      setFormState("error");
+      setStatus("error");
     }
   };
 
   const inputClasses =
-    "w-full bg-white/5 border border-[var(--overlay-border)] rounded-xl py-3.5 px-4 text-[var(--overlay-text)] placeholder:text-[var(--overlay-text)]/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all hover:bg-white/8 text-sm";
+    "w-full bg-white/5 border border-[var(--overlay-border)] rounded-xl py-3.5 px-4 text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/20 focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]/50 transition-all hover:bg-white/8 text-sm";
 
   return (
     <div className="relative overflow-hidden">
@@ -85,15 +77,14 @@ export default function ContactPage() {
             <div>
               <RevealSection>
                 <p className="text-[var(--soft-gold)] text-sm font-bold uppercase tracking-[0.3em] mb-4">
-                  İletişim
+                  {t("contactPage.topLabel")}
                 </p>
-                <h1 className="text-4xl md:text-5xl font-black text-[var(--overlay-text)] leading-[1.1] tracking-tight mb-6">
-                  Demo{" "}
-                  <span className="text-[var(--soft-gold)] gold-glow-text">Talep Edin</span>
+                <h1 className="text-4xl md:text-5xl font-black text-[var(--text-primary)] leading-[1.1] tracking-tight mb-6">
+                  {t("contactPage.titleMain")}{" "}
+                  <span className="text-[var(--soft-gold)] gold-glow-text">{t("contactPage.titleHighlight")}</span>
                 </h1>
                 <p className="text-lg text-[var(--text-secondary)] leading-relaxed mb-10">
-                  Hotel Plus&apos;ı otelinize özel bir demo ile tanıyın. Ekibimiz 
-                  24 saat içinde sizinle iletişime geçecektir.
+                  {t("contactPage.desc")}
                 </p>
               </RevealSection>
 
@@ -107,7 +98,7 @@ export default function ContactPage() {
                           <polyline points="22,6 12,13 2,6" />
                         </svg>
                       ),
-                      label: "E-posta",
+                      label: t("contactPage.emailLabel"),
                       value: "info@hotelplus.com.tr",
                     },
                     {
@@ -117,12 +108,12 @@ export default function ContactPage() {
                           <circle cx="12" cy="10" r="3" />
                         </svg>
                       ),
-                      label: "Adres",
-                      value: "Balıkesir, Türkiye",
+                      label: t("contactPage.addressLabel"),
+                      value: t("contactPage.addressValue"),
                     },
                   ].map((item, i) => (
                     <div key={i} className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] flex items-center justify-center shrink-0 border border-[var(--soft-gold)]/10">
                         {item.icon}
                       </div>
                       <div>
@@ -140,25 +131,25 @@ export default function ContactPage() {
             {/* Right: Form */}
             <RevealSection delay={100}>
               <div className="command-card p-8">
-                {formState === "sent" ? (
+                {status === "sent" ? (
                   <div className="text-center py-12">
-                    <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-4 border border-green-500/20 animate-bounce">
                       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     </div>
-                    <h3 className="text-xl font-bold text-[var(--overlay-text)] mb-2">
-                      Talebiniz Alındı!
+                    <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+                      {t("contactPage.form.successTitle")}
                     </h3>
                     <p className="text-sm text-[var(--text-secondary)]">
-                      Ekibimiz en kısa sürede sizinle iletişime geçecektir.
+                      {t("contactPage.form.successDesc")}
                     </p>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
                       <label htmlFor="name" className="block text-xs font-bold text-[var(--soft-gold)] uppercase tracking-widest mb-2 ml-1">
-                        Ad Soyad
+                        {t("contactPage.form.name")}
                       </label>
                       <input
                         id="name"
@@ -167,12 +158,12 @@ export default function ContactPage() {
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         className={inputClasses}
-                        placeholder="Adınız Soyadınız"
+                        placeholder={t("contactPage.form.namePlaceholder")}
                       />
                     </div>
                     <div>
                       <label htmlFor="contact-email" className="block text-xs font-bold text-[var(--soft-gold)] uppercase tracking-widest mb-2 ml-1">
-                        E-posta
+                        {t("contactPage.form.email")}
                       </label>
                       <input
                         id="contact-email"
@@ -181,12 +172,12 @@ export default function ContactPage() {
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         className={inputClasses}
-                        placeholder="ornek@oteliniz.com"
+                        placeholder={t("contactPage.form.emailPlaceholder")}
                       />
                     </div>
                     <div>
                       <label htmlFor="hotel" className="block text-xs font-bold text-[var(--soft-gold)] uppercase tracking-widest mb-2 ml-1">
-                        Otel Adı
+                        {t("contactPage.form.hotel")}
                       </label>
                       <input
                         id="hotel"
@@ -195,12 +186,12 @@ export default function ContactPage() {
                         value={formData.hotelName}
                         onChange={(e) => setFormData({ ...formData, hotelName: e.target.value })}
                         className={inputClasses}
-                        placeholder="Otelinizin adı"
+                        placeholder={t("contactPage.form.hotelPlaceholder")}
                       />
                     </div>
                     <div>
                       <label htmlFor="message" className="block text-xs font-bold text-[var(--soft-gold)] uppercase tracking-widest mb-2 ml-1">
-                        Mesaj (Opsiyonel)
+                        {t("contactPage.form.message")}
                       </label>
                       <textarea
                         id="message"
@@ -208,27 +199,27 @@ export default function ContactPage() {
                         value={formData.message}
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                         className={`${inputClasses} resize-none`}
-                        placeholder="Varsa özel talepleriniz..."
+                        placeholder={t("contactPage.form.messagePlaceholder")}
                       />
                     </div>
                     <button
                       type="submit"
-                      disabled={formState === "sending"}
+                      disabled={status === "sending"}
                       className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-base transition-all cursor-pointer ${
-                        formState === "sending"
-                          ? "bg-white/10 text-[var(--text-muted)] cursor-not-allowed"
+                        status === "sending"
+                          ? "bg-white/10 text-[var(--text-muted)] cursor-not-allowed border border-white/5"
                           : "btn-gold"
                       }`}
                     >
-                      {formState === "sending" ? (
+                      {status === "sending" ? (
                         <div className="w-5 h-5 border-2 border-[var(--deep-ocean)]/30 border-t-[var(--deep-ocean)] rounded-full animate-spin" />
                       ) : (
-                        "Demo Talep Edin"
+                        t("contactPage.form.submit")
                       )}
                     </button>
-                    {formState === "error" && (
-                      <p className="text-sm text-red-400 text-center">
-                        Bir hata oluştu. Lütfen tekrar deneyin.
+                    {status === "error" && (
+                      <p className="text-sm text-red-400 text-center font-semibold">
+                        {t("contactPage.form.error")}
                       </p>
                     )}
                   </form>

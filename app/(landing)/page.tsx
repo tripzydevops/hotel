@@ -187,6 +187,16 @@ function IconCpu() {
     </svg>
   );
 }
+function IconCalendar() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  );
+}
 
 /* ===== MAIN HOMEPAGE COMPONENT ===== */
 export default function LandingHome() {
@@ -678,12 +688,12 @@ export default function LandingHome() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {(features.items?.length > 0 ? features.items : [
-              { icon: "chart", title: t("landing.features.items.priceIntel.title"), description: t("landing.features.items.priceIntel.desc") },
-              { icon: "radar", title: t("landing.features.items.discovery.title"), description: t("landing.features.items.discovery.desc") },
-              { icon: "share", title: t("landing.features.items.parity.title"), description: t("landing.features.items.parity.desc") },
-              { icon: "users", title: t("landing.features.items.sentiment.title"), description: t("landing.features.items.sentiment.desc") },
-              { icon: "bell", title: t("landing.features.items.alerts.title"), description: t("landing.features.items.alerts.desc") },
-              { icon: "file", title: t("landing.features.items.reports.title"), description: t("landing.features.items.reports.desc") }
+              { icon: "priceIntel", title: t("landing.features.items.priceIntel.title"), description: t("landing.features.items.priceIntel.desc") },
+              { icon: "discovery", title: t("landing.features.items.discovery.title"), description: t("landing.features.items.discovery.desc") },
+              { icon: "parity", title: t("landing.features.items.parity.title"), description: t("landing.features.items.parity.desc") },
+              { icon: "sentiment", title: t("landing.features.items.sentiment.title"), description: t("landing.features.items.sentiment.desc") },
+              { icon: "events", title: t("landing.features.items.events.title"), description: t("landing.features.items.events.desc") },
+              { icon: "reports", title: t("landing.features.items.reports.title"), description: t("landing.features.items.reports.desc") }
             ]).map((feature: any, i: number) => (
               <RevealSection key={i} delay={i * 100}>
                 <div className="command-card p-8 h-full group cursor-pointer hover:border-[var(--soft-gold)]/20 transition-all duration-300">
@@ -692,6 +702,7 @@ export default function LandingHome() {
                     {(feature.icon === "discovery" || feature.icon === "radar") && <IconRadar />}
                     {(feature.icon === "parity" || feature.icon === "share") && <IconShare2 />}
                     {(feature.icon === "sentiment" || feature.icon === "users" || feature.icon === "cpu") && <IconCpu />}
+                    {(feature.icon === "events" || feature.icon === "calendar") && <IconCalendar />}
                     {(feature.icon === "alerts" || feature.icon === "bell") && <IconBell />}
                     {(feature.icon === "reports" || feature.icon === "file") && <IconFileText />}
                   </div>
