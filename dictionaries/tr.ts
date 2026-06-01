@@ -625,16 +625,16 @@ export const tr = {
       pages: "Sayfalar",
       product: "Ürün",
       contact: "İletişim",
-      rights: "© 2026 Hotel Rate Sentinel. Tüm hakları saklıdır.",
+      rights: "© 2026 Hotel Plus. Tüm hakları saklıdır.",
     },
     hero: {
-      topLabel: "Yapay Zeka Destekli Otel Fiyat İstihbaratı",
-      titleMain: "Rakiplerinizin Fiyatlarını",
-      titleHighlight: "Gerçek Zamanlı",
-      titleSuffix: "Takip Edin",
+      topLabel: "Otonom Pazar İstihbaratı",
+      titleMain: "Otel Liderleri İçin",
+      titleHighlight: "B2B Fiyat",
+      titleSuffix: "Nöbetçisi",
       description:
-        "Otelinizin kârlılığını şansa bırakmayın. Piyasa verilerini rekabet avantajına dönüştürün ve gelir yönetimi stratejinizi kesin bilgiyle güçlendirin.",
-      ctaPrimary: "Erişim Talebi Oluşturun",
+        "Hotel Plus, Hotel Rate Sentinel (Enterprise Core) tarafından desteklenmektedir. Fiyat paritenizi koruyun, bölgesel talep hareketlerini öngörün ve otonom Ajan Ağı ile rekabet analizlerini otomatikleştirin.",
+      ctaPrimary: "B2B Erişim Talebi",
       ctaSecondary: "Üyelik Planlarını İnceleyin",
     },
     stats: {
@@ -649,28 +649,47 @@ export const tr = {
       items: {
         priceIntel: {
           title: "Fiyat İstihbaratı",
-          desc: "Rakip otel fiyatlarını günlük olarak tarayın, geçmiş trendleri analiz edin ve fiyat değişikliklerine anında tepki verin.",
+          desc: "Rakip otel fiyatlarını arka planda 7/24 otomatik tarayın, geçmiş trendleri analiz edin ve fiyat hareketlerine anında yanıt verin.",
         },
         discovery: {
           title: "Keşif Motoru",
-          desc: "Bölgenizdeki tüm rakip otelleri harita üzerinde keşfedin. Coğrafi konum bazlı gerçek zamanlı fiyat karşılaştırması.",
+          desc: "Rakipleri harita üzerinde keşfedin. Otomatik rekabet seti eşleşmeleri için pgvector anlamsal arama ile güçlendirildi.",
         },
         parity: {
           title: "Parite Monitörü",
-          desc: "OTA kanallarındaki fiyat tutarsızlıklarını anında tespit edin. Marka değerinizi ve doğrudan satış kanallarınızı koruyun.",
+          desc: "OTA kanallarındaki fiyat tutarsızlıklarını anında tespit edin. Doğrudan satışlarınızı ve marka kârlılığınızı koruyun.",
         },
         sentiment: {
-          title: "Duyarlılık Analizi",
-          desc: "AI destekli misafir yorum analizi ile rakiplerinizin zayıf noktalarını keşfedin, hizmet kalitenizi pazarın önüne taşıyın.",
+          title: "Akıllı Duygu Hafızası",
+          desc: "Rakiplerin zayıf noktalarını tespit etmek için çapraz dil kategori normalizasyonu ile birikimli yorum takibi.",
         },
         alerts: {
           title: "Anlık Uyarılar",
-          desc: "Fiyat değişikliklerinde masaüstü bildirimleri ve e-posta uyarıları alın. Hiçbir fırsatı kaçırmayın.",
+          desc: "Rakip fiyat sınırları aşıldığında veya kritik pazar değişimlerinde e-posta ve anlık mobil bildirimler alın.",
         },
         reports: {
           title: "Akıllı Raporlar",
-          desc: "Yapay zeka destekli pazar analiz raporları ve PDF çıktılarıyla yönetim kararlarınızı veriye dayandırın.",
+          desc: "Veriye dayalı yönetim kararları için yapay zeka destekli pazar analiz raporları ve kurul sunumu hazır PDF çıktısı.",
         },
+      },
+    },
+    personas: {
+      title: "Stratejik Rolünüze Özel Çözümler",
+      subtitle: "Kurumsal Değer Önerileri",
+      owner: {
+        tag: "Otel Sahipleri & Yatırımcılar",
+        title: "RevPAR & Kârlılık Koruması",
+        desc: "Acentelerin doğrudan fiyatlarınızı baltalamasını engelleyin. Doğrudan satışları geri kazanın, varlık değerinizi koruyun ve kârlılığı artırın.",
+      },
+      gm: {
+        tag: "Genel Müdürler (GM)",
+        title: "Sunumlara Tek Tıkla Hazırlık",
+        desc: "Manuel Excel takibini tamamen ortadan kaldırın. 7/24 otomatik arka plan taramaları çalıştırın ve saniyeler içinde B2B kurul sunumu raporu oluşturun.",
+      },
+      revenue: {
+        tag: "Gelir Yöneticileri & Zincirler",
+        title: "B2B Ölçekli Otonom Yönetim",
+        desc: "Yeni mülklerde 'soğuk başlangıç' sorununu pgvector haritalama ile çözün. Fiyat senaryolarını What-If simülasyon motoruyla test edin.",
       },
     },
     testimonials: {
@@ -703,6 +722,7 @@ export const tr = {
     pricing: {
       title: "Otelinize Uygun Plan Seçin",
       subtitle: "Fiyatlandırma",
+      items: {},
     },
     faq: {
       title: "Sıkça Sorulan Sorular",
@@ -731,7 +751,7 @@ export const tr = {
       titleHighlight: "Bugün",
       description:
         "Ücretsiz demo ile Hotel Plus'ı deneyimleyin. Kredi kartı gerekmez, kurulum süresi 5 dakikadır.",
-      ctaPrimary: "Erişim Talebi Oluşturun",
+      ctaPrimary: "B2B Erişim Talebi Oluşturun",
       ctaSecondary: "Zaten Hesabınız Var mı? Giriş Yapın",
     },
   },

@@ -621,16 +621,16 @@ export const en = {
       pages: "Pages",
       product: "Product",
       contact: "Contact",
-      rights: "© 2026 Hotel Rate Sentinel. All rights reserved.",
+      rights: "© 2026 Hotel Plus. All rights reserved.",
     },
     hero: {
-      topLabel: "AI-Powered Hotel Price Intelligence",
-      titleMain: "Track Your Competitors",
-      titleHighlight: "Real-Time",
-      titleSuffix: "Pricing",
+      topLabel: "Autonomous Market Intelligence",
+      titleMain: "The B2B Rate Sentinel for",
+      titleHighlight: "Hospitality",
+      titleSuffix: "Leaders",
       description:
-        "Don't leave your hotel's profitability to chance. Transform market data into a competitive advantage and strengthen your revenue management strategy with precise information.",
-      ctaPrimary: "Request Access",
+        "Hotel Plus is powered by the Hotel Rate Sentinel (Enterprise Core). Secure your rate parity, forecast regional demand events, and automate competitive analysis with an otonom Agent Mesh.",
+      ctaPrimary: "Request B2B Access",
       ctaSecondary: "View Membership Plans",
     },
     stats: {
@@ -645,28 +645,47 @@ export const en = {
       items: {
         priceIntel: {
           title: "Price Intelligence",
-          desc: "Scan competitor hotel prices daily, analyze historical trends, and react instantly to price changes.",
+          desc: "Scan competitor hotel prices 24/7 in the background, analyze historical trends, and react instantly to pricing shifts.",
         },
         discovery: {
           title: "Discovery Engine",
-          desc: "Discover all competitor hotels in your area on a map. Real-time geo-located price comparison.",
+          desc: "Discover competitor hotels on an interactive map. Powered by pgvector Semantic Search for automated compset matching.",
         },
         parity: {
-          title: "Parite Monitor",
-          desc: "Instantly detect price inconsistencies across OTA channels. Protect your brand value and direct sales channels.",
+          title: "Parity Monitor",
+          desc: "Instantly detect price inconsistencies across major OTA channels to protect your direct bookings and brand margin.",
         },
         sentiment: {
-          title: "Sentiment Analysis",
-          desc: "Discover your competitors' weak points with AI-powered guest review analysis, pushing your service quality ahead of the market.",
+          title: "Smart Memory Sentiment",
+          desc: "Cumulative review tracking with cross-language category normalization to pinpoint competitor vulnerabilities.",
         },
         alerts: {
           title: "Instant Alerts",
-          desc: "Receive desktop notifications and email alerts for price changes. Never miss an opportunity.",
+          desc: "Receive proactive mobile push and email notifications when competitor rate thresholds are crossed.",
         },
         reports: {
           title: "Smart Reports",
-          desc: "Base your management decisions on data with AI-powered market analysis reports and PDF outputs.",
+          desc: "Empower management decisions with AI-powered market analysis reports and boardroom-ready PDF briefs.",
         },
+      },
+    },
+    personas: {
+      title: "Tailored to Your Strategic Role",
+      subtitle: "Enterprise Value Props",
+      owner: {
+        tag: "Hotel Owners & Investors",
+        title: "Maximize RevPAR & Margins",
+        desc: "Stop revenue leakage from OTA undercutting. Reclaim direct bookings, defend your asset value, and increase yields with real-time rate enforcement.",
+      },
+      gm: {
+        tag: "General Managers (GMs)",
+        title: "Boardroom-Ready in 1-Click",
+        desc: "Automate manual Excel competitor tracking. Run automated background scans and compile professional 'Meeting Prep' briefs in seconds.",
+      },
+      revenue: {
+        tag: "Revenue Directors & Chains",
+        title: "Cognitive Multi-Property Scaling",
+        desc: "Solve the 'Cold Start' problem for new properties with pgvector mapping. Model strategic shifts with the What-If simulation engine.",
       },
     },
     testimonials: {
@@ -710,11 +729,11 @@ export const en = {
         },
         1: {
           q: "Which sites do you fetch prices from?",
-          a: "We scan all major OTA channels and meta-search engines, including Booking.com, Expedia, Hotels.com, Google Hotels, and their own websites.",
+          a: "We scan all major OTA channels and meta-search engines, including Booking.com, Expedia, Hotels.com, Google Hotels, and direct brand websites.",
         },
         2: {
           q: "Is there a commitment?",
-          a: "No, there are no long-term contracts or commitments at Hotel Plus. You can cancel at any time, only pay for what you use.",
+          a: "No, there are no long-term contracts or commitments. You can cancel at any time, only pay for what you use.",
         },
         3: {
           q: "Can I track my own hotel as well?",
@@ -727,7 +746,7 @@ export const en = {
       titleHighlight: "Today",
       description:
         "Experience Hotel Plus with a free demo. No credit card required, 5-minute setup.",
-      ctaPrimary: "Request Access",
+      ctaPrimary: "Request B2B Access",
       ctaSecondary: "Already have an account? Log In",
     },
   },
