@@ -688,12 +688,12 @@ export default function LandingHome() {
               <RevealSection key={i} delay={i * 100}>
                 <div className="command-card p-8 h-full group cursor-pointer hover:border-[var(--soft-gold)]/20 transition-all duration-300">
                   <div className="w-12 h-12 rounded-xl bg-[var(--soft-gold)]/5 flex items-center justify-center text-[var(--soft-gold)] mb-5 group-hover:bg-[var(--soft-gold)]/10 transition-colors duration-300 border border-[var(--soft-gold)]/10">
-                    {feature.icon === "priceIntel" && <IconChart />}
-                    {feature.icon === "discovery" && <IconRadar />}
-                    {feature.icon === "parity" && <IconShare2 />}
-                    {feature.icon === "sentiment" && <IconCpu />}
-                    {feature.icon === "alerts" && <IconBell />}
-                    {feature.icon === "reports" && <IconFileText />}
+                    {(feature.icon === "priceIntel" || feature.icon === "chart") && <IconChart />}
+                    {(feature.icon === "discovery" || feature.icon === "radar") && <IconRadar />}
+                    {(feature.icon === "parity" || feature.icon === "share") && <IconShare2 />}
+                    {(feature.icon === "sentiment" || feature.icon === "users" || feature.icon === "cpu") && <IconCpu />}
+                    {(feature.icon === "alerts" || feature.icon === "bell") && <IconBell />}
+                    {(feature.icon === "reports" || feature.icon === "file") && <IconFileText />}
                   </div>
                   <h3 className="text-lg font-bold text-[var(--text-primary)] mb-3">{feature.title}</h3>
                   <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
