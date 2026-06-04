@@ -1503,6 +1503,11 @@ class ScanPersistenceService:
             analysis_item.update({"identity": identity, "targets_count": len(targets)})
             analysis_payload.append(analysis_item)
             
+            new_property_token = res_data.get("property_token")
+            new_serp_api_id = res_data.get("serp_api_id")
+            was_self_healed = False
+            original_token_for_healing = None
+
             for target in targets:
                 if not target:
                     continue
@@ -1513,6 +1518,38 @@ class ScanPersistenceService:
                     "id": tid,
                     "last_scanned_at": now_ts
                 }
+                
+                # Check for self-healing: token changed/updated
+                old_token = target.get("property_token")
+                if new_property_token and old_token and new_property_token != old_token:
+                    logger.info(
+                        f"[Self-Healing] Token changed for hotel {tid}: "
+                        f"Old={old_token}, New={new_property_token}"
+                    )
+                    upd["property_token"] = new_property_token
+                    if new_serp_api_id:
+                        upd["serp_api_id"] = new_serp_api_id
+                    
+                    # Update target in-memory so downstream processes see it
+                    target["property_token"] = new_property_token
+                    if new_serp_api_id:
+                        target["serp_api_id"] = new_serp_api_id
+                    
+                    was_self_healed = True
+                    original_token_for_healing = old_token
+
+                    # Insert an audit log into query_logs
+                    try:
+                        self.admin_insforge.table("query_logs").insert({
+                            "hotel_name": target.get("name") or "Unknown",
+                            "action_type": "token_healing",
+                            "status": "success",
+                            "status_detail": f"Google Hotels token expired. Automatically fell back to keyword search and updated token from {old_token} to {new_property_token}.",
+                            "session_id": str(group["session_id"]) if group.get("session_id") else None,
+                            "created_at": datetime.now(timezone.utc).isoformat(),
+                        }).execute()
+                    except Exception as q_log_err:
+                        logger.error(f"[Self-Healing] Failed to write query_log: {q_log_err}")
                 
                 # [FIX] Only update current_price if we actually found a positive price
                 # AND the price is NOT flagged as anomalous. Anomalous prices are still logged
@@ -1701,11 +1738,14 @@ class ScanPersistenceService:
             for tid in group["task_ids"]:
                 completed_task_ids.append(tid)
                 if res_data.get("raw_data"):
-                    raw_archives.append({
+                    archive_record = {
                         "id": tid, 
                         "raw_results": res_data["raw_data"],
                         "status": "completed"
-                    })
+                    }
+                    if was_self_healed and original_token_for_healing and new_property_token:
+                        archive_record["error_message"] = f"[Self-Healed] Google Hotels token updated from {original_token_for_healing} to {new_property_token}"
+                    raw_archives.append(archive_record)
 
         # 5. Execute Batch Operations
         if hotel_updates:

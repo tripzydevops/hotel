@@ -1928,6 +1928,7 @@ class DataForSEOProvider(HotelDataProvider):
                         "task_type": "price_search",
                         "currency": prices_data.get("currency"), # [FIX] Remove hardcoded TRY default
                         "property_token": target.get("hotel_identifier"),
+                        "serp_api_id": target.get("serp_api_id") or target.get("hotel_identifier"),
                         "hotel_name": target.get("title"),
                         "stars": target.get("stars"),
                         "rating": reviews_data.get("value", 0.0),

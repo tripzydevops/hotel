@@ -430,6 +430,77 @@ async def run_system_heartbeat(insforge: InsForgeClient):
         else:
             s_logger.info(f"Heartbeat: Found {len(monitored_res.data)} raw monitored hotel entries.")
         
+        stale_hotel_ids = set()
+        if monitored_res.data:
+            # Extract distinct hotel IDs
+            all_monitored_hids = list(set(
+                str(item["hotel_id"]) for item in monitored_res.data 
+                if item.get("hotel_id") and item.get("hotels")
+            ))
+            
+            if all_monitored_hids:
+                try:
+                    # Query recent completed pricing tasks for these hotels (last 5 per hotel on average)
+                    tasks_check = (
+                        insforge.table("scan_tasks")
+                        .select("hotel_id, status, created_at, task_type")
+                        .in_("hotel_id", all_monitored_hids)
+                        .eq("status", "completed")
+                        .eq("task_type", "price_search")
+                        .order("created_at", desc=True)
+                        .limit(len(all_monitored_hids) * 5)
+                        .execute()
+                    )
+                    
+                    # Query latest price log for these hotels
+                    price_logs_check = (
+                        insforge.table("price_logs")
+                        .select("hotel_id, recorded_at")
+                        .in_("hotel_id", all_monitored_hids)
+                        .order("recorded_at", desc=True)
+                        .limit(len(all_monitored_hids) * 10)
+                        .execute()
+                    )
+                    
+                    # Group completed task creation times by hotel_id
+                    from collections import defaultdict
+                    hotel_completed_tasks = defaultdict(list)
+                    for t in (tasks_check.data or []):
+                        hotel_completed_tasks[str(t["hotel_id"])].append(t["created_at"])
+                        
+                    # Group latest price log by hotel_id
+                    latest_price_log_time = {}
+                    for p in (price_logs_check.data or []):
+                        hid = str(p["hotel_id"])
+                        if hid not in latest_price_log_time:
+                            latest_price_log_time[hid] = p["recorded_at"]
+                            
+                    # Check each hotel for repeated zero-pricing rate anomaly
+                    for hid in all_monitored_hids:
+                        times = hotel_completed_tasks[hid]
+                        # We require at least 3 completed tasks to detect repeated failure
+                        if len(times) >= 3:
+                            # The 3rd completed task time (cutoff)
+                            cutoff_str = times[2]
+                            latest_log_str = latest_price_log_time.get(hid)
+                            
+                            # Parse timestamps
+                            cutoff_dt = datetime.fromisoformat(cutoff_str.replace("Z", "+00:00"))
+                            if latest_log_str:
+                                latest_log_dt = datetime.fromisoformat(latest_log_str.replace("Z", "+00:00"))
+                                # If the latest price log is older than the oldest of the last 3 completed tasks,
+                                # then all of those 3 runs yielded zero prices/empty results (no price logs written)
+                                if latest_log_dt < cutoff_dt:
+                                    stale_hotel_ids.add(hid)
+                            else:
+                                # If no price logs exist at all but we have 3 completed tasks, it's stale
+                                stale_hotel_ids.add(hid)
+                                
+                    if stale_hotel_ids:
+                        s_logger.warning(f"Heartbeat: Detected {len(stale_hotel_ids)} hotels with repeated zero-pricing rate anomalies: {list(stale_hotel_ids)}")
+                except Exception as detect_e:
+                    s_logger.error(f"Heartbeat: Stale token detection failed: {detect_e}")
+
         # Deduplicate and validate (Must have property_token or serp_api_id)
         hotels_to_scan = []
         seen_hotels = set()
@@ -446,11 +517,19 @@ async def run_system_heartbeat(insforge: InsForgeClient):
                 if hid in seen_hotels:
                     continue
                 
+                # Check if this hotel's token is stale
+                is_stale_token = str(hid) in stale_hotel_ids
+                if is_stale_token:
+                    s_logger.warning(f"Heartbeat: Hotel '{h.get('name')}' (ID: {hid}) has a stale token. Forcing keyword fallback scan.")
+                    h["_is_stale_fallback"] = True
+                    h["_original_property_token"] = h.get("property_token")
+                    h["_original_serp_api_id"] = h.get("serp_api_id")
+                    h["property_token"] = None
+                    h["serp_api_id"] = None
+
                 # [PROTOCOL 2026] ENFORCE TOKEN REQUIREMENT
-                # Requirement: Hotels MUST be mapped to a provider-specific token (property_token or serp_api_id).
-                # Reason: Prevents broad city-wide keyword searches that lead to low accuracy and wasted costs.
-                # Outcome: Only high-fidelity, targeted scans are dispatched by the heartbeat.
-                if not (h.get("property_token") or h.get("serp_api_id")):
+                # If it's not a stale fallback, it MUST have a property_token or serp_api_id
+                if not is_stale_token and not (h.get("property_token") or h.get("serp_api_id")):
                     unmapped_hotels.append(h.get("name", "Unknown"))
                     continue
 
