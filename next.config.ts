@@ -61,6 +61,10 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        source: "/api/auth/:path*",
+        destination: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/api/auth/:path*`,
+      },
+      {
         source: "/auth/v1/:path*",
         destination: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/:path*`,
       },
@@ -72,6 +76,14 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      {
+        source: "/api/auth/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD" },
+          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization, X-Requested-With, Accept, Origin, apikey" },
+        ],
+      },
       {
         source: "/auth/v1/:path*",
         headers: [
