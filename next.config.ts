@@ -65,6 +65,10 @@ const nextConfig: NextConfig = {
         destination: "/api/auth/session",
       },
       {
+        source: "/api/auth/mfa/:path*",
+        destination: "/api/auth/mfa/:path*",
+      },
+      {
         source: "/api/auth/:path*",
         destination: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/api/auth/:path*`,
       },

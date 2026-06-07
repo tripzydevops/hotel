@@ -2,6 +2,10 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/api/auth/mfa/:path*",
+      "destination": "/api/index.py"
+    },
+    {
       "source": "/api/:path((?!auth/).*)",
       "destination": "/api/index.py"
     }
