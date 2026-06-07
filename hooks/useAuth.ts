@@ -17,9 +17,19 @@ export function useAuth() {
         const { data, error } = await insforge.auth.getCurrentUser() as any;
         if (error) throw error;
         // The SDK returns { data: { user }, error } or just data.
-        setUser(data?.user || data);
+        const currentUser = data?.user || data;
+        if (!currentUser) {
+          throw new Error("No user profile found in session");
+        }
+        setUser(currentUser);
       } catch (err) {
         console.error("Auth Load Error", err);
+        // Clear the stale app-domain session cookie so we don't get trapped in a redirect loop
+        try {
+          await fetch("/api/auth/session", { method: "DELETE" });
+        } catch (clearErr) {
+          console.error("Failed to clear stale session cookie:", clearErr);
+        }
       } finally {
         setIsLoaded(true);
       }
