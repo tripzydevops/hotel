@@ -61,6 +61,10 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        source: "/api/auth/session",
+        destination: "/api/auth/session",
+      },
+      {
         source: "/api/auth/:path*",
         destination: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/api/auth/:path*`,
       },
