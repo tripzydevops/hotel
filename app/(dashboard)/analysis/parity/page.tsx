@@ -25,7 +25,6 @@ export default function ParityPage() {
     // Small delay lets the page paint its loading skeleton first
     const timer = setTimeout(() => { fetchData(); }, 300);
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const handleExport = async () => {

@@ -19,6 +19,7 @@ export default function SubscriptionModal({
   onUpgrade,
 }: SubscriptionModalProps) {
   const { t } = useI18n();
+  const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
 
   const PLANS = [
@@ -76,8 +77,6 @@ export default function SubscriptionModal({
   ];
 
   if (!isOpen) return null;
-
-  const router = useRouter();
 
   const handleUpgrade = async (planId: string) => {
     try {
