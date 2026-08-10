@@ -947,8 +947,8 @@ export default function LandingHome() {
                   <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{plan.name}</h3>
                   <p className="text-sm text-[var(--text-muted)] mb-4">{plan.description}</p>
                   <div className="mb-6">
-                    <span className="text-3xl font-black text-[var(--text-primary)]">{plan.price}</span>
-                    <span className="text-[var(--text-muted)] text-sm">{plan.period}</span>
+                    <span className={`${plan.price?.length > 12 ? "text-xl font-bold" : "text-3xl font-black"} text-[var(--text-primary)]`}>{plan.price}</span>
+                    {plan.period && <span className="text-[var(--text-muted)] text-sm ml-1">{plan.period}</span>}
                   </div>
                   <ul className="space-y-2.5 mb-8 flex-1">
                     {plan.features.map((f: string, j: number) => (

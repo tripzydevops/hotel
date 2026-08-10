@@ -187,8 +187,8 @@ export default function PricingPage() {
                 <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">{plan.name}</h3>
                 <p className="text-sm text-[var(--text-muted)] mb-6 min-h-[40px]">{plan.description}</p>
                 <div className="mb-6">
-                  <span className="text-4xl font-black text-[var(--text-primary)]">{plan.price}</span>
-                  <span className="text-[var(--text-muted)] text-sm">{plan.period}</span>
+                  <span className={`${plan.price?.length > 12 ? "text-xl md:text-2xl font-bold" : "text-4xl font-black"} text-[var(--text-primary)]`}>{plan.price}</span>
+                  {plan.period && <span className="text-[var(--text-muted)] text-sm ml-1">{plan.period}</span>}
                 </div>
                 <Link
                   href="/contact"

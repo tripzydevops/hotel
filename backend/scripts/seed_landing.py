@@ -70,9 +70,9 @@ async def main():
                 "title": "Otelinize Uygun Plan Seçin",
                 "subtitle": "Fiyatlandırma",
                 "plans": [
-                    { "name": "Başlangıç", "price": "₺2.490", "period": "/ay", "description": "Tek otel için temel izleme", "features": ["1 otel takibi", "5 rakip izleme", "Günlük fiyat taraması", "E-posta uyarıları", "Temel raporlar"], "popular": False, "cta": "Başlayın" },
-                    { "name": "Profesyonel", "price": "₺4.990", "period": "/ay", "description": "Büyüyen oteller için gelişmiş analiz", "features": ["3 otel takibi", "15 rakip izleme", "Saatlik fiyat taraması", "Push + E-posta uyarıları", "AI destekli raporlar", "Pazar analizi", "Keşif motoru"], "popular": True, "cta": "En Popüler" },
-                    { "name": "Kurumsal", "price": "Özel", "period": "", "description": "Otel zincirleri için tam çözüm", "features": ["Sınırsız otel", "Sınırsız rakip", "Gerçek zamanlı tarama", "Tüm bildirim kanalları", "Global Pulse ağı", "API erişimi", "Özel entegrasyonlar", "Öncelikli destek"], "popular": False, "cta": "İletişime Geçin" }
+                    { "name": "Başlangıç", "price": "Özel Fiyat Teklifi", "period": "", "description": "Tek otel için temel izleme", "features": ["1 otel takibi", "5 rakip izleme", "Günlük fiyat taraması", "E-posta uyarıları", "Temel raporlar"], "popular": False, "cta": "Teklif Alın" },
+                    { "name": "Profesyonel", "price": "Özel Fiyat Teklifi", "period": "", "description": "Büyüyen oteller için gelişmiş analiz", "features": ["3 otel takibi", "15 rakip izleme", "Saatlik fiyat taraması", "Push + E-posta uyarıları", "AI destekli raporlar", "Pazar analizi", "Keşif motoru"], "popular": True, "cta": "Teklif Alın" },
+                    { "name": "Kurumsal", "price": "Özel Fiyat Teklifi", "period": "", "description": "Otel zincirleri için tam çözüm", "features": ["Sınırsız otel", "Sınırsız rakip", "Gerçek zamanlı tarama", "Tüm bildirim kanalları", "Global Pulse ağı", "API erişimi", "Özel entegrasyonlar", "Öncelikli destek"], "popular": False, "cta": "İletişime Geçin" }
                 ]
             }
         },
@@ -164,9 +164,9 @@ async def main():
                 "title": "Choose the Plan That Fits Your Hotel",
                 "subtitle": "Pricing",
                 "plans": [
-                    { "name": "Starter", "price": "₺2,490", "period": "/mo", "description": "Essential monitoring for one hotel", "features": ["1 hotel tracking", "5 competitor tracking", "Daily price scanning", "Email alerts", "Basic reports"], "popular": False, "cta": "Get Started" },
-                    { "name": "Professional", "price": "₺4,990", "period": "/mo", "description": "Advanced analysis for growing hotels", "features": ["3 hotel tracking", "15 competitor tracking", "Hourly price scanning", "Push + Email alerts", "AI-powered reports", "Market analysis", "Discovery engine"], "popular": True, "cta": "Most Popular" },
-                    { "name": "Enterprise", "price": "Custom", "period": "", "description": "Full solution for hotel chains", "features": ["Unlimited hotels", "Unlimited competitors", "Real-time scanning", "All notification channels", "Global Pulse network", "API access", "Custom integrations", "Priority support"], "popular": False, "cta": "Contact Us" }
+                    { "name": "Starter", "price": "Contact Sales for Quote", "period": "", "description": "Essential monitoring for one hotel", "features": ["1 hotel tracking", "5 competitor tracking", "Daily price scanning", "Email alerts", "Basic reports"], "popular": False, "cta": "Request Quote" },
+                    { "name": "Professional", "price": "Contact Sales for Quote", "period": "", "description": "Advanced analysis for growing hotels", "features": ["3 hotel tracking", "15 competitor tracking", "Hourly price scanning", "Push + Email alerts", "AI-powered reports", "Market analysis", "Discovery engine"], "popular": True, "cta": "Request Quote" },
+                    { "name": "Enterprise", "price": "Custom Quote", "period": "", "description": "Full solution for hotel chains", "features": ["Unlimited hotels", "Unlimited competitors", "Real-time scanning", "All notification channels", "Global Pulse network", "API access", "Custom integrations", "Priority support"], "popular": False, "cta": "Contact Us" }
                 ]
             }
         },

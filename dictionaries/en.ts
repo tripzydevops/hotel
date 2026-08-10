@@ -434,17 +434,18 @@ export const en = {
     mostPopular: "Most Popular",
     currentPlan: "Current Plan",
     upgrade: "Upgrade",
+    requestQuote: "Contact Sales",
     contactSales:
       "Needs enterprise-grade compliance? Contact Sales for volume licensing.",
     // Plan-specific keys used by SubscriptionModal.tsx
     price: {
-      starter: "$49",
-      pro: "$149",
-      enterprise: "$399",
+      starter: "Contact Sales for Quote",
+      pro: "Contact Sales for Quote",
+      enterprise: "Custom Quote",
     },
     period: {
-      mo: "/mo",
-      custom: "/custom",
+      mo: "",
+      custom: "",
     },
     starter: {
       name: "Starter",

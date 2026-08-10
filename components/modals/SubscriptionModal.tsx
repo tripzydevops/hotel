@@ -2,6 +2,7 @@
 
 import { X, Check, Shield, Zap, Building2, Crown, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 
 interface SubscriptionModalProps {
@@ -76,10 +77,14 @@ export default function SubscriptionModal({
 
   if (!isOpen) return null;
 
+  const router = useRouter();
+
   const handleUpgrade = async (planId: string) => {
     try {
       setLoading(planId);
       await onUpgrade(planId);
+      onClose();
+      router.push("/contact");
     } catch (e) {
       console.error("Upgrade failed", e);
     } finally {
@@ -143,12 +148,14 @@ export default function SubscriptionModal({
                   {plan.name}
                 </h3>
                 <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-3xl font-black text-[var(--overlay-text)]">
+                  <span className={`${plan.price?.length > 12 ? "text-lg font-bold" : "text-3xl font-black"} text-[var(--overlay-text)]`}>
                     {plan.price}
                   </span>
-                  <span className="text-sm text-[var(--text-muted)]">
-                    {plan.period}
-                  </span>
+                  {plan.period && (
+                    <span className="text-sm text-[var(--text-muted)]">
+                      {plan.period}
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-[var(--text-muted)] mb-6 h-10">
                   {plan.description}
@@ -183,7 +190,7 @@ export default function SubscriptionModal({
                   ) : isCurrent ? (
                     t("subscription.currentPlan")
                   ) : (
-                    t("subscription.upgrade")
+                    t("subscription.requestQuote")
                   )}
                 </button>
               </div>

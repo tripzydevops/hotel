@@ -553,6 +553,7 @@ export const tr = {
     mostPopular: "En Popüler",
     currentPlan: "Mevcut Plan",
     upgrade: "Yükselt",
+    requestQuote: "Satışla İletişime Geçin",
     contactSales:
       "Kurumsal uyumluluk mu gerekiyor? Toplu lisanslama için Satışla İletişime Geçin.",
     starter: {
@@ -591,13 +592,13 @@ export const tr = {
       },
     },
     period: {
-      mo: "/ay",
+      mo: "",
       custom: "",
     },
     price: {
-      starter: "₺999",
-      pro: "₺2.499",
-      enterprise: "Özel",
+      starter: "Özel Fiyat Teklifi",
+      pro: "Özel Fiyat Teklifi",
+      enterprise: "Özel Fiyat Teklifi",
     },
   },
   landing: {
