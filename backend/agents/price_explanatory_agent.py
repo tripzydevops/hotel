@@ -69,7 +69,7 @@ class PriceExplanatoryAgent:
         try:
             response = await asyncio.to_thread(
                 client.models.generate_content,
-                model="gemini-3-flash-preview",
+                model="gemini-3.1-pro-preview",
                 contents=prompt,
                 config={
                     "system_instruction": "You are a Senior Revenue Strategist specializing in hotel market intelligence and compression analysis."

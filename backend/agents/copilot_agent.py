@@ -332,7 +332,7 @@ TOOL_DECLARATIONS = [
 MAX_TOOL_ITERATIONS = 5
 
 # Models to try in order (cascade)
-MODEL_CASCADE = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"]
+MODEL_CASCADE = ["gemini-3.1-pro-preview", "gemini-pro-latest", "gemini-omni-flash-preview"]
 
 
 

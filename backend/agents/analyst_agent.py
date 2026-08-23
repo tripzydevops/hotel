@@ -660,7 +660,7 @@ class AnalystAgent:
                 Ensure the JSON is valid and strictly follows this structure.
                 """
                 
-                models_to_try = ["gemini-3-flash-preview", "gemini-2.5-flash"]
+                models_to_try = ["gemini-3.1-pro-preview", "gemini-pro-latest", "gemini-omni-flash-preview"]
                 response = None
                 for m in models_to_try:
                     try:

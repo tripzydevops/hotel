@@ -18,7 +18,7 @@ class MarketIntelligenceAgent:
     Now acts as a thin wrapper delegating to AnalysisService for core logic.
     """
 
-    def __init__(self, model: str = "gemini-3-flash-preview"):
+    def __init__(self, model: str = "gemini-3.1-pro-preview"):
         self.model = model
 
     async def run_analysis(

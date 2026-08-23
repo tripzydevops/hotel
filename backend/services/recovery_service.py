@@ -48,7 +48,7 @@ async def generate_dispute_letter(
         for attempt in range(max_retries):
             try:
                 response = client.models.generate_content(
-                    model="gemini-3-flash-preview",
+                    model="gemini-3.1-pro-preview",
                     contents=prompt,
                 )
                 if response and response.text:
@@ -67,7 +67,7 @@ async def generate_dispute_letter(
 
     import httpx
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key={api_key}"
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
     for attempt in range(max_retries):

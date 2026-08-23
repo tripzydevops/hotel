@@ -5,6 +5,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 
+from backend.config.ai_config import DEFAULT_GEMINI_MODEL, get_model_cascade
 from backend.utils.logger import get_logger
 
 # Typing-safe import for Google GenAI to satisfy strict linter checks
@@ -34,7 +35,7 @@ class MarketIntelligenceService:
 
     def __init__(self):
         self.api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-        self.model_name = "gemini-3-flash-preview"  # Upgraded to Gemini 3
+        self.model_name = DEFAULT_GEMINI_MODEL
         self.client = get_genai_client()
         self.sdk_available = self.client is not None
 
@@ -90,9 +91,7 @@ class MarketIntelligenceService:
         {json.dumps(context, indent=2)}
         """
 
-        models_to_try = [self.model_name, "gemini-2.5-flash"]
-        seen_models = set()
-        models_to_try = [x for x in models_to_try if not (x in seen_models or seen_models.add(x))]
+        models_to_try = get_model_cascade(self.model_name)
 
         response_text = None
         last_error = None
@@ -300,9 +299,7 @@ class MarketIntelligenceService:
         {json.dumps(city_data, indent=2)}
         """
 
-        models_to_try = [self.model_name, "gemini-2.5-flash"]
-        seen_models = set()
-        models_to_try = [x for x in models_to_try if not (x in seen_models or seen_models.add(x))]
+        models_to_try = get_model_cascade(self.model_name)
         
         last_error = None
         for model in models_to_try:

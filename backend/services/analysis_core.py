@@ -21,6 +21,7 @@ from supabase import Client
 logger = get_logger(__name__)
 
 # AGENT_NOTE: Added typing-safe import for Google GenAI to satisfy strict linter checks
+from backend.config.ai_config import DEFAULT_GEMINI_MODEL, get_model_cascade
 from backend.utils.ai_client import get_genai_client
 
 try:
@@ -410,11 +411,11 @@ async def run_market_intelligence(
     scraper_results: List[Dict[str, Any]],
     threshold: float = 2.0,
     volatility: float = 0.0,
-    model: str = "gemini-3-flash-preview",
+    model: str = DEFAULT_GEMINI_MODEL,
 ) -> Dict[str, Any]:
     """
     Core AI logic for market anomaly detection and strategic reasoning.
-    Uses Gemini 3 agentic reasoning traces.
+    Uses Gemini agentic reasoning traces.
     """
     # 1. Prepare data summary
     summary = []
@@ -443,7 +444,7 @@ async def run_market_intelligence(
     if not client:
         return run_heuristic_market_fallback(summary, threshold, volatility)
 
-    models_to_try = [model, "gemini-2.5-flash"]
+    models_to_try = get_model_cascade(model)
     seen_models = set()
     models_to_try = [x for x in models_to_try if not (x in seen_models or seen_models.add(x))]
 
@@ -553,7 +554,7 @@ def run_heuristic_market_fallback(
 
 
 async def synthesize_pricing_dna(
-    history: List[Dict[str, Any]], model: str = "gemini-3-flash-preview"
+    history: List[Dict[str, Any]], model: str = DEFAULT_GEMINI_MODEL
 ) -> Dict[str, Any]:
     """
     Synthesizes a hotel's 'Pricing DNA' from historical performance logs.
@@ -582,7 +583,7 @@ async def synthesize_pricing_dna(
     }}
     """
 
-    models_to_try = [model, "gemini-2.5-flash"]
+    models_to_try = get_model_cascade(model)
     seen_models = set()
     models_to_try = [x for x in models_to_try if not (x in seen_models or seen_models.add(x))]
 
@@ -672,7 +673,7 @@ async def stream_narrative_gen(
             return
 
         # AGENT_FEATURE: Using modern Async Generative models stream and Gemini 3.1
-        models_to_try = ["gemini-3-flash-preview", "gemini-2.5-flash"]
+        models_to_try = get_model_cascade()
         stream = None
         last_error = None
         for m in models_to_try:

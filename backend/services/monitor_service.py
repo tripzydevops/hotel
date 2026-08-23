@@ -99,6 +99,68 @@ async def record_system_pulse(
         logger.error(f"Pulse recording exception: {e}", exc_info=True)
 
 
+async def check_dead_mans_switch(insforge: InsForgeClient):
+    """
+    Safeguard 4: Dead Man's Switch
+    Monitors global scan frequency and emits system alerts if the last global scan
+    is older than 8 hours.
+    """
+    s_logger = get_scheduler_logger()
+    try:
+        settings_res = insforge.table("admin_settings").select("last_global_scan_at").limit(1).execute()
+        if not settings_res.data:
+            return
+
+        last_scan = cast(dict, settings_res.data[0]).get("last_global_scan_at")
+        if not last_scan:
+            return
+
+        now = datetime.now(timezone.utc)
+        last_dt = datetime.fromisoformat(last_scan.replace("Z", "+00:00"))
+        if last_dt.tzinfo is None:
+            last_dt = last_dt.replace(tzinfo=timezone.utc)
+
+        elapsed_hours = (now - last_dt).total_seconds() / 3600.0
+
+        if elapsed_hours >= 8.0:
+            four_hours_ago = (now - timedelta(hours=4)).isoformat()
+            recent_alert = (
+                insforge.table("query_logs")
+                .select("id")
+                .eq("action_type", "dead_mans_switch_alert")
+                .gt("created_at", four_hours_ago)
+                .limit(1)
+                .execute()
+            )
+
+            if not recent_alert.data:
+                msg = f"CRITICAL: Global scan pipeline is overdue! Last scan was {elapsed_hours:.1f} hours ago."
+                s_logger.critical(f"DEAD MAN'S SWITCH: {msg}")
+
+                await record_system_pulse(
+                    insforge,
+                    action_type="dead_mans_switch_alert",
+                    status="critical",
+                    status_detail=msg
+                )
+
+                try:
+                    insforge.table("alerts").insert({
+                        "user_id": None,
+                        "alert_type": "dead_mans_switch",
+                        "title": "CRITICAL: Automated Scan Pipeline Overdue",
+                        "message": f"The autonomous monitoring engine has not executed a global scan in {elapsed_hours:.1f} hours. Please inspect background scheduler workers.",
+                        "severity": "critical",
+                        "is_read": False,
+                        "is_global_pulse": True,
+                        "created_at": now.isoformat()
+                    }).execute()
+                except Exception as a_err:
+                    s_logger.warning(f"Dead Man's Switch: Alert table insert error: {a_err}")
+    except Exception as e:
+        s_logger.error(f"Dead Man's Switch check error: {e}")
+
+
 async def run_scheduler_check_logic(insforge: Optional[InsForgeClient] = None):
     """
     Main entry point for the autonomous scheduler.
@@ -120,6 +182,12 @@ async def run_scheduler_check_logic(insforge: Optional[InsForgeClient] = None):
         await loc_service.resolve_hotel_locations()
     except Exception as rl_e:
         s_logger.warning(f"CRON: Location resolution phase had issues: {rl_e}")
+
+    # SAFEGUARD 4: DEAD MAN'S SWITCH CHECK
+    try:
+        await check_dead_mans_switch(insforge)
+    except Exception as dms_e:
+        s_logger.warning(f"CRON: Dead Man's Switch check error: {dms_e}")
 
     try:
         # 1. RUN SYSTEM PULSE (5-minute heartbeat for UI 'Alive' feeling)

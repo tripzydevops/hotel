@@ -137,7 +137,7 @@ class TGAScraper:
 
         try:
             response = client.models.generate_content(
-                model="gemini-3-flash-preview", contents=prompt
+                model="gemini-3.1-pro-preview", contents=prompt
             )
 
             if response and response.text:

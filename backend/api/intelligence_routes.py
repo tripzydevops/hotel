@@ -286,7 +286,7 @@ async def generate_meeting_prep(
             return {"brief": "AI service unavailable.", "action_items": [], "risks": []}
 
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        model = genai.GenerativeModel("gemini-3.1-pro-preview")
 
         annotations_text = "\n".join(
             f"- [{a.get('annotation_type','note').upper()}] {a['note']}"
