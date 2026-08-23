@@ -123,6 +123,15 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
  * - Trend indicators (vs Market Avg)
  * - Price difference percentage calculation
  */
+const parseLocalDate = (dateStr: string): Date => {
+  if (!dateStr) return new Date();
+  const parts = dateStr.split("-").map(Number);
+  if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+  return new Date(dateStr);
+};
+
 export default function RateIntelligenceGrid({
   dailyPrices,
   competitors,
@@ -144,7 +153,7 @@ export default function RateIntelligenceGrid({
 
   // Sort dates ascending
   const sortedData = [...dailyPrices].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    (a, b) => parseLocalDate(a.date).getTime() - parseLocalDate(b.date).getTime(),
   );
 
   return (
@@ -206,7 +215,7 @@ export default function RateIntelligenceGrid({
           </thead>
           <tbody className="divide-y divide-[var(--glass-border)]">
             {sortedData.slice(0, 14).map((row) => {
-              const dateObj = new Date(row.date);
+              const dateObj = parseLocalDate(row.date);
               const isWeekend =
                 dateObj.getDay() === 0 || dateObj.getDay() === 6; // Sun or Sat
 
@@ -237,7 +246,7 @@ export default function RateIntelligenceGrid({
                           <div className="flex items-center gap-1 opacity-60">
                             <div className="w-1 h-px bg-[var(--text-muted)]" />
                             <span className="text-[10px] font-bold text-[var(--text-muted)]">
-                              {new Date(row.check_out_date).toLocaleDateString(
+                              {parseLocalDate(row.check_out_date).toLocaleDateString(
                                 locale === "en" ? "en-US" : "tr-TR",
                                 { month: "short", day: "numeric" },
                               )}

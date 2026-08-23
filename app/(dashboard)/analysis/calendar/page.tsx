@@ -32,6 +32,19 @@ export default function CalendarPage() {
     return d;
   });
 
+  // Local Date formatting helpers to prevent timezone shift bugs with toISOString()
+  const formatLocalDate = (d: Date): string => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const parseLocalDate = (dateStr: string): Date => {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   const loadData = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
@@ -45,8 +58,8 @@ export default function CalendarPage() {
       const end = new Date(viewDate);
       end.setDate(end.getDate() + 60); // 2 months forward
 
-      params.set("start_date", start.toISOString().split("T")[0]);
-      params.set("end_date", end.toISOString().split("T")[0]);
+      params.set("start_date", formatLocalDate(start));
+      params.set("end_date", formatLocalDate(end));
 
       if (roomType) params.set("room_type", roomType);
 
@@ -130,7 +143,7 @@ export default function CalendarPage() {
     for (let i = 0; i < 14; i++) {
       const curr = new Date(startTs);
       curr.setDate(curr.getDate() + i);
-      const dStr = curr.toISOString().split("T")[0];
+      const dStr = formatLocalDate(curr);
 
       const existing = data.daily_prices.find((p: any) => p.date === dStr);
       if (existing) {
@@ -163,7 +176,7 @@ export default function CalendarPage() {
 
   const visibleRangeLabel =
     visiblePrices.length > 0
-      ? `${new Date(visiblePrices[0].date).toLocaleDateString()} - ${new Date(visiblePrices[visiblePrices.length - 1].date).toLocaleDateString()}`
+      ? `${parseLocalDate(visiblePrices[0].date).toLocaleDateString()} - ${parseLocalDate(visiblePrices[visiblePrices.length - 1].date).toLocaleDateString()}`
       : "No Data";
 
   return (

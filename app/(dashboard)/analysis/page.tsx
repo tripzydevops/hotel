@@ -91,12 +91,18 @@ export default function AnalysisPage() {
 
   // Set default date range to current month
   useEffect(() => {
+    const formatLocal = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
     const today = new Date();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
     const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-    setStartDate(firstDay.toISOString().split("T")[0]);
-    setEndDate(lastDay.toISOString().split("T")[0]);
+    setStartDate(formatLocal(firstDay));
+    setEndDate(formatLocal(lastDay));
   }, []);
 
   const loadData = useCallback(async () => {
