@@ -1,13 +1,13 @@
 import asyncio
 import json
-from backend.utils.db import get_supabase_client, load_env_standard
+from backend.utils.db import get_insforge_db, load_env_standard
 
 # Standardize environment loading
 load_env_standard()
 
 async def main():
-    # Initialize via the global factory to handle InsForge pathing
-    supabase = get_supabase_client()
+    # Initialize admin client to bypass RLS for CMS landing seeding
+    supabase = get_insforge_db(admin=True)
 
     # Content for TR
     config_tr = [
