@@ -4,6 +4,7 @@ Allows hoteliers to ask "What happens if I raise my rate by X%?"
 and receive an AI-generated market impact simulation.
 """
 
+import json
 import logging
 import os
 from typing import Any, Dict

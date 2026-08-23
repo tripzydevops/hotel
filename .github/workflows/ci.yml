@@ -1,0 +1,82 @@
+name: CI — Backend Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - ".github/workflows/ci.yml"
+
+jobs:
+  test:
+    name: Run pytest suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libcairo2-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run pytest
+        env:
+          # Dummy env vars so backend modules can import without crashing.
+          # Tests that need real API calls use mocks — these are placeholders only.
+          GOOGLE_API_KEY: "ci-dummy-key"
+          GEMINI_API_KEY: "ci-dummy-key"
+          NEXT_PUBLIC_SUPABASE_URL: "https://ci-dummy.insforge.app"
+          SUPABASE_SERVICE_ROLE_KEY: "ci-dummy-service-key"
+          DATAFORSEO_LOGIN: "ci-dummy"
+          DATAFORSEO_PASSWORD: "ci-dummy"
+          DATAFORSEO_POSTBACK_URL: "https://ci-dummy.vercel.app/api/v1/webhooks/dataforseo"
+          SERPAPI_API_KEY: "ci-dummy"
+          FIRECRAWL_API_KEY: "ci-dummy"
+          VAPID_SUBJECT: "mailto:ci@dummy.com"
+          VAPID_PRIVATE_KEY: "ci-dummy"
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: "ci-dummy"
+        run: |
+          pytest backend/tests/ \
+            --ignore=backend/tests/diagnose_crash.py \
+            --ignore=backend/tests/diagnose_db.py \
+            --ignore=backend/tests/diagnose_scan.py \
+            --ignore=backend/tests/manual_scan_fix.py \
+            --ignore=backend/tests/sync_ids.py \
+            --ignore=backend/tests/integration_test_dashboard.py \
+            --ignore=backend/tests/cors_standalone_verification.py \
+            --ignore=backend/tests/api_health_check.py \
+            --ignore=backend/tests/test_section7_http.py \
+            -v --tb=short
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results
+          path: .pytest_cache/
+          retention-days: 7

@@ -27,3 +27,26 @@ dependencies = [
 ]
 
 
+[tool.pytest.ini_options]
+# Run async tests automatically without needing @pytest.mark.asyncio on every test
+asyncio_mode = "auto"
+# Scope test discovery to the backend tests directory only
+testpaths = ["backend/tests"]
+# Verbose output with short tracebacks — good for CI log readability
+# Exclude manual diagnostic scripts and live-server HTTP tests from CI collection:
+#   - diagnose_* / manual_* / sync_ids: require live DB credentials
+#   - integration_test_dashboard: requires full live stack
+#   - cors_standalone_verification / api_health_check: standalone HTTP scripts
+#   - test_section7_http: hits localhost — requires a running server
+addopts = """
+  -v --tb=short
+  --ignore=backend/tests/diagnose_crash.py
+  --ignore=backend/tests/diagnose_db.py
+  --ignore=backend/tests/diagnose_scan.py
+  --ignore=backend/tests/manual_scan_fix.py
+  --ignore=backend/tests/sync_ids.py
+  --ignore=backend/tests/integration_test_dashboard.py
+  --ignore=backend/tests/cors_standalone_verification.py
+  --ignore=backend/tests/api_health_check.py
+  --ignore=backend/tests/test_section7_http.py
+"""
