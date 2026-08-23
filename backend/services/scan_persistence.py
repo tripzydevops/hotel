@@ -54,19 +54,36 @@ class ScanPersistenceService:
             
         return None
 
+    def _sanitize_persistence_item(self, table_name: str, item: Dict[str, Any]) -> Dict[str, Any]:
+        """Validates and sanitizes persistence items before database insertion via Pydantic Guard."""
+        if not isinstance(item, dict):
+            return item
+
+        try:
+            if table_name == "price_logs":
+                from backend.models.schemas import PriceLogPersistenceSchema
+                return PriceLogPersistenceSchema(**item).model_dump(exclude_unset=False)
+        except Exception as err:
+            logger.warning(f"Pydantic Guard warning for {table_name}: {err}. Retaining raw payload.")
+
+        return item
+
     async def _resilient_insert(self, table_name: str, items: List[Dict[str, Any]]):
-        """Helper for batch insertion with per-item fallback on failure."""
+        """Helper for batch insertion with per-item fallback and Pydantic validation guard."""
         if not items:
             return
+
+        sanitized_items = [self._sanitize_persistence_item(table_name, it) for it in items]
+
         try:
             # Use admin_db for persistence in background to avoid RLS/Session issues
-            self.admin_insforge.table(table_name).insert(items).execute()
+            self.admin_insforge.table(table_name).insert(sanitized_items).execute()
         except Exception as e:
             logger.warning(
                 f"Batch insert for {table_name} failed: {e}. Falling back to individual inserts."
             )
             # Per-item fallback
-            for item in items:
+            for item in sanitized_items:
                 try:
                     self.admin_insforge.table(table_name).insert(item).execute()
                 except Exception as item_err:

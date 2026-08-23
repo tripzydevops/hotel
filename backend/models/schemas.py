@@ -698,3 +698,37 @@ class MfaVerifyRequest(BaseModel):
 class MfaSendRequest(BaseModel):
     token: str = Field(..., description="The temporary JWT access token from InsForge login")
 
+
+# ===== JSONB & Table Persistence Schemas =====
+
+
+class PriceOfferSchema(BaseModel):
+    source: str = "OTA"
+    price: float = Field(default=0.0, ge=0.0)
+    currency: str = "USD"
+    room_type: Optional[str] = "Standard Room"
+    booking_url: Optional[str] = None
+    is_available: bool = True
+
+    model_config = ConfigDict(extra="allow", from_attributes=True)
+
+
+class PriceLogPersistenceSchema(BaseModel):
+    hotel_id: Optional[str] = None
+    source: str = "DataForSEO"
+    price: float = Field(default=0.0, ge=0.0)
+    currency: str = "USD"
+    room_type: Optional[str] = "Standard Room"
+    offers: List[Dict[str, Any]] = Field(default_factory=list)
+    raw_payload: Optional[Dict[str, Any]] = None
+    created_at: Optional[str] = None
+
+    @field_validator("offers", mode="before")
+    @classmethod
+    def validate_offers_list(cls, v: Any) -> List[Dict[str, Any]]:
+        if not isinstance(v, list):
+            return []
+        return v
+
+    model_config = ConfigDict(extra="allow", from_attributes=True)
+
