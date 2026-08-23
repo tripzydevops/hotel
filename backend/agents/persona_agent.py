@@ -1,7 +1,8 @@
 import os
-import json
 import logging
 from typing import Dict, List, Any
+
+from backend.config.ai_config import extract_llm_json
 
 import google.generativeai as genai
 from pydantic import BaseModel, Field
@@ -125,7 +126,7 @@ Output your findings as JSON matching this exact schema:
             ),
         )
 
-        result_json = json.loads(response.text)
+        result_json = extract_llm_json(response.text)
         return CompsetProfileModel(**result_json)
 
     except Exception as e:

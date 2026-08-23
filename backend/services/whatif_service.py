@@ -4,11 +4,11 @@ Allows hoteliers to ask "What happens if I raise my rate by X%?"
 and receive an AI-generated market impact simulation.
 """
 
-import json
 import logging
 import os
 from typing import Any, Dict
 
+from backend.config.ai_config import extract_llm_json
 from supabase import Client
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ async def simulate_whatif_scenario(
                 response_mime_type="application/json"
             ),
         )
-        result = json.loads(response.text)
+        result = extract_llm_json(response.text)
         result["scenario"] = scenario
         result["context_snapshot"] = {
             "target_price": context.get("target_price"),
