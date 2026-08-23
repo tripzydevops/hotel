@@ -5,8 +5,8 @@ import os
 import time
 import re
 
-SOURCE_URL = 'https://ztwkdawfdfbgusskqbns.supabase.co'
-SOURCE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0d2tkYXdmZGZiZ3Vzc2txYm5zIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTAwNzYwMywiZXhwIjoyMDg0NTgzNjAzfQ.fK1BbznvceMo-YbntB_FCJs49mant-CRiKPny5i21s8'
+SOURCE_URL = os.getenv('SUPABASE_URL', 'https://ztwkdawfdfbgusskqbns.supabase.co')
+SOURCE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY', os.getenv('SOURCE_KEY', ''))
 
 source = create_client(SOURCE_URL, SOURCE_KEY)
 

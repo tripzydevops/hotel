@@ -140,3 +140,11 @@ task_raw_results.json
 .antigravity/
 diagnose_save.py
 verify_fix.py
+
+# Credentials and Local Secret Files
+credentials*.json
+bash_history
+scripts/vm_env*
+project.json
+*.key
+
