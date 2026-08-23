@@ -3,6 +3,22 @@
 > [!IMPORTANT]
 > **PRIMARY SOURCE OF TRUTH**: This document is the authoritative record of the HotelPlus platform. Every agent, service, and database table MUST be documented here. Reference this file FIRST when starting any task.
 
+## 🕒 Recent Updates (August 23, 2026)
+- ✅ **Centralized AI Model Registry & Dynamic Fallback Cascade**:
+    - Created `backend/config/ai_config.py` defining `DEFAULT_GEMINI_MODEL = "gemini-3.1-pro-preview"` and dynamic model fallback cascade `get_model_cascade()`.
+    - Refactored model references across 12 backend files to eliminate hardcoded deprecated model strings.
+- ✅ **Dead Man's Switch Heartbeat Alerts**:
+    - Implemented `check_dead_mans_switch()` in `monitor_service.py` evaluating `last_global_scan_at`.
+    - Automatically emits critical system alerts, `query_logs` audit events, and red dashboard banners if >8 hours pass without a global scan.
+- ✅ **`google.genai` Modern SDK Migration**:
+    - Upgraded all 5 backend agent/service files (`persona_agent.py`, `intelligence_routes.py`, `recommendation_engine.py`, `revenue_impact_service.py`, `whatif_service.py`) from deprecated `google.generativeai` to modern `google.genai` SDK (`Client` pattern).
+- ✅ **LLM JSON Response Parsing Safety**:
+    - Created `extract_llm_json()` utility in `ai_config.py` to strip markdown code fences (` ```json `) and prose prefixes before parsing LLM output, preventing crashes on formatted JSON responses.
+- ✅ **Automated Pytest CI Workflow**:
+    - Created `.github/workflows/ci.yml` running a 44-test suite automatically on every PR and commit to `main`.
+    - Added `backend/tests/conftest.py` with module-level stubs for heavy optional dependencies and `backend/tests/test_extract_llm_json.py` for full parser coverage.
+    - Added a permanent CI ban guard checking for `import google.generativeai` to prevent accidental reintroduction of the deprecated SDK.
+
 ## 🕒 Recent Updates (May 23, 2026)
 - ✅ **Autonomous Agent Recommendation Engine (Cold Start Solver)**:
     - Built `persona_agent.py` (using LangGraph/Gemini) to infer user travel personas from UI interaction patterns (e.g., clicking on specific amenities).
