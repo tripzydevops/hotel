@@ -14,10 +14,14 @@
     - Upgraded all 5 backend agent/service files (`persona_agent.py`, `intelligence_routes.py`, `recommendation_engine.py`, `revenue_impact_service.py`, `whatif_service.py`) from deprecated `google.generativeai` to modern `google.genai` SDK (`Client` pattern).
 - ✅ **LLM JSON Response Parsing Safety**:
     - Created `extract_llm_json()` utility in `ai_config.py` to strip markdown code fences (` ```json `) and prose prefixes before parsing LLM output, preventing crashes on formatted JSON responses.
-- ✅ **Automated Pytest CI Workflow**:
-    - Created `.github/workflows/ci.yml` running a 44-test suite automatically on every PR and commit to `main`.
-    - Added `backend/tests/conftest.py` with module-level stubs for heavy optional dependencies and `backend/tests/test_extract_llm_json.py` for full parser coverage.
-    - Added a permanent CI ban guard checking for `import google.generativeai` to prevent accidental reintroduction of the deprecated SDK.
+- ✅ **Pydantic Validation Guard for JSONB Database Inserts**:
+    - Integrated `_sanitize_persistence_item()` into `ScanPersistenceService._resilient_insert()`.
+    - Added `PriceLogPersistenceSchema` and `PriceOfferSchema` with `extra="allow"` mode to sanitize vendor payloads prior to PostgreSQL insertion.
+- ✅ **Database-Driven AI Model Cascade**:
+    - Added `active_model_cascade` to `AdminSettings` schema and updated `get_model_cascade()` to read fallback lists dynamically from the DB.
+- ✅ **Frontend Dashboard Component Refactoring**:
+    - Created `hooks/useDashboardMetrics.ts` to encapsulate all derived calculations (`effectiveTargetPrice`, `isLocked`, `currentHotelCount`, `isEnterprise`, `marketPulseAvg`, `avgCompetitorPrice`, `undercuttingCount`, `pricesDroppedCount`, `activeCurrency`, `sortedCompetitors`).
+    - Created `components/dashboard/dashboard.variants.ts` for shared Framer Motion animation constants, slimming down `app/(dashboard)/dashboard/page.tsx` by ~100 lines.
 
 ## 🕒 Recent Updates (May 23, 2026)
 - ✅ **Autonomous Agent Recommendation Engine (Cold Start Solver)**:
