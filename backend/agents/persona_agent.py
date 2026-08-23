@@ -3,17 +3,12 @@ import json
 import logging
 from typing import Dict, List, Any
 
+from google import genai
+from google.genai import types
 from backend.config.ai_config import extract_llm_json
-
-import google.generativeai as genai
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
-
-# Configure Gemini
-api_key = os.environ.get("GEMINI_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
 
 
 # ---------------------------------------------------------------------------
@@ -119,10 +114,15 @@ Output your findings as JSON matching this exact schema:
 """
 
     try:
-        model = genai.GenerativeModel("gemini-3.1-pro-preview")
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY not set")
+
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model="gemini-3.1-pro-preview",
+            contents=prompt,
+            config=types.GenerateContentConfig(
                 response_mime_type="application/json"
             ),
         )

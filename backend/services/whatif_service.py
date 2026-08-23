@@ -48,17 +48,18 @@ async def simulate_whatif_scenario(
 
     # 3. Call Gemini
     try:
-        import google.generativeai as genai
+        from google import genai
+        from google.genai import types
 
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
             return _fallback_result("GEMINI_API_KEY not configured.")
 
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-3.1-pro-preview")
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model="gemini-3.1-pro-preview",
+            contents=prompt,
+            config=types.GenerateContentConfig(
                 response_mime_type="application/json"
             ),
         )

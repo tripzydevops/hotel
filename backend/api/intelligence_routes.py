@@ -280,13 +280,14 @@ async def generate_meeting_prep(
 
         # Generate brief with Gemini
         import os
-        import google.generativeai as genai
+        from google import genai
+        from google.genai import types
+        from backend.config.ai_config import extract_llm_json
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
             return {"brief": "AI service unavailable.", "action_items": [], "risks": []}
 
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-3.1-pro-preview")
+        client = genai.Client(api_key=api_key)
 
         annotations_text = "\n".join(
             f"- [{a.get('annotation_type','note').upper()}] {a['note']}"
@@ -307,11 +308,12 @@ Generate a concise meeting prep brief in JSON:
   "decisions_needed": ["decision 1"]
 }}
 """
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(response_mime_type="application/json"),
+        response = client.models.generate_content(
+            model="gemini-3.1-pro-preview",
+            contents=prompt,
+            config=types.GenerateContentConfig(response_mime_type="application/json"),
         )
-        return json.loads(response.text)
+        return extract_llm_json(response.text)
 
     except Exception as e:
         raise HTTPException(500, str(e))

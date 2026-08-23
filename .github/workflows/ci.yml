@@ -73,6 +73,20 @@ jobs:
             --ignore=backend/tests/test_section7_http.py \
             -v --tb=short
 
+      - name: 🚫 Ban deprecated google.generativeai SDK
+        # Fails the build if anyone re-introduces the deprecated package.
+        # Use 'from google import genai' (google-genai) instead.
+        run: |
+          if grep -r "import google.generativeai" backend/ --include="*.py" -l; then
+            echo ""
+            echo "❌ DEPRECATED SDK DETECTED"
+            echo "   'google.generativeai' is fully deprecated and no longer receives updates."
+            echo "   Replace with: 'from google import genai' (google-genai package)."
+            echo "   See: https://github.com/google-gemini/deprecated-generative-ai-python"
+            exit 1
+          fi
+          echo "✅ No deprecated google.generativeai imports found."
+
       - name: Upload test results on failure
         if: failure()
         uses: actions/upload-artifact@v4

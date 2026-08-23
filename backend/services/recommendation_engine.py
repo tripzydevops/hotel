@@ -2,7 +2,8 @@ import logging
 import os
 from typing import Any, Dict, List
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from backend.services.auth_service import get_insforge_admin
 
@@ -22,14 +23,13 @@ async def generate_vector_embedding(text: str) -> List[float]:
     if not api_key:
         raise ValueError("GEMINI_API_KEY not set")
 
-    genai.configure(api_key=api_key)
-
-    result = genai.embed_content(
+    client = genai.Client(api_key=api_key)
+    result = client.models.embed_content(
         model="models/text-embedding-004",
-        content=text,
-        task_type="retrieval_document",
+        contents=text,
+        config=types.EmbedContentConfig(task_type="retrieval_document"),
     )
-    return result["embedding"]
+    return result.embeddings[0].values
 
 
 def _build_hotel_semantic_description(hotel: Dict[str, Any]) -> str:

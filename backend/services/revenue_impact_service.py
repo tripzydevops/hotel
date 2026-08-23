@@ -129,13 +129,12 @@ async def _generate_narrative(
 ) -> str:
     """Uses Gemini to generate a concise, human-readable revenue impact narrative."""
     try:
-        import google.generativeai as genai
+        from google import genai
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
             return _static_narrative(hotel_name, delta, monthly_impact)
 
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-3.1-pro-preview")
+        client = genai.Client(api_key=api_key)
 
         direction_word = "improved" if delta > 0 else "dropped"
         impact_sign = "+" if monthly_impact >= 0 else ""
@@ -150,7 +149,10 @@ Estimated monthly impact: {impact_sign}₺{abs(monthly_impact):,.0f}
 
 Do not use markdown. Write only the sentence.
 """
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-3.1-pro-preview",
+            contents=prompt,
+        )
         return response.text.strip()
     except Exception:
         return _static_narrative(hotel_name, delta, monthly_impact)
