@@ -21,15 +21,29 @@ ACTIVE_MODEL_CASCADE: List[str] = [
 DEFAULT_EMBEDDING_MODEL = "models/gemini-embedding-2"
 
 
-def get_model_cascade(custom_model: str = None) -> List[str]:
+def get_model_cascade(custom_model: str = None, db: Any = None) -> List[str]:
     """
-    Returns a deduplicated list of active models starting with the custom_model (if provided).
+    Returns a deduplicated list of active models starting with custom_model (if provided).
+    If db client is provided, attempts to fetch active_model_cascade from admin_settings table.
+    Falls back gracefully to ACTIVE_MODEL_CASCADE default registry.
     """
+    base_cascade = list(ACTIVE_MODEL_CASCADE)
+
+    if db:
+        try:
+            res = db.table("admin_settings").select("active_model_cascade").limit(1).execute()
+            if res.data and res.data[0].get("active_model_cascade"):
+                db_cascade = res.data[0]["active_model_cascade"]
+                if isinstance(db_cascade, list) and len(db_cascade) > 0:
+                    base_cascade = [str(m) for m in db_cascade]
+        except Exception:
+            pass
+
     cascade = []
     if custom_model:
         cascade.append(custom_model)
 
-    for m in ACTIVE_MODEL_CASCADE:
+    for m in base_cascade:
         if m not in cascade:
             cascade.append(m)
 

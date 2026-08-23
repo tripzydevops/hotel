@@ -614,6 +614,13 @@ class AdminSettings(BaseModel):
     scan_children_ages: List[int] = Field(default_factory=list)
     last_global_scan_at: Optional[datetime] = None
     next_global_scan_at: Optional[datetime] = None
+    active_model_cascade: Optional[List[str]] = Field(
+        default_factory=lambda: [
+            "gemini-3.1-pro-preview",
+            "gemini-pro-latest",
+            "gemini-omni-flash-preview",
+        ]
+    )
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -629,6 +636,7 @@ class AdminSettingsUpdate(BaseModel):
     scan_children_ages: Optional[List[int]] = None
     last_global_scan_at: Optional[datetime] = None
     next_global_scan_at: Optional[datetime] = None
+    active_model_cascade: Optional[List[str]] = None
 
 
 # ===== Membership Plan Models =====
