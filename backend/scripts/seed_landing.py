@@ -199,16 +199,23 @@ async def main():
 
     print(f"--- Seeding Multi-Locale Landing Page Config ---")
     
+    async def save_entry(entry):
+        res = supabase.table("landing_page_config").select("id").eq("key", entry["key"]).eq("locale", entry["locale"]).execute()
+        if res.data and len(res.data) > 0:
+            supabase.table("landing_page_config").update({"content": entry["content"]}).eq("key", entry["key"]).eq("locale", entry["locale"]).execute()
+            print(f"Updated ({entry['locale']}): {entry['key']}")
+        else:
+            supabase.table("landing_page_config").insert(entry).execute()
+            print(f"Inserted ({entry['locale']}): {entry['key']}")
+
     try:
         # Seed TR
         for entry in config_tr:
-            supabase.table("landing_page_config").upsert(entry, on_conflict="key,locale").execute()
-            print(f"Upserted (TR): {entry['key']}")
+            await save_entry(entry)
             
         # Seed EN
         for entry in config_en:
-            supabase.table("landing_page_config").upsert(entry, on_conflict="key,locale").execute()
-            print(f"Upserted (EN): {entry['key']}")
+            await save_entry(entry)
             
         print("SUCCESS: Multi-locale content seeded.")
     except Exception as e:
