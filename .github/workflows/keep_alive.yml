@@ -1,0 +1,37 @@
+name: InsForge Backend Keep-Alive
+
+on:
+  schedule:
+    # Ping once every 3 days to safely prevent the 7-day inactivity pause
+    - cron: "0 12 */3 * *"
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping InsForge Backend Health
+        env:
+          INSFORGE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://pa5riyqv.eu-central.insforge.app' }}
+          SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'ik_4697b4a8df7380fb98a348d2d8c6d163' }}
+        run: |
+          echo "Pinging InsForge Keep-Alive: ${INSFORGE_URL}"
+          
+          # Ping /health endpoint
+          HEALTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${INSFORGE_URL}/health" || echo "000")
+          echo "Health endpoint HTTP status: ${HEALTH_STATUS}"
+
+          # Ping REST API root to ensure container stays warm
+          REST_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: ${SERVICE_KEY}" \
+            -H "Authorization: Bearer ${SERVICE_KEY}" \
+            "${INSFORGE_URL}/rest/v1/" || echo "000")
+          echo "REST API endpoint HTTP status: ${REST_STATUS}"
+
+          if [ "${HEALTH_STATUS}" = "200" ] || [ "${REST_STATUS}" = "200" ]; then
+            echo "✓ InsForge backend is warm and active."
+          else
+            echo "⚠️ InsForge backend returned unexpected status codes. Health: ${HEALTH_STATUS}, REST: ${REST_STATUS}"
+          fi
