@@ -725,11 +725,9 @@ class PriceLogPersistenceSchema(BaseModel):
     hotel_id: Optional[str] = None
     source: str = "DataForSEO"
     price: float = Field(default=0.0, ge=0.0)
-    currency: str = "USD"
-    room_type: Optional[str] = "Standard Room"
+    currency: str = "TRY"
     offers: List[Dict[str, Any]] = Field(default_factory=list)
-    raw_payload: Optional[Dict[str, Any]] = None
-    created_at: Optional[str] = None
+    recorded_at: Optional[str] = None
 
     @field_validator("offers", mode="before")
     @classmethod

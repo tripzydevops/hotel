@@ -62,7 +62,11 @@ class ScanPersistenceService:
         try:
             if table_name == "price_logs":
                 from backend.models.schemas import PriceLogPersistenceSchema
-                return PriceLogPersistenceSchema(**item).model_dump(exclude_unset=False)
+                dumped = PriceLogPersistenceSchema(**item).model_dump(exclude_unset=False)
+                # Strip columns that do not exist in the price_logs database table
+                for non_col in ["created_at", "raw_payload", "room_type"]:
+                    dumped.pop(non_col, None)
+                return dumped
         except Exception as err:
             logger.warning(f"Pydantic Guard warning for {table_name}: {err}. Retaining raw payload.")
 
