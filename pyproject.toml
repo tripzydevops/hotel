@@ -28,6 +28,8 @@ dependencies = [
 
 
 [tool.pytest.ini_options]
+# Automatically add repository root to sys.path so 'backend.*' imports resolve
+pythonpath = ["."]
 # Run async tests automatically without needing @pytest.mark.asyncio on every test
 asyncio_mode = "auto"
 # Scope test discovery to the backend tests directory only
