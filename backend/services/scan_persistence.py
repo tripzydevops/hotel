@@ -526,7 +526,7 @@ class ScanPersistenceService:
             ]
             current_room_types = self._normalize_room_types(raw_derived, target_currency=currency)
 
-        # [KAIZEN 2026] Anomaly Detection Safeguard (30% Variance)
+        # [KAIZEN 2026] Anomaly Detection Safeguard
         # Fetch 5-day history for baseline calculation
         is_anomaly = False
         try:
@@ -540,9 +540,10 @@ class ScanPersistenceService:
             
             if recent_valid and price > 0:
                 avg_baseline = sum(recent_valid) / len(recent_valid)
-                # REJECT if price deviates by more than 30% from verified baseline
-                lower_bound = avg_baseline * 0.7
-                upper_bound = avg_baseline * 1.3
+                # Allow standard commercial shifts (drops up to 40%, spikes up to 60%)
+                # Reject only extreme outlier shifts (>40% drop or >60% spike)
+                lower_bound = avg_baseline * 0.60
+                upper_bound = avg_baseline * 1.60
                 if price < lower_bound or price > upper_bound:
                     is_anomaly = True
         except Exception as e:
@@ -1484,21 +1485,35 @@ class ScanPersistenceService:
                 norm_price = convert_currency(price, currency, "TRY")
                 avg_baseline = sum(recent_valid) / len(recent_valid)
                 
+                rel_diff = abs(norm_price - avg_baseline) / avg_baseline
+                
                 # Dynamic Threshold: Use StdDev if we have enough samples (N>3)
                 if len(recent_valid) > 3:
-                    std_dev = statistics.stdev(recent_valid)
-                    # Z-Score check: Reject if price is > 3 sigma or > 50% shift
-                    z_score = abs(norm_price - avg_baseline) / (std_dev or 1)
-                    if z_score > 3 or abs(norm_price - avg_baseline) / avg_baseline > 0.5:
+                    raw_std = statistics.stdev(recent_valid)
+                    # Floor standard deviation at 10% of baseline to prevent the zero/low-variance trap
+                    # (where flat historical rates turn a minor 3-5% discount into a huge 100-sigma anomaly)
+                    std_dev = max(raw_std, avg_baseline * 0.10)
+                    z_score = abs(norm_price - avg_baseline) / std_dev
+                    
+                    # Reject ONLY if price deviates > 3 sigma AND relative shift > 30%,
+                    # OR if there is an extreme ungrounded shift > 50%
+                    if (z_score > 3.0 and rel_diff > 0.30) or rel_diff > 0.50:
                         is_anomaly = True
-                        anomaly_details = {"z_score": round(z_score, 2), "std_dev": round(std_dev, 2)}
+                        anomaly_details = {
+                            "z_score": round(z_score, 2),
+                            "std_dev": round(std_dev, 2),
+                            "rel_diff_pct": round(rel_diff * 100, 1)
+                        }
                 else:
                     # Fallback: REJECT if price deviates by more than 50% from verified baseline
                     lower_bound = avg_baseline * 0.5
                     upper_bound = avg_baseline * 1.5
                     if norm_price < lower_bound or norm_price > upper_bound:
                         is_anomaly = True
-                        anomaly_details = {"deviation": "Exceeds 50% baseline shift"}
+                        anomaly_details = {
+                            "deviation": "Exceeds 50% baseline shift",
+                            "rel_diff_pct": round(rel_diff * 100, 1)
+                        }
 
                 if is_anomaly:
                     logger.warning(
