@@ -96,6 +96,57 @@ class ScanPersistenceService:
                         f"Failed to persist {table_name} item for {item.get('hotel_id')}: {item_err}"
                     )
 
+    def _compute_review_fingerprint(self, hotel_id: str, author: str, text: str) -> str:
+        """Deterministic SHA-256 fingerprint to prevent duplicate reviews across recurring scans."""
+        import hashlib
+        c_text = (text or "").strip().lower()
+        c_author = (author or "Anonymous").strip().lower()
+        raw = f"{hotel_id}:{c_author}:{c_text}"
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
+
+    async def _deduplicate_and_insert_reviews(self, reviews: List[Dict[str, Any]]):
+        """Filters out already-persisted reviews by external_id before insertion."""
+        if not reviews:
+            return
+
+        # 1. Deduplicate within the incoming batch itself
+        seen = {}
+        for r in reviews:
+            ext = r.get("external_id")
+            if ext and ext not in seen:
+                seen[ext] = r
+        unique_batch = list(seen.values())
+
+        # 2. Check against database records to only insert genuinely NEW reviews
+        ext_ids = [r["external_id"] for r in unique_batch if r.get("external_id")]
+        new_reviews = []
+        if ext_ids:
+            try:
+                res = (
+                    self.admin_insforge.table("hotel_reviews")
+                    .select("external_id")
+                    .in_("external_id", ext_ids)
+                    .execute()
+                )
+                existing = set(row["external_id"] for row in (res.data or []))
+                new_reviews = [r for r in unique_batch if r["external_id"] not in existing]
+            except Exception as e:
+                logger.warning(f"Failed to verify existing review external_ids: {e}")
+                new_reviews = unique_batch
+        else:
+            new_reviews = unique_batch
+
+        if new_reviews:
+            logger.info(
+                f"[Sync] Persisting {len(new_reviews)} new unique reviews "
+                f"({len(reviews) - len(new_reviews)} duplicates skipped)."
+            )
+            await self._resilient_insert("hotel_reviews", new_reviews)
+        else:
+            logger.info(
+                f"[Sync] Review deduplication: all {len(reviews)} incoming reviews already exist in DB. Skipped insert."
+            )
+
     async def vault_log(
         self, db: Any, session_id: Optional[str], endpoint: str, data: Any
     ) -> None:
@@ -230,7 +281,7 @@ class ScanPersistenceService:
         # While the 'hotels' table stores a JSON snapshot of reviews for fast UI display,
         # we also persist individual review objects to the 'hotel_reviews' table.
         # This enables long-term historical sentiment analysis and NLP tasks.
-        await self._resilient_insert("hotel_reviews", reviews_to_insert)
+        await self._deduplicate_and_insert_reviews(reviews_to_insert)
 
         # 3. Parallel Embedding Generation
         if embedding_queue:
@@ -1132,12 +1183,18 @@ class ScanPersistenceService:
                 if not isinstance(r, dict):
                     continue
                 # Map SerpApi/DataForSEO fields to our DB schema
+                rev_author = r.get("title") or r.get("author", "Anonymous")
+                rev_text = r.get("snippet") or r.get("review_text") or r.get("text") or ""
+                ext_id = r.get("id") or r.get("review_id")
+                if not ext_id:
+                    ext_id = self._compute_review_fingerprint(hotel_id, rev_author, rev_text)
+
                 review_obj = {
                     "hotel_id": hotel_id,
-                    "external_id": r.get("id") or str(uuid.uuid4()),
-                    "author": r.get("title") or r.get("author", "Anonymous"),
+                    "external_id": str(ext_id),
+                    "author": rev_author,
                     "rating": r.get("rating", 0),
-                    "text": r.get("snippet") or r.get("review_text") or r.get("text") or "",
+                    "text": rev_text,
                     "recorded_at": datetime.now(timezone.utc).isoformat(),
                     "review_date": self._parse_relative_date(
                         r.get("date") or r.get("review_date")
@@ -1738,12 +1795,18 @@ class ScanPersistenceService:
                             if not r.get("text") and not r.get("rating") and not r.get("review_text"):
                                 continue
 
+                            raw_author = r.get("author") or r.get("title") or "Anonymous"
+                            raw_text = r.get("text") or r.get("snippet") or r.get("review_text") or ""
+                            ext_id = r.get("id") or r.get("review_id")
+                            if not ext_id:
+                                ext_id = self._compute_review_fingerprint(tid, raw_author, raw_text)
+
                             hotel_reviews.append({
                                 "hotel_id": tid,
-                                "external_id": str(r.get("id") or r.get("review_id") or uuid.uuid4()),
-                                "author": r.get("author") or r.get("title") or "Anonymous",
+                                "external_id": str(ext_id),
+                                "author": raw_author,
                                 "rating": r.get("rating"),
-                                "text": r.get("text") or r.get("snippet") or r.get("review_text") or "",
+                                "text": raw_text,
                                 "review_date": self._parse_relative_date(r.get("date") or r.get("review_date")),
                                 "recorded_at": now_ts,
                                 "metadata": {k: v for k, v in r.items() if k not in ["author", "rating", "text", "date", "id", "review_text", "review_id"]}
@@ -1791,8 +1854,7 @@ class ScanPersistenceService:
         
         # 6. Finalize Transactional Insertions
         if hotel_reviews:
-            logger.info(f"[Sync] Persisting {len(hotel_reviews)} individual reviews.")
-            await self._resilient_insert("hotel_reviews", hotel_reviews)
+            await self._deduplicate_and_insert_reviews(hotel_reviews)
 
         if price_logs:
             # Production-level summary logging
