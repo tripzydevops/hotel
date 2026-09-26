@@ -61,17 +61,7 @@ jobs:
           VAPID_PRIVATE_KEY: "ci-dummy"
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: "ci-dummy"
         run: |
-          pytest backend/tests/ \
-            --ignore=backend/tests/diagnose_crash.py \
-            --ignore=backend/tests/diagnose_db.py \
-            --ignore=backend/tests/diagnose_scan.py \
-            --ignore=backend/tests/manual_scan_fix.py \
-            --ignore=backend/tests/sync_ids.py \
-            --ignore=backend/tests/integration_test_dashboard.py \
-            --ignore=backend/tests/cors_standalone_verification.py \
-            --ignore=backend/tests/api_health_check.py \
-            --ignore=backend/tests/test_section7_http.py \
-            -v --tb=short
+          python -m pytest
 
       - name: 🚫 Ban deprecated google.generativeai SDK
         # Fails the build if anyone re-introduces the deprecated package.
