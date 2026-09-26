@@ -41,3 +41,9 @@ if "firecrawl" not in sys.modules:
 # Stub pywebpush — only needed by push notification service
 if "pywebpush" not in sys.modules:
     sys.modules["pywebpush"] = MagicMock()
+
+# Stub cachetools — fallback if not installed in minimal test environments
+if "cachetools" not in sys.modules:
+    cachetools_mock = MagicMock()
+    cachetools_mock.TTLCache = dict
+    sys.modules["cachetools"] = cachetools_mock
