@@ -44,7 +44,8 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://pa5riyqv.eu-central.insforge.app' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'ik_4697b4a8df7380fb98a348d2d8c6d163' }}
 
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY || 'AIzaSyDLNOqhTF9-jDNeWKOtBfMcXwbxIKgOqCo' }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GOOGLE_API_KEY }}
           DATAFORSEO_LOGIN: ${{ secrets.DATAFORSEO_LOGIN || 'successofmentors@gmail.com' }}
           DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD || 'd276748f9354ec68' }}
           DATAFORSEO_POSTBACK_URL: ${{ secrets.DATAFORSEO_POSTBACK_URL || 'https://hotel-gray.vercel.app/api/v1/webhooks/dataforseo' }}
