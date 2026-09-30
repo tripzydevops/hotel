@@ -494,32 +494,149 @@ async def get_market_intelligence_data(
         data = None
 
     if not data or not isinstance(data, dict):
-        logger.warning(
-            f"[Analysis] Empty or invalid RPC response for user_id {user_id}."
+        logger.info(
+            f"[Analysis] RPC get_market_analysis_aggregates unavailable or returned empty for user_id {user_id}. Executing direct Python analysis pipeline."
         )
-        return {
-            "hotels": [],
-            "all_hotels": [],
-            "total_hotels": 0,
-            "total_competitors": 0,
-            "market_average": 0.0,
-            "market_avg": 0.0,
-            "market_min": 0.0,
-            "market_max": 0.0,
-            "target_price": 0.0,
-            "ari": 100.0,
-            "sent_index": 100.0,
-            "quadrant_label": "No Data Found",
-            "quadrant_x": 100.0,
-            "quadrant_y": 100.0,
-            "price_rank_list": [],
-            "price_history": [],
-            "daily_prices": [],
-            "advisory_keys": [],
-            "recommendation": {"action": "no_data", "impact": 0, "reason": "No data found."},
-            "synthetic_narrative": "No data found.",
-            "audit_checklist": [],
-        }
+        try:
+            uh_res = (
+                query_db.table("user_hotels")
+                .select(
+                    "is_target, hotel:hotels(id, name, location, rating, review_count, "
+                    "sentiment_breakdown, deleted_at, currency)"
+                )
+                .eq("user_id", str(user_id))
+                .execute()
+            )
+            all_hotels = []
+            for uh in (uh_res.data or []):
+                hotel = uh.get("hotel")
+                if hotel and not hotel.get("deleted_at"):
+                    hotel["is_target_hotel"] = uh.get("is_target", False)
+                    all_hotels.append(hotel)
+
+            hotels = [h for h in all_hotels if not h.get("deleted_at")]
+            if exclude_hotel_ids:
+                to_exclude = set(exclude_hotel_ids.split(","))
+                hotels = [h for h in hotels if str(h.get("id")) not in to_exclude]
+
+            if search_query:
+                sq = search_query.lower()
+                hotels = [
+                    h
+                    for h in hotels
+                    if sq in str(h.get("name", "")).lower()
+                    or sq in str(h.get("location", "")).lower()
+                ]
+
+            if not hotels:
+                logger.warning(
+                    f"[Analysis] Zero hotels found for user_id {user_id}."
+                )
+                return {
+                    "hotels": [],
+                    "all_hotels": [],
+                    "total_hotels": 0,
+                    "total_competitors": 0,
+                    "market_average": 0.0,
+                    "market_avg": 0.0,
+                    "market_min": 0.0,
+                    "market_max": 0.0,
+                    "target_price": 0.0,
+                    "ari": 100.0,
+                    "sent_index": 100.0,
+                    "quadrant_label": "No Data Found",
+                    "quadrant_x": 100.0,
+                    "quadrant_y": 100.0,
+                    "price_rank_list": [],
+                    "price_history": [],
+                    "daily_prices": [],
+                    "advisory_keys": [],
+                    "recommendation": {"action": "no_data", "impact": 0, "reason": "No data found."},
+                    "synthetic_narrative": "No data found.",
+                    "audit_checklist": [],
+                }
+
+            h_ids = [str(h["id"]) for h in hotels]
+            p_query = (
+                query_db.table("price_logs")
+                .select(
+                    "hotel_id,check_in_date,check_out_date,price,recorded_at,currency,room_types,vendor"
+                )
+                .in_("hotel_id", h_ids)
+            )
+            if start_date:
+                p_query = p_query.gte("check_in_date", start_date)
+            if end_date:
+                p_query = p_query.lte("check_in_date", end_date)
+
+            p_res = p_query.order("recorded_at", desc=True).limit(2000).execute()
+            logs = p_res.data or []
+
+            p_map: Dict[str, List[Dict[str, Any]]] = {}
+            for log in logs:
+                hid = str(log["hotel_id"])
+                if hid not in p_map:
+                    p_map[hid] = []
+                p_map[hid].append(log)
+
+            allowed_map: Dict[str, List[str]] = {}
+            for h in hotels:
+                synonyms = [room_type]
+                rt_lower = room_type.lower()
+                if "standard" in rt_lower or "standart" in rt_lower:
+                    synonyms.extend(
+                        [
+                            "Standard Room",
+                            "Standart Oda",
+                            "Double Room",
+                            "Twin Room",
+                            "Deluxe Room",
+                            "Economy Room",
+                        ]
+                    )
+                elif "deluxe" in rt_lower:
+                    synonyms.extend(["Deluxe King", "Deluxe Twin", "Superior Room"])
+                elif "suite" in rt_lower:
+                    synonyms.extend(
+                        ["Junior Suite", "Executive Suite", "King Suite", "Business Suite"]
+                    )
+                allowed_map[str(h["id"])] = list(set(synonyms))
+
+            return await perform_market_analysis(
+                user_id=str(user_id),
+                hotels=hotels,
+                hotel_prices_map=p_map,
+                display_currency=currency if currency else display_currency,
+                room_type=room_type,
+                start_date=start_date,
+                end_date=end_date,
+                allowed_room_names_map=allowed_map,
+            )
+        except Exception as fallback_err:
+            logger.error(f"[Analysis] Python fallback analysis failed: {fallback_err}")
+            return {
+                "hotels": [],
+                "all_hotels": [],
+                "total_hotels": 0,
+                "total_competitors": 0,
+                "market_average": 0.0,
+                "market_avg": 0.0,
+                "market_min": 0.0,
+                "market_max": 0.0,
+                "target_price": 0.0,
+                "ari": 100.0,
+                "sent_index": 100.0,
+                "quadrant_label": "No Data Found",
+                "quadrant_x": 100.0,
+                "quadrant_y": 100.0,
+                "price_rank_list": [],
+                "price_history": [],
+                "daily_prices": [],
+                "advisory_keys": [],
+                "recommendation": {"action": "no_data", "impact": 0, "reason": "No data found."},
+                "synthetic_narrative": "No data found.",
+                "audit_checklist": [],
+            }
 
     # Python post-processing (recommendation, synthetic narrative, audit checklist, legacy compatibility aliases)
     ari = data.get("ari")
