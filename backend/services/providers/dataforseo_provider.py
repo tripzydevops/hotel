@@ -172,11 +172,19 @@ class DataForSEOProvider(HotelDataProvider):
                 "payload": data,
             }
 
-            # Use existing RPC for atomic appending to scan_sessions.raw_payload
-            db.rpc("append_scan_raw_payload", {
-                "session_id": session_id,
-                "payload_item": vault_item
-            }).execute()
+            # Direct table update for InsForge PostgREST compatibility
+            try:
+                s_res = db.table("scan_sessions").select("raw_payload").eq("id", str(session_id)).single().execute()
+                curr_payload = (s_res.data.get("raw_payload") or []) if s_res.data else []
+                if not isinstance(curr_payload, list):
+                    curr_payload = [curr_payload]
+                curr_payload.append(vault_item)
+                db.table("scan_sessions").update({"raw_payload": curr_payload}).eq("id", str(session_id)).execute()
+            except Exception:
+                db.rpc("append_scan_raw_payload", {
+                    "session_id": session_id,
+                    "payload_item": vault_item
+                }).execute()
         except Exception as vault_err:
             logger.error(
                 f"Everything Vault Failure for session {session_id}: {vault_err}"

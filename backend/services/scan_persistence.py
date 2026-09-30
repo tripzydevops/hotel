@@ -160,11 +160,19 @@ class ScanPersistenceService:
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "payload": data,
             }
-            # Use existing RPC for atomic appending
-            db.rpc("append_scan_raw_payload", {
-                "session_id": session_id,
-                "payload_item": vault_item
-            }).execute()
+            # Direct table update for InsForge PostgREST compatibility
+            try:
+                s_res = db.table("scan_sessions").select("raw_payload").eq("id", str(session_id)).single().execute()
+                curr_payload = (s_res.data.get("raw_payload") or []) if s_res.data else []
+                if not isinstance(curr_payload, list):
+                    curr_payload = [curr_payload]
+                curr_payload.append(vault_item)
+                db.table("scan_sessions").update({"raw_payload": curr_payload}).eq("id", str(session_id)).execute()
+            except Exception:
+                db.rpc("append_scan_raw_payload", {
+                    "session_id": session_id,
+                    "payload_item": vault_item
+                }).execute()
         except Exception as e:
             logger.error(f"Everything Vault Error: {e}")
 
@@ -1885,18 +1893,25 @@ class ScanPersistenceService:
         if catalog_items:
             await self.batch_update_room_type_catalog(catalog_items, list(hotel_ref_map.values()))
 
-        # 7. Batch increment successes via RPC
+        # 7. Batch increment successes
         batch_ids = [item.get("batch_id") for item in batch_items if item.get("batch_id")]
         if batch_ids:
             from collections import Counter
             counts = Counter(batch_ids)
             for bid, count in counts.items():
                 try:
-                    self.admin_insforge.rpc(
-                        "increment_batch_success", {"b_id": str(bid), "p_count": count}
-                    ).execute()
-                except Exception as e:
-                    logger.warning(f"Failed to increment batch success for {bid}: {e}")
+                    b_res = self.admin_insforge.table("scan_batches").select("success_count").eq("id", str(bid)).single().execute()
+                    c_success = (b_res.data.get("success_count") or 0) if b_res.data else 0
+                    self.admin_insforge.table("scan_batches").update(
+                        {"success_count": c_success + count}
+                    ).eq("id", str(bid)).execute()
+                except Exception:
+                    try:
+                        self.admin_insforge.rpc(
+                            "increment_batch_success", {"b_id": str(bid), "p_count": count}
+                        ).execute()
+                    except Exception as e:
+                        logger.warning(f"Failed to increment batch success for {bid}: {e}")
 
         return {
             "synced_hotel_ids": list(hotel_ref_map.keys()),
