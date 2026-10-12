@@ -31,7 +31,6 @@ const PROTECTED_PATH_PREFIXES = [
   '/reports',
   '/parity-monitor',
   '/admin',
-  '/help',
   '/debug',
 ];
 
