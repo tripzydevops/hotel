@@ -173,11 +173,11 @@ export default function HotelTile(props: HotelTileProps) {
         )}
       </div>
 
-      <div className="p-5 flex flex-col flex-1 bg-[var(--glass-bg)]">
+      <div className="p-3.5 sm:p-5 flex flex-col flex-1 bg-[var(--glass-bg)]">
         {/* Core Identity */}
-        <div className="flex items-start justify-between mb-4" onClick={() => onViewDetails?.(props as any)}>
+        <div className="flex items-start justify-between mb-3 sm:mb-4 gap-2" onClick={() => onViewDetails?.(props as any)}>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-black text-[var(--text-primary)] leading-tight tracking-tighter uppercase italic group-hover:text-[var(--soft-gold)] transition-colors truncate">
+            <h3 className="text-base sm:text-lg font-black text-[var(--text-primary)] leading-tight tracking-tighter uppercase italic group-hover:text-[var(--soft-gold)] transition-colors truncate">
               {name}
             </h3>
             <p className="text-[10px] text-[var(--text-muted)] mt-1 uppercase font-bold tracking-widest flex items-center gap-1 truncate">
@@ -186,12 +186,12 @@ export default function HotelTile(props: HotelTileProps) {
             </p>
           </div>
           
-          <div className="text-right flex-shrink-0 ml-4">
-            <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 opacity-50">{t("hotelDetails.leadRate")}</div>
-            <div className="text-2xl font-black text-[var(--soft-gold)] tracking-tighter italic leading-none">
+          <div className="text-right flex-shrink-0">
+            <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-0.5 sm:mb-1 opacity-50">{t("hotelDetails.leadRate")}</div>
+            <div className="text-xl sm:text-2xl font-black text-[var(--soft-gold)] tracking-tighter italic leading-none">
               {displayPriceValue > 0 ? formatCurrency(displayPriceValue, currency) : "---"}
             </div>
-            <div className="text-[9px] uppercase text-[var(--text-primary)] bg-[var(--soft-gold)]/10 px-2 py-0.5 rounded-sm mt-1.5 inline-block border border-[var(--soft-gold)]/20 font-black tracking-widest">
+            <div className="text-[9px] uppercase text-[var(--text-primary)] bg-[var(--soft-gold)]/10 px-1.5 sm:px-2 py-0.5 rounded-sm mt-1 sm:mt-1.5 inline-block border border-[var(--soft-gold)]/20 font-black tracking-widest">
               {displayVendor}
             </div>
           </div>

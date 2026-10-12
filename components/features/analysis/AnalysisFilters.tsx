@@ -88,7 +88,7 @@ export default function AnalysisFilters({
     <div className="glass-card p-4 mb-6 relative z-20">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         {/* Date Range */}
-        <div className="flex items-center gap-3 flex-1">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-1 w-full sm:w-auto">
           <div className="flex items-center gap-2 text-[var(--text-muted)]">
             <Calendar className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wide">
@@ -96,19 +96,19 @@ export default function AnalysisFilters({
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <input
               type="date"
               value={startDate}
               onChange={(e) => onDateChange(e.target.value, endDate)}
-              className="px-3 py-1.5 rounded-lg bg-white/5 border border-[var(--overlay-border)] text-[var(--overlay-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]"
+              className="px-2 sm:px-3 py-1.5 rounded-lg bg-white/5 border border-[var(--overlay-border)] text-[var(--overlay-text)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)] w-[125px] sm:w-auto"
             />
             <span className="text-[var(--text-muted)]">–</span>
             <input
               type="date"
               value={endDate}
               onChange={(e) => onDateChange(startDate, e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-white/5 border border-[var(--overlay-border)] text-[var(--overlay-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)]"
+              className="px-2 sm:px-3 py-1.5 rounded-lg bg-white/5 border border-[var(--overlay-border)] text-[var(--overlay-text)] text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)] w-[125px] sm:w-auto"
             />
           </div>
 
@@ -116,7 +116,7 @@ export default function AnalysisFilters({
           <div className="relative">
             <button
               onClick={() => setShowDateDropdown(!showDateDropdown)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 border border-[var(--overlay-border)] text-[var(--overlay-text)]/70 text-xs font-medium hover:bg-white/10 transition-colors"
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-white/5 border border-[var(--overlay-border)] text-[var(--overlay-text)]/70 text-xs font-medium hover:bg-white/10 transition-colors"
             >
               Presets
               <ChevronDown className="w-3 h-3" />
@@ -195,7 +195,7 @@ export default function AnalysisFilters({
           </button>
 
           {showHotelDropdown && (
-            <div className="absolute top-full right-0 mt-1 z-50 bg-[var(--deep-ocean)] border border-[var(--overlay-border)] rounded-lg shadow-xl overflow-hidden min-w-[280px]">
+            <div className="absolute top-full right-0 mt-1 z-50 bg-[var(--deep-ocean)] border border-[var(--overlay-border)] rounded-lg shadow-xl overflow-hidden w-[calc(100vw-2.5rem)] sm:w-auto sm:min-w-[280px] max-w-[320px]">
               <div className="px-4 py-2 border-b border-[var(--overlay-border)]">
                 <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
                   Exclude from Analysis

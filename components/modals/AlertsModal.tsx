@@ -97,15 +97,15 @@ export default function AlertsModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300">
-      <div className="bg-[var(--deep-ocean-card)] border border-[var(--overlay-border)] rounded-2xl w-full max-w-lg p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between mb-6">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300 p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-[var(--deep-ocean-card)] border border-[var(--overlay-border)] rounded-2xl w-full max-w-lg p-4 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-200 my-auto max-h-[92vh] flex flex-col">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-[var(--soft-gold)]/10 text-[var(--soft-gold)]">
               <Bell className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-[var(--overlay-text)] leading-tight">
+              <h2 className="text-lg sm:text-xl font-black text-[var(--overlay-text)] leading-tight">
                 {t("alerts.title")}
               </h2>
               <p className="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)]">
@@ -131,7 +131,7 @@ export default function AlertsModal({
           </div>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-2 scrollbar-thin">
+        <div className="overflow-y-auto space-y-3 pr-1 sm:pr-2 scrollbar-thin flex-1 min-h-0">
           {loading ? (
             <div className="py-20 flex flex-col items-center justify-center gap-4">
               <div className="w-8 h-8 border-2 border-[var(--soft-gold)] border-t-transparent rounded-full animate-spin" />

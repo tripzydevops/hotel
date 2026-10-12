@@ -180,7 +180,7 @@ export default function CalendarPage() {
       : "No Data";
 
   return (
-    <div className="min-h-screen bg-[var(--deep-ocean)] p-6">
+    <div className="min-h-screen bg-[var(--deep-ocean)] p-3 sm:p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">

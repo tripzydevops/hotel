@@ -191,8 +191,8 @@ export default function AddHotelModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="premium-card w-full max-w-md p-8 relative overflow-visible radar-scan">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-300 p-3 sm:p-4 overflow-y-auto">
+      <div className="premium-card w-full max-w-md p-5 sm:p-8 relative overflow-visible radar-scan my-auto max-h-[92vh] overflow-y-auto">
         <div className="absolute -top-12 left-0 right-0 flex justify-center">
           <div className="bg-[var(--soft-gold)] text-[var(--deep-ocean)] px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest animate-signal shadow-[0_0_20px_var(--soft-gold-glow)]">
             {t("addHotel.title")}

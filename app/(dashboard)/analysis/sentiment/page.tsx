@@ -1020,7 +1020,7 @@ export default function SentimentPage() {
     , [targetHotel, selectedHotelIds]);
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] p-6 md:p-8 relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--bg-primary)] p-3 sm:p-6 md:p-8 relative overflow-hidden">
       {/* ── Ambient background orbs (decorative depth) ── */}
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
         <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-600/[0.04] rounded-full blur-[120px]" />
@@ -1030,10 +1030,10 @@ export default function SentimentPage() {
 
       <div className="relative z-10 max-w-[1600px] mx-auto">
         {/* ── Glass Breadcrumb Pill ── */}
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-6 sm:mb-8">
           <Link
             href="/analysis"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--bg-accent)] backdrop-blur-sm border border-[var(--glass-border)] text-sm text-gray-400 hover:text-[var(--overlay-text)] hover:bg-white/[0.08] hover:border-white/15 transition-all duration-200 cursor-pointer"
+            className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-[var(--bg-accent)] backdrop-blur-sm border border-[var(--glass-border)] text-xs sm:text-sm text-gray-400 hover:text-[var(--overlay-text)] hover:bg-white/[0.08] hover:border-white/15 transition-all duration-200 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             {t("sentiment.backToOverview")}
@@ -1041,12 +1041,12 @@ export default function SentimentPage() {
         </div>
 
         {/* ── Page Header with Gradient Title ── */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 sm:mb-10 gap-4 sm:gap-6">
           <div>
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
               {t("sentiment.title")}
             </h2>
-            <p className="text-slate-600 dark:text-[var(--text-secondary)] text-sm md:text-base">{t("sentiment.subtitle")}</p>
+            <p className="text-slate-600 dark:text-[var(--text-secondary)] text-xs sm:text-sm md:text-base">{t("sentiment.subtitle")}</p>
           </div>
 
           {/* Hotel Selector Pills with checkmarks */}
@@ -1129,7 +1129,7 @@ export default function SentimentPage() {
               variants={staggerContainer}
               initial="hidden"
               animate="visible"
-              className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8"
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8"
             >
               {isTargetSelected && targetHotel && (
                 <ScoreCard
@@ -1202,7 +1202,7 @@ export default function SentimentPage() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="lg:col-span-7 bg-[var(--bg-accent)] backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-[var(--glass-border)]"
+                className="lg:col-span-7 bg-[var(--bg-accent)] backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 border border-[var(--glass-border)]"
               >
                 {/* Section header with icon badge */}
                 <div className="flex items-center justify-between mb-8">
@@ -1221,7 +1221,7 @@ export default function SentimentPage() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-10">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 sm:gap-x-12 gap-y-6 sm:gap-y-10">
                     <CategoryBar
                       category="Cleanliness"
                       myScore={categoryMetrics.cleanliness?.myScore || 0}

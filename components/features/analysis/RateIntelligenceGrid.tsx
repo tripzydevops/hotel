@@ -157,8 +157,8 @@ export default function RateIntelligenceGrid({
   );
 
   return (
-    <div className="glass-card p-6 overflow-hidden">
-      <div className="flex items-center justify-between mb-6">
+    <div className="glass-card p-3 sm:p-6 overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
         <div>
           <h2 className="text-lg font-black text-[var(--text-primary)] mb-1">
             {t("rateIntelligence.title")}

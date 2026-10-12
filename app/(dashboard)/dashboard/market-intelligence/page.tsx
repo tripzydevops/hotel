@@ -164,12 +164,12 @@ export default function MarketIntelligencePage() {
     const riskAnalysis = getDynamicRiskAnalysis();
 
     return (
-        <div className="container mx-auto p-6 space-y-8 min-h-screen bg-[#020617]">
+        <div className="container mx-auto p-3 sm:p-6 space-y-6 sm:space-y-8 min-h-screen bg-[#020617]">
             {/* Header section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-[var(--overlay-text)] tracking-tight">Market Intelligence</h1>
-                    <p className="text-[var(--text-muted)]">Localized demand signals & predictive compression.</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-[var(--overlay-text)] tracking-tight">Market Intelligence</h1>
+                    <p className="text-xs sm:text-sm text-[var(--text-muted)]">Localized demand signals & predictive compression.</p>
                     {!loading && metadata?.last_synced && (
                         <div className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-500 uppercase tracking-widest font-bold">
                             <RefreshCw className="w-2.5 h-2.5" />
@@ -183,7 +183,7 @@ export default function MarketIntelligencePage() {
                     )}
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                     <button
                         onClick={handleExportCSV}
                         disabled={loading || data.length === 0}
@@ -199,7 +199,7 @@ export default function MarketIntelligencePage() {
                             <button
                                 key={d}
                                 onClick={() => setDays(d)}
-                                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
+                                className={`px-2.5 sm:px-3 py-1 text-xs font-bold rounded-md transition-all ${
                                     days === d ? "bg-[var(--soft-gold)] text-black" : "text-[var(--text-muted)] hover:text-[var(--overlay-text)]"
                                 }`}
                             >
@@ -208,13 +208,13 @@ export default function MarketIntelligencePage() {
                         ))}
                     </div>
 
-                    <div className="relative">
+                    <div className="relative w-full sm:w-auto">
                         <select
                             key={`city-select-${cityKey}`}
                             value={city}
                             onChange={handleCityChange}
                             disabled={loadingCities}
-                            className="appearance-none pl-3 pr-10 py-1.5 rounded-lg bg-[#0f172a] border border-[var(--overlay-border)] text-white text-sm focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)] w-60 cursor-pointer disabled:opacity-50"
+                            className="appearance-none pl-3 pr-10 py-1.5 rounded-lg bg-[#0f172a] border border-[var(--overlay-border)] text-white text-sm focus:outline-none focus:ring-2 focus:ring-[var(--soft-gold)] w-full sm:w-60 cursor-pointer disabled:opacity-50"
                             style={{ colorScheme: 'dark' }}
                         >
                             {cities.map(c => (
@@ -267,7 +267,7 @@ export default function MarketIntelligencePage() {
                         exit={{ opacity: 0, y: 10 }}
                         className="w-full"
                     >
-                        <BentoTile className="bg-gradient-to-r from-blue-500/10 to-transparent border-blue-500/20 backdrop-blur-sm p-6 relative overflow-hidden group">
+                        <BentoTile className="bg-gradient-to-r from-blue-500/10 to-transparent border-blue-500/20 backdrop-blur-sm p-4 sm:p-6 relative overflow-hidden group">
                             <div className="flex flex-col md:flex-row md:items-center gap-6">
                                 <div className="flex-1 space-y-2">
                                     <div className="flex items-center gap-2 mb-2">
@@ -382,7 +382,7 @@ export default function MarketIntelligencePage() {
 
                 {/* Right: Risk Action Panel */}
                 <div>
-                    <div className="p-6 rounded-2xl bg-gradient-to-br from-[#F6C344]/10 to-[#0A1629]/50 border border-[#F6C344]/20 backdrop-blur-md shadow-2xl relative overflow-hidden group h-full">
+                    <div className="p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-[#F6C344]/10 to-[#0A1629]/50 border border-[#F6C344]/20 backdrop-blur-md shadow-2xl relative overflow-hidden group h-full">
                         {/* Background Pulse */}
                         <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#F6C344]/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
                         

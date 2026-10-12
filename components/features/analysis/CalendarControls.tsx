@@ -129,27 +129,27 @@ export default function CalendarControls({
       </div>
 
       {/* CENTER: Date Navigation (The most prominent control) */}
-      <div className="flex items-center p-1 rounded-xl bg-black/20 border border-[var(--soft-gold)]/20 shadow-inner">
+      <div className="flex items-center justify-between w-full md:w-auto p-1 rounded-xl bg-black/20 border border-[var(--soft-gold)]/20 shadow-inner">
         <button
           onClick={() => onNavigate(-7)}
-          className="p-2 hover:bg-[var(--soft-gold)]/10 text-[var(--overlay-text)]/70 hover:text-[var(--soft-gold)] transition-all rounded-lg active:scale-95"
+          className="p-2 hover:bg-[var(--soft-gold)]/10 text-[var(--overlay-text)]/70 hover:text-[var(--soft-gold)] transition-all rounded-lg active:scale-95 shrink-0"
           title="Previous 7 days"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
 
-        <div className="px-6 py-1.5 flex flex-col items-center min-w-[180px] border-x border-[var(--overlay-border)] mx-1">
+        <div className="px-2 sm:px-6 py-1.5 flex flex-col items-center flex-1 sm:min-w-[180px] border-x border-[var(--overlay-border)] mx-1">
           <span className="text-[9px] font-black uppercase text-[var(--soft-gold)] tracking-widest mb-0.5">
             Viewing Range
           </span>
-          <span className="text-sm font-bold text-[var(--overlay-text)] whitespace-nowrap">
+          <span className="text-xs sm:text-sm font-bold text-[var(--overlay-text)] whitespace-nowrap">
             {visibleRangeLabel}
           </span>
         </div>
 
         <button
           onClick={() => onNavigate(7)}
-          className="p-2 hover:bg-[var(--soft-gold)]/10 text-[var(--overlay-text)]/70 hover:text-[var(--soft-gold)] transition-all rounded-lg active:scale-95"
+          className="p-2 hover:bg-[var(--soft-gold)]/10 text-[var(--overlay-text)]/70 hover:text-[var(--soft-gold)] transition-all rounded-lg active:scale-95 shrink-0"
           title="Next 7 days"
         >
           <ChevronRight className="w-5 h-5" />
@@ -177,7 +177,7 @@ export default function CalendarControls({
         </button>
 
         {isCompDropdownOpen && (
-          <div className="absolute right-0 top-full mt-2 w-64 p-2 bg-[var(--deep-ocean)] border border-[var(--soft-gold)]/20 rounded-xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
+          <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2.5rem)] sm:w-64 max-w-sm p-2 bg-[var(--deep-ocean)] border border-[var(--soft-gold)]/20 rounded-xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
             <div className="max-h-[300px] overflow-y-auto space-y-1 custom-scrollbar">
               {competitors.length === 0 ? (
                 <div className="p-4 text-center text-xs text-[var(--text-muted)] italic">

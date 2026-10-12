@@ -54,9 +54,9 @@ export default function ParityStats({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
       {/* Parity Score */}
-      <div className="glass-card rounded-[2rem] p-6 relative overflow-hidden group">
+      <div className="glass-card rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 relative overflow-hidden group">
         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
           <Gauge className="w-16 h-16 text-[#F6C344]" />
         </div>
@@ -83,7 +83,7 @@ export default function ParityStats({
       </div>
 
       {/* Active Discrepancies */}
-      <div className="glass-card rounded-[2rem] p-6 relative overflow-hidden group">
+      <div className="glass-card rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 relative overflow-hidden group">
         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
           <AlertTriangle className="w-16 h-16 text-rose-500" />
         </div>
@@ -91,7 +91,7 @@ export default function ParityStats({
           Active Violations
         </h3>
         <div className="mt-4 flex items-baseline gap-2">
-          <span className="text-5xl font-black text-slate-900 dark:text-white leading-none">
+          <span className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white leading-none">
             {activeDiscrepancies}
           </span>
           <span className="text-sm text-slate-500 dark:text-gray-400 font-bold uppercase tracking-widest">
@@ -114,7 +114,7 @@ export default function ParityStats({
       </div>
 
       {/* Monthly Revenue Leakage */}
-      <div className="glass-card rounded-[2rem] p-6 relative overflow-hidden group border border-blue-500/10">
+      <div className="glass-card rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 relative overflow-hidden group border border-blue-500/10">
         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
           <CircleDollarSign className="w-16 h-16 text-blue-400" />
         </div>

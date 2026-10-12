@@ -201,11 +201,11 @@ export default function RateMatrix({
   };
 
   return (
-    <div className="card-blur rounded-[2.5rem] p-8 flex-grow border border-[var(--overlay-border)] shadow-2xl">
+    <div className="card-blur rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-8 flex-grow border border-[var(--overlay-border)] shadow-2xl">
       <div className="flex flex-col gap-4 mb-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
           <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold text-[var(--overlay-text)]">
+            <h2 className="text-lg sm:text-xl font-bold text-[var(--overlay-text)]">
               Rate Comparison Matrix
             </h2>
           </div>

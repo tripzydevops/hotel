@@ -3,7 +3,7 @@
 import React, { lazy, Suspense } from "react";
 import Sidebar from "./Sidebar";
 import UserMenu from "./UserMenu";
-import { Bell, Search, Calendar, EyeOff, LogOut, ShieldAlert } from "lucide-react";
+import { Bell, Search, Calendar, EyeOff, LogOut, ShieldAlert, Menu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { api } from "@/lib/api";
@@ -42,6 +42,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [mounted, setMounted] = React.useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = React.useState(false);
   const pathname = usePathname();
 
   React.useEffect(() => {
@@ -184,67 +185,85 @@ export default function DashboardLayout({
         )}
       </AnimatePresence>
 
-      <Sidebar profile={profile} />
+      <Sidebar
+        profile={profile}
+        isMobileOpen={isMobileNavOpen}
+        onMobileClose={() => setIsMobileNavOpen(false)}
+      />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-24 border-b border-[var(--glass-border)] flex items-center justify-between px-10 bg-[var(--glass-bg)] backdrop-blur-3xl sticky top-0 z-30 transition-all duration-500 shadow-[var(--glass-shadow)]">
-          <div className="flex items-center gap-8">
-            <div className="flex flex-col">
-              <h2 className="text-xl font-black text-[var(--text-primary)] tracking-[-0.04em] uppercase transition-all duration-500 mb-0.5">
+        <header className="h-16 sm:h-20 lg:h-24 border-b border-[var(--glass-border)] flex items-center justify-between px-3 sm:px-6 lg:px-10 bg-[var(--glass-bg)] backdrop-blur-3xl sticky top-0 z-30 transition-all duration-500 shadow-[var(--glass-shadow)]">
+          <div className="flex items-center gap-2.5 sm:gap-4 lg:gap-8 min-w-0">
+            {/* Mobile Navigation Trigger */}
+            <button
+              onClick={() => setIsMobileNavOpen(true)}
+              className="lg:hidden p-2 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg-accent)] text-[var(--soft-gold)] hover:bg-[var(--bg-accent)] transition-all shrink-0 active:scale-95"
+              aria-label="Open Navigation Menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            <div className="flex flex-col min-w-0">
+              <h2 className="text-base sm:text-xl font-black text-[var(--text-primary)] tracking-[-0.04em] uppercase transition-all duration-500 mb-0.5 truncate">
                 {getPageTitle()}
               </h2>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[var(--soft-gold)] animate-pulse shadow-[0_0_8px_var(--soft-gold)]" />
-                <span className="text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-[0.2em] opacity-70">Live Intelligence Active</span>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className="w-2 h-2 rounded-full bg-[var(--soft-gold)] animate-pulse shadow-[0_0_8px_var(--soft-gold)] shrink-0" />
+                <span className="text-[9px] sm:text-[10px] font-black text-[var(--soft-gold)] uppercase tracking-[0.2em] opacity-70 truncate">
+                  Live Intelligence Active
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-3 lg:gap-4">
               <button
                 onClick={() => setIsAlertsOpen(true)}
-                className="w-12 h-12 rounded-2xl border border-[var(--glass-border)] flex items-center justify-center bg-[var(--glass-bg-accent)] hover:bg-[var(--bg-accent)] transition-all relative group shadow-lg"
+                className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl border border-[var(--glass-border)] flex items-center justify-center bg-[var(--glass-bg-accent)] hover:bg-[var(--bg-accent)] transition-all relative group shadow-lg shrink-0"
+                aria-label="Alerts"
               >
-                <Bell className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors" />
+                <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors" />
                 {(data?.unread_alerts_count || 0) > 0 && (
-                  <span className="absolute top-3.5 right-3.5 w-2.5 h-2.5 bg-[var(--alert-red)] rounded-full border-2 border-[var(--deep-ocean)] shadow-[0_0_10px_var(--alert-red)]" />
+                  <span className="absolute top-2 sm:top-3.5 right-2 sm:right-3.5 w-2 sm:w-2.5 h-2 sm:h-2.5 bg-[var(--alert-red)] rounded-full border-2 border-[var(--deep-ocean)] shadow-[0_0_10px_var(--alert-red)]" />
                 )}
               </button>
 
-              <div className="h-10 w-[1px] bg-[var(--glass-border)] mx-2" />
+              <div className="h-6 sm:h-10 w-[1px] bg-[var(--glass-border)] mx-1 sm:mx-2 hidden sm:block" />
 
               <ThemeToggle />
 
-              <div className="h-10 w-[1px] bg-white/5 mx-2" />
+              <div className="h-6 sm:h-10 w-[1px] bg-white/5 mx-1 sm:mx-2 hidden md:block" />
 
               {/* Language Toggle */}
-              <div className="flex bg-[var(--glass-bg-accent)] p-1.5 rounded-2xl border border-[var(--glass-border)] shadow-inner">
+              <div className="hidden sm:flex bg-[var(--glass-bg-accent)] p-1 rounded-xl sm:rounded-2xl border border-[var(--glass-border)] shadow-inner">
                 <button
                   onClick={() => setLocale("en")}
-                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${locale === "en"
-                    ? "bg-[var(--soft-gold)] text-[var(--overlay-text)] shadow-lg shadow-[var(--soft-gold-glow)]"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                    }`}
+                  className={`px-2.5 sm:px-4 py-1 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all ${
+                    locale === "en"
+                      ? "bg-[var(--soft-gold)] text-[var(--overlay-text)] shadow-lg shadow-[var(--soft-gold-glow)]"
+                      : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  }`}
                 >
                   EN
                 </button>
                 <button
                   onClick={() => setLocale("tr")}
-                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${locale === "tr"
-                    ? "bg-[var(--soft-gold)] text-[var(--overlay-text)] shadow-lg shadow-[var(--soft-gold-glow)]"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                    }`}
+                  className={`px-2.5 sm:px-4 py-1 sm:py-2 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all ${
+                    locale === "tr"
+                      ? "bg-[var(--soft-gold)] text-[var(--overlay-text)] shadow-lg shadow-[var(--soft-gold-glow)]"
+                      : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  }`}
                 >
                   TR
                 </button>
               </div>
 
-              <div className="h-10 w-[1px] bg-[var(--glass-border)] mx-2" />
+              <div className="h-6 sm:h-10 w-[1px] bg-[var(--glass-border)] mx-1 sm:mx-2 hidden lg:block" />
 
-              <div className="flex items-center gap-4">
-                <div className="flex flex-col items-end hidden lg:flex">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <div className="flex flex-col items-end hidden xl:flex">
                   <span className="text-sm font-black text-[var(--text-primary)] tracking-tight transition-colors duration-500">
                     {profile?.display_name || "Enterprise User"}
                   </span>
@@ -273,7 +292,7 @@ export default function DashboardLayout({
           <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-[var(--soft-gold)]/5 blur-[120px] rounded-full -z-10 pointer-events-none" />
           <div className="fixed bottom-0 left-0 w-[600px] h-[600px] bg-[var(--alert-red)]/5 blur-[150px] rounded-full -z-10 pointer-events-none" />
           
-          <div className="relative z-10 px-10 py-10">{children}</div>
+          <div className="relative z-10 px-3 sm:px-6 lg:px-10 py-4 sm:py-6 lg:py-10">{children}</div>
         </main>
       </div>
 

@@ -66,7 +66,7 @@ export default function HotelDetailsModal({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-500 ${isOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}
+      className={`fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 transition-all duration-500 ${isOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}
     >
       <div
         className="absolute inset-0 bg-[var(--deep-ocean)]/80 backdrop-blur-md"
@@ -74,14 +74,14 @@ export default function HotelDetailsModal({
       />
 
       <div
-        className="relative w-full max-w-4xl glass-modal border border-[var(--glass-border)] rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300"
+        className="relative w-full max-w-4xl glass-modal border border-[var(--glass-border)] rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] max-h-[94vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header: Tactical Briefing */}
-        <div className="p-4 sm:p-6 border-b border-[var(--glass-border)] flex flex-col sm:flex-row sm:items-start justify-between bg-[var(--glass-bg)] gap-4 shrink-0">
+        <div className="p-3.5 sm:p-6 border-b border-[var(--glass-border)] flex flex-col sm:flex-row sm:items-start justify-between bg-[var(--glass-bg)] gap-3 sm:gap-4 shrink-0">
           <div className="flex items-center gap-3 sm:gap-4 order-2 sm:order-1">
             {hotel.image_url ? (
-              <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden border border-[var(--glass-border)] ring-2 ring-[var(--soft-gold)]/10">
+              <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden border border-[var(--glass-border)] ring-2 ring-[var(--soft-gold)]/10 shrink-0">
                 <FallbackImage
                   src={hotel.image_url}
                   alt={hotel.name}
@@ -91,15 +91,15 @@ export default function HotelDetailsModal({
                 />
               </div>
             ) : (
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-[var(--deep-ocean-accent)] flex items-center justify-center border border-[var(--glass-border)]">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-[var(--deep-ocean-accent)] flex items-center justify-center border border-[var(--glass-border)] shrink-0">
                 <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-[var(--soft-gold)]" />
               </div>
             )}
-            <div>
-              <h2 className="text-xl sm:text-3xl font-black text-[var(--text-primary)] max-w-[200px] sm:max-w-lg truncate tracking-tighter uppercase italic">
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-3xl font-black text-[var(--text-primary)] max-w-[200px] sm:max-w-lg truncate tracking-tighter uppercase italic">
                 {hotel.name}
               </h2>
-              <div className="flex flex-wrap items-center gap-2 text-[10px] sm:text-xs text-[var(--text-muted)] mt-1 uppercase font-bold tracking-widest">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-[var(--text-muted)] mt-1 uppercase font-bold tracking-widest">
                 <span className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--deep-ocean-accent)] border border-[var(--glass-border)]">
                     <MapPin className="w-3 h-3 text-[var(--soft-gold)]" />
                     {hotel.location}
@@ -123,7 +123,7 @@ export default function HotelDetailsModal({
         </div>
 
         {/* Tabs: Stream Selection */}
-        <div className="flex border-b border-[var(--glass-border)] overflow-x-auto bg-[var(--deep-ocean-card)]/30 px-2 shrink-0">
+        <div className="flex border-b border-[var(--glass-border)] overflow-x-auto bg-[var(--deep-ocean-card)]/30 px-1 sm:px-2 shrink-0 scrollbar-none">
           {tabs.map((tab) => (
             <button
               type="button"
@@ -137,7 +137,7 @@ export default function HotelDetailsModal({
                 setActiveTab(tab.id);
               }}
               className={`
-                        flex items-center gap-2 px-6 py-4 text-[10px] uppercase tracking-[0.2em] font-black transition-all border-b-2 whitespace-nowrap
+                        flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2.5 sm:py-4 text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-black transition-all border-b-2 whitespace-nowrap
                         ${
                           activeTab === tab.id
                             ? "border-[var(--soft-gold)] text-[var(--soft-gold)] bg-[var(--soft-gold)]/10"
@@ -152,7 +152,7 @@ export default function HotelDetailsModal({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 bg-[var(--deep-ocean)] custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-[var(--deep-ocean)] custom-scrollbar">
           {activeTab === "overview" && <TabOverview hotel={hotel} rating_distribution={rating_distribution} t={t} />}
           {activeTab === "gallery" && <TabGallery normalizedImages={normalizedImages} t={t} />}
           {activeTab === "amenities" && <TabAmenities hotel={hotel} t={t} />}

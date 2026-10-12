@@ -39,9 +39,9 @@ export default function ParityPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--deep-ocean)] p-8">
-      {/* Breadcrumb */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-[var(--deep-ocean)] p-3 sm:p-6 md:p-8">
+      {/* Breadcrumb & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
         <Link
           href="/analysis"
           className="flex items-center gap-2 text-sm text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
@@ -50,36 +50,36 @@ export default function ParityPage() {
           Back to Overview
         </Link>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Manual refresh button */}
           <button
             onClick={() => fetchData()}
             disabled={loading || isRefreshing}
             title="Refresh parity data"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-900 dark:text-white border border-slate-200 dark:border-transparent text-sm font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-900 dark:text-white border border-slate-200 dark:border-transparent text-xs sm:text-sm font-medium transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 ${(loading || isRefreshing) ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${(loading || isRefreshing) ? "animate-spin" : ""}`} />
             Refresh
           </button>
           <button
             onClick={handleExport}
             disabled={isExporting}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-900 dark:text-white border border-slate-200 dark:border-transparent text-sm font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-900 dark:text-white border border-slate-200 dark:border-transparent text-xs sm:text-sm font-medium transition-colors disabled:opacity-50"
           >
-            {isExporting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {isExporting ? <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
             Export
           </button>
         </div>
       </div>
 
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="p-3 rounded-2xl bg-violet-500/10 text-violet-400">
-          <Share2 className="w-6 h-6" />
+      <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="p-2.5 sm:p-3 rounded-2xl bg-violet-500/10 text-violet-400 shrink-0">
+          <Share2 className="w-5 h-5 sm:w-6 sm:h-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white">Parity Monitor</h1>
-          <p className="text-sm text-slate-600 dark:text-gray-400">
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Parity Monitor</h1>
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-gray-400">
             OTA rate parity comparison and violation alerts
           </p>
         </div>

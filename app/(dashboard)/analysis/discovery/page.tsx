@@ -29,9 +29,9 @@ export default function DiscoveryPage() {
   }, [userId]);
 
   return (
-    <div className="min-h-screen bg-[var(--deep-ocean)] p-8">
+    <div className="min-h-screen bg-[var(--deep-ocean)] p-3 sm:p-6 md:p-8">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-3 mb-8">
+      <div className="flex items-center gap-3 mb-6 sm:mb-8">
         <Link
           href="/analysis"
           className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--overlay-text)] transition-colors"
@@ -42,13 +42,13 @@ export default function DiscoveryPage() {
       </div>
 
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400">
-          <Radar className="w-6 h-6" />
+      <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="p-2.5 sm:p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 shrink-0">
+          <Radar className="w-5 h-5 sm:w-6 sm:h-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-black text-[var(--overlay-text)]">Discovery Engine</h1>
-          <p className="text-sm text-[var(--text-muted)]">
+          <h1 className="text-xl sm:text-2xl font-black text-[var(--overlay-text)]">Discovery Engine</h1>
+          <p className="text-xs sm:text-sm text-[var(--text-muted)]">
             AI-powered competitor discovery using vector similarity
           </p>
         </div>

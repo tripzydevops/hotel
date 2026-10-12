@@ -150,16 +150,16 @@ export default function SettingsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300">
-      <div className="bg-[var(--deep-ocean-card)] border border-[var(--overlay-border)] rounded-2xl w-full max-w-2xl p-0 shadow-2xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300 p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-[var(--deep-ocean-card)] border border-[var(--overlay-border)] rounded-2xl w-full max-w-2xl p-0 shadow-2xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-200 my-auto max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-[var(--overlay-border)] bg-white/5">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-[var(--overlay-border)] bg-white/5">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] shadow-inner">
-              <SettingsIcon className="w-6 h-6" />
+            <div className="p-2 sm:p-2.5 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] shadow-inner">
+              <SettingsIcon className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[var(--overlay-text)] leading-none mb-1">
+              <h2 className="text-lg sm:text-xl font-bold text-[var(--overlay-text)] leading-none mb-1">
                 {t("settings.title")}
               </h2>
               <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold">
@@ -175,9 +175,9 @@ export default function SettingsModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="p-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+          <div className="p-4 sm:p-8 overflow-y-auto custom-scrollbar flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10">
               {/* Left Column: Monitoring */}
               <div className="space-y-8">
                 <div className="space-y-4">
@@ -366,18 +366,18 @@ export default function SettingsModal({
           </div>
 
           {/* Footer */}
-          <div className="p-6 border-t border-[var(--overlay-border)] bg-black/20 flex gap-4 mt-auto">
+          <div className="p-4 sm:p-6 border-t border-[var(--overlay-border)] bg-black/20 flex flex-col sm:flex-row gap-3 sm:gap-4 mt-auto">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3.5 rounded-xl border border-[var(--overlay-border)] text-[var(--overlay-text)] text-sm font-bold hover:bg-white/5 transition-all"
+              className="w-full sm:flex-1 px-6 py-3.5 rounded-xl border border-[var(--overlay-border)] text-[var(--overlay-text)] text-sm font-bold hover:bg-white/5 transition-all"
             >
               Discard Changes
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-[2] btn-gold py-3.5 flex items-center justify-center gap-3 group relative overflow-hidden"
+              className="w-full sm:flex-[2] btn-gold py-3.5 flex items-center justify-center gap-3 group relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:translate-x-0 transition-transform duration-500 skew-x-12" />
               {loading ? (

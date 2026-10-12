@@ -405,7 +405,7 @@ function KpiCard({
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
       role="region"
       aria-label={`${label} metric: ${value}${suffix || ''}`}
-      className="glass-card p-5 border border-white/[0.08] hover:border-white/15 transition-all duration-300 cursor-default group relative overflow-hidden"
+      className="glass-card p-4 sm:p-5 border border-white/[0.08] hover:border-white/15 transition-all duration-300 cursor-default group relative overflow-hidden"
     >
       {/* Subtle gradient overlay on hover */}
       <div
@@ -1029,23 +1029,23 @@ export default function ReportsPage() {
         />
       )}
 
-      <main className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <main className="px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* ═══════════════════════════════════════════════ */}
         {/* ── PAGE HEADER ──                              */}
         {/* ═══════════════════════════════════════════════ */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 mb-6 sm:mb-10">
           <div>
-            <h1 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-blue-300 tracking-tight mb-1">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-blue-300 tracking-tight mb-1">
               {t("reports.title") !== "reports.title" ? t("reports.title") : "Executive Report"}
             </h1>
-            <p className="text-sm text-[var(--text-muted)] font-medium">
+            <p className="text-xs sm:text-sm text-[var(--text-muted)] font-medium">
               Comprehensive performance, sentiment & competitive intelligence
             </p>
           </div>
 
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {/* Currency Selector */}
-            <div className="glass px-3 py-1.5 rounded-lg flex items-center gap-2 border border-[var(--overlay-border)]">
+            <div className="glass px-2.5 sm:px-3 py-1.5 rounded-lg flex items-center gap-2 border border-[var(--overlay-border)]">
               <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] tracking-wider">
                 {t("reports.currencyLabel")}
               </span>
@@ -1065,25 +1065,25 @@ export default function ReportsPage() {
             <button
               onClick={() => handleExport("csv")}
               disabled={!!exporting}
-              className="btn-ghost flex items-center gap-2 group"
+              className="btn-ghost flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 group"
             >
-              <FileSpreadsheet className="w-4 h-4 group-hover:text-[var(--soft-gold)] transition-colors" />
-              <span className="text-xs font-black uppercase tracking-widest">
+              <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:text-[var(--soft-gold)] transition-colors" />
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest">
                 {exporting === "csv" ? t("reports.exporting") : t("reports.exportCsv")}
               </span>
             </button>
             <button
               onClick={() => handleExport("pdf")}
               disabled={!!exporting}
-              className="btn-gold flex items-center gap-2"
+              className="btn-gold flex items-center gap-1.5 sm:gap-2 px-3 py-1.5"
             >
-              <FileType className="w-4 h-4" />
-              <span className="text-xs font-black uppercase tracking-widest">
+              <FileType className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest">
                 {exporting === "pdf" ? t("reports.exporting") : t("reports.exportPdf")}
               </span>
             </button>
 
-            <div className="w-[1px] h-8 bg-white/10 mx-1" />
+            <div className="hidden sm:block w-[1px] h-8 bg-white/10 mx-1" />
 
           </div>
         </div>
@@ -1091,7 +1091,7 @@ export default function ReportsPage() {
         {/* ═══════════════════════════════════════════════ */}
         {/* ── PHASE 8: REPORT CONTROL PANEL ──            */}
         {/* ═══════════════════════════════════════════════ */}
-        <div className="glass p-6 rounded-2xl border border-[var(--overlay-border)] mb-8 relative overflow-hidden group">
+        <div className="glass p-4 sm:p-6 rounded-2xl border border-[var(--overlay-border)] mb-6 sm:mb-8 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[80px] rounded-full -mr-32 -mt-32" />
 
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
@@ -1198,7 +1198,7 @@ export default function ReportsPage() {
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-8 sm:mb-10"
           >
             <KpiCard
               label={t("reports.yourRate") !== "reports.yourRate" ? t("reports.yourRate") : "Your Rate"}

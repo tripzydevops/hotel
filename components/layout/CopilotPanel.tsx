@@ -300,7 +300,7 @@ export default function CopilotPanel({
       <motion.button
         id="copilot-fab"
         onClick={onToggle}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl flex items-center justify-center
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center
           bg-gradient-to-br from-[var(--soft-gold)] to-[var(--soft-gold-dim)]
           shadow-[0_8px_32px_var(--soft-gold-glow)]
           hover:shadow-[0_12px_40px_var(--soft-gold-glow)]
@@ -310,7 +310,7 @@ export default function CopilotPanel({
         aria-label="Toggle Revenue Copilot"
       >
         <Sparkles
-          className="w-6 h-6 text-white drop-shadow-lg group-hover:animate-pulse"
+          className="w-5 h-5 sm:w-6 sm:h-6 text-white drop-shadow-lg group-hover:animate-pulse"
         />
 
         {/* Pulsing ring */}
@@ -330,11 +330,11 @@ export default function CopilotPanel({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.95 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed bottom-24 right-6 z-50 w-[420px] flex flex-col
-              glass-modal rounded-3xl border border-[var(--glass-border)]
+            className="fixed bottom-20 sm:bottom-24 right-3 sm:right-6 left-3 sm:left-auto z-50 w-[calc(100vw-1.5rem)] sm:w-[420px] max-w-[420px] flex flex-col
+              glass-modal rounded-2xl sm:rounded-3xl border border-[var(--glass-border)]
               shadow-[0_32px_80px_-12px_rgba(0,0,0,0.6)]
               overflow-hidden"
-            style={{ height: '600px', maxHeight: 'calc(100vh - 140px)' }}
+            style={{ height: 'min(580px, 78vh)', maxHeight: 'calc(100vh - 100px)' }}
           >
             {/* ---- Header ---- */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--glass-border)]

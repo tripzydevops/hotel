@@ -298,7 +298,7 @@ export default function AnalysisPage() {
 
   return (
     <div className="min-h-screen pb-12">
-      <main className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <main className="px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Page Header */}
         <div className="mb-8">
 
@@ -357,12 +357,12 @@ export default function AnalysisPage() {
         </div> */}
 
         {/* Market Intelligence AI Hub */}
-        <div className="mb-12 cursor-pointer">
+        <div className="mb-8 sm:mb-12 cursor-pointer">
           <IntelligenceHUD hotelId={data?.hotel_id || "default"} />
         </div>
 
         {/* Global KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 overflow-visible">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6 mb-8 sm:mb-12 overflow-visible">
           <KPICard
             index={0}
             title={t("analysis.marketAverage")}
@@ -502,16 +502,16 @@ export default function AnalysisPage() {
 
         {/* Agent Advisory Shard */}
         {(data?.advisory_keys?.length > 0 || data?.advisory_msg) && (
-          <div className="mb-12 glass-card p-8 border-l-4 border-l-[var(--soft-gold)] bg-[var(--glass-bg-accent)]">
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-2xl bg-[var(--soft-gold)]/20 text-[var(--soft-gold)]">
-                <Zap className="w-6 h-6 animate-pulse" />
+          <div className="mb-8 sm:mb-12 glass-card p-4 sm:p-8 border-l-4 border-l-[var(--soft-gold)] bg-[var(--glass-bg-accent)]">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="p-2.5 sm:p-3 rounded-2xl bg-[var(--soft-gold)]/20 text-[var(--soft-gold)] shrink-0">
+                <Zap className="w-5 h-5 sm:w-6 sm:h-6 animate-pulse" />
               </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-black text-[var(--soft-gold)] uppercase tracking-widest mb-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xs sm:text-sm font-black text-[var(--soft-gold)] uppercase tracking-widest mb-2">
                   {t("analysis.advisory.title")}
                 </h3>
-                <div className="text-xl font-medium text-[var(--text-primary)] italic leading-relaxed whitespace-pre-wrap">
+                <div className="text-base sm:text-xl font-medium text-[var(--text-primary)] italic leading-relaxed whitespace-pre-wrap">
                   {streamingNarrative ? (
                     <div className="animate-in fade-in duration-500">
                       {streamingNarrative}
@@ -542,11 +542,11 @@ export default function AnalysisPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Market Spread Visualization */}
-          <div className="lg:col-span-2 glass-card p-8">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-lg font-black text-[var(--text-primary)]">
+          <div className="lg:col-span-2 glass-card p-4 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 sm:mb-8">
+              <h2 className="text-base sm:text-lg font-black text-[var(--text-primary)]">
                 {t("analysis.marketSpread")}
               </h2>
               <div className="flex items-center gap-2 text-[10px] text-[var(--text-muted)] font-bold uppercase">
@@ -719,7 +719,7 @@ export default function AnalysisPage() {
             </div>
 
             {/* Stats Row - Enhanced */}
-            <div className="mt-8 grid grid-cols-3 gap-4 border-t border-[var(--glass-border)] pt-8">
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-[var(--glass-border)] pt-6 sm:pt-8">
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-black text-[var(--text-muted)] uppercase">
                   {t("analysis.priceGapToMin")}
@@ -753,7 +753,7 @@ export default function AnalysisPage() {
             </div>
           </div>
 
-          <div className="glass-card p-8 flex flex-col justify-between">
+          <div className="glass-card p-4 sm:p-8 flex flex-col justify-between">
             <div>
               <h2 className="text-lg font-black text-[var(--text-primary)] mb-2">
                 {t("analysis.targetPriceTrend")}
@@ -854,7 +854,7 @@ function KPICard({
 
   return (
     <motion.div
-      className="glass-card p-6 relative group !overflow-visible hover:z-[400] transition-all duration-300"
+      className="glass-card p-4 sm:p-6 relative group !overflow-visible hover:z-[400] transition-all duration-300"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
