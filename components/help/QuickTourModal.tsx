@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   ExternalLink
 } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 interface QuickTourModalProps {
   isOpen: boolean;
@@ -22,7 +23,7 @@ interface QuickTourModalProps {
   onSelectGuide?: (guideId: string) => void;
 }
 
-const TOUR_SLIDES = [
+const TOUR_SLIDES_EN = [
   {
     step: 1,
     title: "1. The Target Hotel Benchmark",
@@ -85,20 +86,85 @@ const TOUR_SLIDES = [
   },
 ];
 
+const TOUR_SLIDES_TR = [
+  {
+    step: 1,
+    title: "1. Hedef Otel Referansı",
+    subtitle: "Doğrudan otel fiyatınız parite hesaplamalarının bağımsız temelidir",
+    guideId: "getting-started",
+    icon: Crown,
+    iconColor: "text-[var(--soft-gold)]",
+    badge: "Temel Mimari",
+    content:
+      "HotelPlus'ta oteliniz altın taç simgesiyle Hedef Tesis olarak işaretlenir. Tüm fiyat kırma uyarıları, fiyat sapmaları ve parite cezaları bu referans fiyat baz alınarak gerçek zamanlı hesaplanır.",
+    proTip: "Fiyat kıran OTA'ların anında yakalanması için doğrudan web sitesi bağlantınızın ve resmi fiyatlarınızın tanımlı olduğundan emin olun.",
+  },
+  {
+    step: 2,
+    title: "2. Google Hotels Canlı Fiyat Tablosu",
+    subtitle: "Kural dışı OTA'ları yakalama ve rakip fiyat hızını izleme",
+    guideId: "dashboard-grid",
+    icon: LayoutGrid,
+    iconColor: "text-blue-400",
+    badge: "Günlük Takip",
+    content:
+      "Canlı Panel otelinizi rakip sepetinizle yan yana gösterir. Kırmızı rozetler doğrudan fiyatınızın altında oda satan OTA'ları vurgular. DataForSEO hattımız üzerinden anlık tarama başlatmak için 'Hızlı Tarama'ya tıklayın.",
+    proTip: "Hızlı tarama; Google Hotels, Booking.com ve Expedia üzerindeki tüm fiyatları 15 saniyenin altında günceller.",
+  },
+  {
+    step: 3,
+    title: "3. 6-Sekmeli Derinlemesine İnceleme",
+    subtitle: "Oda tipleri, OTA teklifleri, misafir duygusu ve olanakları denetleyin",
+    guideId: "hotel-inspection",
+    icon: Eye,
+    iconColor: "text-emerald-400",
+    badge: "Adli Analiz",
+    content:
+      "Herhangi bir otelde 'Detayları Gör'e tıklamak 6 sekmeli modalı açar. Yan yana OTA tekliflerini, normalize edilmiş oda kataloglarını (Deluxe vs Deluxe), yapay zeka yorum analizini ve olanakları karşılaştırın.",
+    proTip: "Hangi aracı kurumun yetkisiz promosyon sızdırdığını bulmak için 'Teklifler' sekmesini sıralayın.",
+  },
+  {
+    step: 4,
+    title: "4. 30-Günlük Fiyat Takvimi & Yapay Zeka Keşfi",
+    subtitle: "İleriye dönük fiyat ısı haritaları ve vektörel rakip eşleştirme",
+    guideId: "rate-calendar",
+    icon: Calendar,
+    iconColor: "text-purple-400",
+    badge: "Gelir & Strateji",
+    content:
+      "Fiyat Takvimi talep sıçramalarını yakalamak için 30 günlük fiyatları haritalandırır. Keşif Motoru ise pgvector ve Gemini gömmelerini kullanarak misafir profillerine göre gözden kaçan rakipleri bulur.",
+    proTip: "Vektörel keşif sadece yakın otelleri değil, tam olarak aynı misafir segmentine hitap eden rakipleri bulur.",
+  },
+  {
+    step: 5,
+    title: "5. Otonom Copilot (Gemini 3.1 Pro)",
+    subtitle: "Sıfır halüsinasyonla doğal dilde gelir muhakemesi",
+    guideId: "copilot-ai",
+    icon: Sparkles,
+    iconColor: "text-[var(--soft-gold)]",
+    badge: "Yeni Nesil AI",
+    content:
+      "Doğal dilde sorular sorun: 'Rakip A gelecek hafta sonu fiyatları neden %15 düşürdü?' Copilot rakip Fiyatlandırma DNA'sını analiz eder ve taktiksel fiyat düzeltmeleri önerir.",
+    proTip: "Anlık sabah piyasa özetleri için Copilot çekmecesindeki hazır soru çiplerine tıklayın.",
+  },
+];
+
 export default function QuickTourModal({
   isOpen,
   onClose,
   onSelectGuide,
 }: QuickTourModalProps) {
+  const { locale } = useI18n();
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
 
   if (!isOpen) return null;
 
-  const currentSlide = TOUR_SLIDES[currentSlideIndex];
+  const slides = locale === "tr" ? TOUR_SLIDES_TR : TOUR_SLIDES_EN;
+  const currentSlide = slides[currentSlideIndex] || slides[0];
   const IconComponent = currentSlide.icon;
 
   const handleNext = () => {
-    if (currentSlideIndex < TOUR_SLIDES.length - 1) {
+    if (currentSlideIndex < slides.length - 1) {
       setCurrentSlideIndex(currentSlideIndex + 1);
     } else {
       onClose();
@@ -126,7 +192,7 @@ export default function QuickTourModal({
             <motion.div
               className="h-full bg-[var(--soft-gold)]"
               animate={{
-                width: `${((currentSlideIndex + 1) / TOUR_SLIDES.length) * 100}%`,
+                width: `${((currentSlideIndex + 1) / slides.length) * 100}%`,
               }}
               transition={{ duration: 0.3 }}
             />
@@ -135,7 +201,7 @@ export default function QuickTourModal({
           {/* Modal Header */}
           <div className="flex items-center justify-between px-4 sm:px-6 pt-3.5 sm:pt-5 pb-2 sm:pb-3">
             <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-[var(--soft-gold)] bg-[var(--soft-gold)]/10 px-2.5 sm:px-3 py-1 rounded-full border border-[var(--soft-gold)]/20">
-              Onboarding • Step {currentSlideIndex + 1} of {TOUR_SLIDES.length}
+              {locale === "tr" ? "Tanıtım" : "Onboarding"} • {locale === "tr" ? "Adım" : "Step"} {currentSlideIndex + 1} / {slides.length}
             </span>
             <button
               onClick={onClose}
@@ -182,7 +248,7 @@ export default function QuickTourModal({
                 <div className="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 flex items-start gap-3">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                   <p className="text-xs text-emerald-300 leading-relaxed">
-                    <strong>Pro Tip:</strong> {currentSlide.proTip}
+                    <strong>{locale === "tr" ? "Önemli İpucu:" : "Pro Tip:"}</strong> {currentSlide.proTip}
                   </p>
                 </div>
               </motion.div>
@@ -196,11 +262,12 @@ export default function QuickTourModal({
                 onClick={handlePrev}
                 disabled={currentSlideIndex === 0}
                 className="p-2 rounded-xl text-slate-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-white/5 transition-colors"
+                title={locale === "tr" ? "Önceki" : "Previous"}
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <div className="flex gap-1.5">
-                {TOUR_SLIDES.map((_, i) => (
+                {slides.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrentSlideIndex(i)}
@@ -223,14 +290,20 @@ export default function QuickTourModal({
                   }}
                   className="px-3 py-2 rounded-xl text-xs font-semibold text-[var(--soft-gold)] hover:bg-[var(--soft-gold)]/10 transition-colors flex items-center gap-1"
                 >
-                  Read Full Guide <ExternalLink className="w-3.5 h-3.5" />
+                  {locale === "tr" ? "Rehberi Oku" : "Read Full Guide"} <ExternalLink className="w-3.5 h-3.5" />
                 </button>
               )}
               <button
                 onClick={handleNext}
                 className="px-5 py-2 rounded-xl bg-[var(--soft-gold)] text-black font-bold text-xs hover:opacity-90 transition-opacity flex items-center gap-1 shadow-lg"
               >
-                {currentSlideIndex === TOUR_SLIDES.length - 1 ? "Finish Tour" : "Next Step"}
+                {currentSlideIndex === slides.length - 1
+                  ? locale === "tr"
+                    ? "Turu Tamamla"
+                    : "Finish Tour"
+                  : locale === "tr"
+                  ? "Sonraki Adım"
+                  : "Next Step"}
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>

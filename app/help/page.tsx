@@ -30,13 +30,16 @@ import {
   Layers,
   ArrowUpRight,
   Video,
-  ListOrdered
+  ListOrdered,
+  Globe
 } from "lucide-react";
 import {
+  getGuideArticles,
+  getGuideCategories,
   GUIDE_ARTICLES,
-  GUIDE_CATEGORIES,
   GuideArticle,
 } from "@/components/help/guideData";
+import { useI18n } from "@/lib/i18n";
 import AnnotatedScreenMockup from "@/components/help/AnnotatedScreenMockup";
 import GuideVideoModal from "@/components/help/GuideVideoModal";
 import QuickTourModal from "@/components/help/QuickTourModal";
@@ -55,8 +58,14 @@ const ICON_MAP: Record<string, React.ElementType> = {
 };
 
 export default function HelpAndGuidePage() {
+  const { locale, setLocale } = useI18n();
+  const isTr = locale === "tr";
+
+  const categories = useMemo(() => getGuideCategories(locale), [locale]);
+  const allArticles = useMemo(() => getGuideArticles(locale), [locale]);
+
   const [selectedArticleId, setSelectedArticleId] = useState<string>("getting-started");
-  const [selectedCategory, setSelectedCategory] = useState<string>("All Guides");
+  const [selectedCategory, setSelectedCategory] = useState<string>(categories[0]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isVideoModalOpen, setIsVideoModalOpen] = useState<boolean>(false);
   const [isTourModalOpen, setIsTourModalOpen] = useState<boolean>(false);
@@ -64,11 +73,25 @@ export default function HelpAndGuidePage() {
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [feedbackGiven, setFeedbackGiven] = useState<"helpful" | "not-helpful" | null>(null);
 
+  // Sync selectedCategory index when locale switches
+  const activeCategoryIndex = useMemo(() => {
+    const idx = categories.indexOf(selectedCategory as any);
+    return idx >= 0 ? idx : 0;
+  }, [categories, selectedCategory]);
+
   // Filter articles based on category and search query
   const filteredArticles = useMemo(() => {
-    return GUIDE_ARTICLES.filter((article) => {
+    return allArticles.filter((article) => {
       const matchesCategory =
-        selectedCategory === "All Guides" || article.category === selectedCategory;
+        activeCategoryIndex === 0 ||
+        article.category === GUIDE_ARTICLES[0].category && activeCategoryIndex === 1 ||
+        article.category === GUIDE_ARTICLES[1].category && activeCategoryIndex === 2 ||
+        article.category === GUIDE_ARTICLES[2].category && activeCategoryIndex === 3 ||
+        article.category === GUIDE_ARTICLES[3].category && activeCategoryIndex === 4 ||
+        article.category === GUIDE_ARTICLES[5].category && activeCategoryIndex === 5 ||
+        article.category === GUIDE_ARTICLES[6].category && activeCategoryIndex === 6 ||
+        article.category === GUIDE_ARTICLES[7].category && activeCategoryIndex === 7 ||
+        article.category === selectedCategory;
 
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
@@ -81,22 +104,22 @@ export default function HelpAndGuidePage() {
 
       return matchesCategory && matchesSearch;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [allArticles, activeCategoryIndex, selectedCategory, searchQuery]);
 
   // Active article object
   const activeArticle = useMemo(() => {
     return (
-      GUIDE_ARTICLES.find((a) => a.id === selectedArticleId) ||
+      allArticles.find((a) => a.id === selectedArticleId) ||
       filteredArticles[0] ||
-      GUIDE_ARTICLES[0]
+      allArticles[0]
     );
-  }, [selectedArticleId, filteredArticles]);
+  }, [allArticles, selectedArticleId, filteredArticles]);
 
   // Current index for next/previous navigation
-  const currentIndex = GUIDE_ARTICLES.findIndex((a) => a.id === activeArticle.id);
-  const prevArticle = currentIndex > 0 ? GUIDE_ARTICLES[currentIndex - 1] : null;
+  const currentIndex = allArticles.findIndex((a) => a.id === activeArticle.id);
+  const prevArticle = currentIndex > 0 ? allArticles[currentIndex - 1] : null;
   const nextArticle =
-    currentIndex < GUIDE_ARTICLES.length - 1 ? GUIDE_ARTICLES[currentIndex + 1] : null;
+    currentIndex < allArticles.length - 1 ? allArticles[currentIndex + 1] : null;
 
   const handleShare = () => {
     if (typeof window !== "undefined") {
@@ -123,32 +146,68 @@ export default function HelpAndGuidePage() {
               className="group flex items-center gap-1.5 sm:gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-white transition-colors"
             >
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              <span className="hidden xs:inline">Back to Dashboard</span>
-              <span className="xs:hidden">Back</span>
+              <span className="hidden xs:inline">
+                {isTr ? "Panoya Dön" : "Back to Dashboard"}
+              </span>
+              <span className="xs:hidden">{isTr ? "Geri" : "Back"}</span>
             </Link>
             <div className="h-4 w-[1px] bg-white/10 hidden sm:block" />
             <div className="flex items-center gap-2 sm:gap-3">
               <HotelPlusLogo variant="navbar" />
               <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-[var(--soft-gold)] bg-[var(--soft-gold)]/10 px-2 sm:px-2.5 py-0.5 rounded-full border border-[var(--soft-gold)]/20 hidden sm:inline-block">
-                Academy & User Guide
+                {isTr ? "Akademi & Kullanım Rehberi" : "Academy & User Guide"}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Language Switcher Switch */}
+            <div className="flex bg-[var(--glass-bg-accent)] p-0.5 rounded-xl border border-[var(--glass-border)] shadow-inner">
+              <button
+                onClick={() => {
+                  setLocale("en");
+                  setSelectedCategory("All Guides");
+                }}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                  locale === "en"
+                    ? "bg-[var(--soft-gold)] text-black shadow-md shadow-[var(--soft-gold-glow)]"
+                    : "text-[var(--text-muted)] hover:text-white"
+                }`}
+                title="Switch to English"
+              >
+                EN
+              </button>
+              <button
+                onClick={() => {
+                  setLocale("tr");
+                  setSelectedCategory("Tüm Rehberler");
+                }}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                  locale === "tr"
+                    ? "bg-[var(--soft-gold)] text-black shadow-md shadow-[var(--soft-gold-glow)]"
+                    : "text-[var(--text-muted)] hover:text-white"
+                }`}
+                title="Türkçe'ye geç"
+              >
+                TR
+              </button>
+            </div>
+
             <button
               onClick={() => setIsTourModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] border border-[var(--soft-gold)]/30 text-xs font-bold hover:bg-[var(--soft-gold)] hover:text-black transition-all shadow-sm"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>2-Min Tour</span>
+              <span>{isTr ? "2 Dk Tur" : "2-Min Tour"}</span>
             </button>
             <button
               onClick={() => setIsVideoModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Video ({activeArticle.video.duration})</span>
+              <span>
+                {isTr ? "Video" : "Video"} ({activeArticle.video.duration})
+              </span>
             </button>
           </div>
         </div>
@@ -159,19 +218,35 @@ export default function HelpAndGuidePage() {
         <div className="max-w-5xl mx-auto text-center space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 text-xs text-[var(--soft-gold)] font-medium">
             <HelpCircle className="w-3.5 h-3.5" />
-            <span>Official HotelPlus Knowledge Base & Operational Playbook</span>
+            <span>
+              {isTr
+                ? "Resmi HotelPlus Bilgi Bankası & Operasyonel Rehber"
+                : "Official HotelPlus Knowledge Base & Operational Playbook"}
+            </span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
-            Everything You Need to Master <br className="hidden sm:block" />
-            <span className="bg-gradient-to-r from-white via-[var(--soft-gold-bright)] to-[var(--soft-gold)] bg-clip-text text-transparent">
-              Hotel Market Intelligence
-            </span>
+            {isTr ? (
+              <>
+                Otel Piyasası İstihbaratında <br className="hidden sm:block" />
+                <span className="bg-gradient-to-r from-white via-[var(--soft-gold-bright)] to-[var(--soft-gold)] bg-clip-text text-transparent">
+                  Uzmanlaşmanız İçin İhtiyacınız Olan Her Şey
+                </span>
+              </>
+            ) : (
+              <>
+                Everything You Need to Master <br className="hidden sm:block" />
+                <span className="bg-gradient-to-r from-white via-[var(--soft-gold-bright)] to-[var(--soft-gold)] bg-clip-text text-transparent">
+                  Hotel Market Intelligence
+                </span>
+              </>
+            )}
           </h1>
 
           <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Explore step-by-step guides, interactive visual blueprints, video walkthroughs, and
-            forensic rate parity workflows for all platform pages and features.
+            {isTr
+              ? "Tüm platform sayfaları ve özellikleri için adım adım rehberleri, interaktif görsel taslakları, video anlatımlarını ve adli fiyat paritesi iş akışlarını keşfedin."
+              : "Explore step-by-step guides, interactive visual blueprints, video walkthroughs, and forensic rate parity workflows for all platform pages and features."}
           </p>
 
           {/* Search Bar */}
@@ -182,7 +257,11 @@ export default function HelpAndGuidePage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search features, pages, rate parity, 6-tab modal, calendar, or copilot..."
+                placeholder={
+                  isTr
+                    ? "Özellikleri, sayfaları, fiyat paritesini, 6-sekmeli modalı veya copilotu arayın..."
+                    : "Search features, pages, rate parity, 6-tab modal, calendar, or copilot..."
+                }
                 className="w-full bg-[#0a182f]/90 border border-[var(--glass-border)] rounded-2xl pl-12 pr-12 py-3.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[var(--soft-gold)] focus:ring-2 focus:ring-[var(--soft-gold)]/20 transition-all shadow-xl"
               />
               {searchQuery && (
@@ -190,13 +269,15 @@ export default function HelpAndGuidePage() {
                   onClick={() => setSearchQuery("")}
                   className="absolute right-4 text-xs text-slate-400 hover:text-white bg-white/10 px-2 py-0.5 rounded"
                 >
-                  Clear
+                  {isTr ? "Temizle" : "Clear"}
                 </button>
               )}
             </div>
             {searchQuery && (
               <p className="text-xs text-slate-400 text-left mt-2 pl-2">
-                Found {filteredArticles.length} guides matching &ldquo;{searchQuery}&rdquo;
+                {isTr
+                  ? `"${searchQuery}" ile eşleşen ${filteredArticles.length} rehber bulundu`
+                  : `Found ${filteredArticles.length} guides matching "${searchQuery}"`}
               </p>
             )}
           </div>
@@ -206,19 +287,22 @@ export default function HelpAndGuidePage() {
       {/* Category Filter Pills */}
       <div className="border-b border-[var(--glass-border)]/40 bg-[#050C18] px-6 py-3 sticky top-[73px] z-30 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar">
-          {GUIDE_CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                selectedCategory === cat
-                  ? "bg-[var(--soft-gold)] text-black shadow-md shadow-[var(--soft-gold)]/20"
-                  : "bg-white/5 text-slate-400 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+          {categories.map((cat, idx) => {
+            const isSelected = activeCategoryIndex === idx;
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  isSelected
+                    ? "bg-[var(--soft-gold)] text-black shadow-md shadow-[var(--soft-gold)]/20"
+                    : "bg-white/5 text-slate-400 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                {cat}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -232,7 +316,9 @@ export default function HelpAndGuidePage() {
                 onClick={() => setIsMobileDirectoryOpen(!isMobileDirectoryOpen)}
                 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white transition-colors lg:pointer-events-none"
               >
-                <span>Guide Directory ({filteredArticles.length})</span>
+                <span>
+                  {isTr ? "Rehber Dizini" : "Guide Directory"} ({filteredArticles.length})
+                </span>
                 <ChevronDown
                   className={`w-4 h-4 lg:hidden transition-transform ${
                     isMobileDirectoryOpen ? "rotate-180 text-[var(--soft-gold)]" : ""
@@ -250,51 +336,51 @@ export default function HelpAndGuidePage() {
               }`}
             >
               {filteredArticles.map((article) => {
-                const isSelected = activeArticle.id === article.id;
-                const ItemIcon = ICON_MAP[article.iconName] || BookOpen;
+                const isSelected = article.id === activeArticle.id;
+                const Icon = ICON_MAP[article.iconName] || BookOpen;
 
                 return (
                   <button
                     key={article.id}
                     onClick={() => {
                       setSelectedArticleId(article.id);
-                      setFeedbackGiven(null);
                       setIsMobileDirectoryOpen(false);
+                      setFeedbackGiven(null);
                     }}
-                    className={`w-full text-left p-3.5 rounded-2xl transition-all border group relative ${
+                    className={`w-full text-left p-3.5 rounded-2xl border transition-all group ${
                       isSelected
-                        ? "bg-gradient-to-r from-[#0d223f] to-[#09172c] border-[var(--soft-gold)]/40 shadow-lg"
-                        : "bg-white/[0.02] border-white/5 hover:bg-white/5 hover:border-white/10"
+                        ? "bg-gradient-to-r from-[var(--glass-bg)] to-[#0c1f38] border-[var(--soft-gold)]/50 shadow-lg shadow-[var(--soft-gold)]/5"
+                        : "bg-[#060D1A]/60 border-white/5 hover:border-white/15 hover:bg-white/[0.03]"
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       <div
-                        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                           isSelected
-                            ? "bg-[var(--soft-gold)] text-black"
-                            : "bg-white/5 text-slate-400 group-hover:text-white"
+                            ? "bg-[var(--soft-gold)] text-black font-bold"
+                            : "bg-white/5 text-slate-400 group-hover:text-white group-hover:bg-white/10"
                         }`}
                       >
-                        <ItemIcon className="w-4 h-4" />
+                        <Icon className="w-4 h-4" />
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1 mb-1">
-                          <span
-                            className={`text-[10px] font-bold uppercase tracking-wider ${
-                              isSelected ? "text-[var(--soft-gold)]" : "text-slate-500"
-                            }`}
-                          >
-                            {article.category}
-                          </span>
-                          <span className="text-[10px] text-slate-500 font-mono">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono text-[var(--soft-gold)]">
                             {article.readTime}
                           </span>
+                          {article.badge && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-white/5 text-slate-400 font-bold uppercase">
+                              {article.badge}
+                            </span>
+                          )}
                         </div>
 
                         <h4
-                          className={`text-sm font-bold truncate leading-snug ${
-                            isSelected ? "text-white" : "text-slate-300 group-hover:text-white"
+                          className={`text-xs font-bold leading-snug line-clamp-2 mt-0.5 ${
+                            isSelected
+                              ? "text-white"
+                              : "text-slate-300 group-hover:text-white"
                           }`}
                         >
                           {article.title}
@@ -319,16 +405,22 @@ export default function HelpAndGuidePage() {
 
               {filteredArticles.length === 0 && (
                 <div className="p-8 text-center bg-white/5 rounded-2xl border border-white/5">
-                  <p className="text-sm font-bold text-slate-300">No guides match your search</p>
-                  <p className="text-xs text-slate-500 mt-1">Try clearing your filters or search term</p>
+                  <p className="text-sm font-bold text-slate-300">
+                    {isTr ? "Aramanızla eşleşen rehber bulunamadı" : "No guides match your search"}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {isTr
+                      ? "Filtrelerinizi veya arama terimini temizlemeyi deneyin"
+                      : "Try clearing your filters or search term"}
+                  </p>
                   <button
                     onClick={() => {
                       setSearchQuery("");
-                      setSelectedCategory("All Guides");
+                      setSelectedCategory(categories[0]);
                     }}
                     className="mt-3 text-xs text-[var(--soft-gold)] font-bold hover:underline"
                   >
-                    Reset Search
+                    {isTr ? "Aramayı Sıfırla" : "Reset Search"}
                   </button>
                 </div>
               )}
@@ -360,17 +452,17 @@ export default function HelpAndGuidePage() {
                   <button
                     onClick={handleShare}
                     className="flex items-center gap-1 hover:text-white transition-colors"
-                    title="Copy Guide Link"
+                    title={isTr ? "Rehber Bağlantısını Kopyala" : "Copy Guide Link"}
                   >
                     {copiedLink ? (
                       <>
                         <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-400">Copied!</span>
+                        <span className="text-emerald-400">{isTr ? "Kopyalandı!" : "Copied!"}</span>
                       </>
                     ) : (
                       <>
                         <Share2 className="w-3.5 h-3.5" />
-                        <span>Share</span>
+                        <span>{isTr ? "Paylaş" : "Share"}</span>
                       </>
                     )}
                   </button>
@@ -426,7 +518,7 @@ export default function HelpAndGuidePage() {
                     <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-[11px] text-white font-mono bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg">
                       <span className="flex items-center gap-1.5 font-bold">
                         <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                        Video Walkthrough
+                        {isTr ? "Video Anlatım" : "Video Walkthrough"}
                       </span>
                       <span className="text-[var(--soft-gold)]">{activeArticle.video.duration}</span>
                     </div>
@@ -436,10 +528,10 @@ export default function HelpAndGuidePage() {
                   <div className="md:col-span-7 space-y-3">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
-                        Interactive Screencast + HD Video
+                        {isTr ? "İnteraktif Screencast + HD Video" : "Interactive Screencast + HD Video"}
                       </span>
                       <span className="text-xs font-mono text-slate-400">
-                        {activeArticle.video.chapters.length} Key Chapters
+                        {activeArticle.video.chapters.length} {isTr ? "Bölüm" : "Key Chapters"}
                       </span>
                     </div>
 
@@ -448,8 +540,9 @@ export default function HelpAndGuidePage() {
                         {activeArticle.video.title}
                       </h4>
                       <p className="text-xs text-slate-300 line-clamp-2 mt-1 leading-relaxed">
-                        Watch an animated walkthrough showing cursor navigation, live price
-                        scans, tab inspections, and practical actions for this feature.
+                        {isTr
+                          ? "İmleç hareketlerini, canlı fiyat taramalarını, sekme denetimlerini ve pratik adımları gösteren animasyonlu video anlatımı izleyin."
+                          : "Watch an animated walkthrough showing cursor navigation, live price scans, tab inspections, and practical actions for this feature."}
                       </p>
                     </div>
 
@@ -470,7 +563,7 @@ export default function HelpAndGuidePage() {
                           onClick={() => setIsVideoModalOpen(true)}
                           className="px-2 py-0.5 rounded-md bg-white/5 text-[10px] font-mono text-[var(--soft-gold)]"
                         >
-                          +{activeArticle.video.chapters.length - 3} more
+                          +{activeArticle.video.chapters.length - 3} {isTr ? "daha" : "more"}
                         </button>
                       )}
                     </div>
@@ -482,7 +575,10 @@ export default function HelpAndGuidePage() {
                         className="px-5 py-2.5 rounded-xl bg-[var(--soft-gold)] text-black text-xs font-bold hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-[var(--soft-gold)]/20"
                       >
                         <Play className="w-3.5 h-3.5 fill-current" />
-                        <span>Launch Video Screencast ({activeArticle.video.duration})</span>
+                        <span>
+                          {isTr ? "Video Anlatımı Başlat" : "Launch Video Screencast"} (
+                          {activeArticle.video.duration})
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -492,7 +588,7 @@ export default function HelpAndGuidePage() {
               {/* Key Objectives */}
               <div className="space-y-3 pt-2">
                 <h4 className="text-xs font-bold text-[var(--soft-gold)] uppercase tracking-wider flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" /> Learning Objectives
+                  <CheckCircle2 className="w-4 h-4" /> {isTr ? "Öğrenme Hedefleri" : "Learning Objectives"}
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {activeArticle.objectives.map((obj, i) => (
@@ -511,9 +607,12 @@ export default function HelpAndGuidePage() {
               <div className="space-y-3 pt-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-blue-400" /> Interactive Visual Blueprint
+                    <Layers className="w-4 h-4 text-blue-400" />{" "}
+                    {isTr ? "İnteraktif Görsel Taslak" : "Interactive Visual Blueprint"}
                   </h4>
-                  <span className="text-[11px] text-slate-400">Click any hotspot pin below</span>
+                  <span className="text-[11px] text-slate-400">
+                    {isTr ? "Aşağıdaki herhangi bir pin noktasına tıklayın" : "Click any hotspot pin below"}
+                  </span>
                 </div>
 
                 <AnnotatedScreenMockup
@@ -527,7 +626,8 @@ export default function HelpAndGuidePage() {
               {/* STEP-BY-STEP PROCEDURES */}
               <div className="space-y-4 pt-6 border-t border-white/10">
                 <h4 className="text-base font-bold text-white flex items-center gap-2">
-                  <ListOrdered className="w-5 h-5 text-[var(--soft-gold)]" /> Step-by-Step Instructions
+                  <ListOrdered className="w-5 h-5 text-[var(--soft-gold)]" />{" "}
+                  {isTr ? "Adım Adım Uygulama Talimatları" : "Step-by-Step Instructions"}
                 </h4>
 
                 <div className="space-y-4">
@@ -540,17 +640,16 @@ export default function HelpAndGuidePage() {
                         <span className="w-6 h-6 rounded-lg bg-[var(--soft-gold)]/20 text-[var(--soft-gold)] text-xs font-bold flex items-center justify-center">
                           {st.stepNumber}
                         </span>
-                        <h5 className="font-bold text-sm text-white">{st.title}</h5>
+                        <h5 className="text-sm font-bold text-white">{st.title}</h5>
                       </div>
+
                       <p className="text-xs text-slate-300 leading-relaxed pl-9">
                         {st.description}
                       </p>
+
                       {st.tip && (
-                        <div className="ml-9 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 flex items-start gap-2">
-                          <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-400" />
-                          <span>
-                            <strong>Pro Tip:</strong> {st.tip}
-                          </span>
+                        <div className="ml-9 p-2.5 rounded-xl bg-[var(--soft-gold)]/5 border border-[var(--soft-gold)]/20 text-[11px] text-[var(--soft-gold)]">
+                          <strong>{isTr ? "İpucu:" : "Pro Tip:"}</strong> {st.tip}
                         </div>
                       )}
                     </div>
@@ -558,14 +657,11 @@ export default function HelpAndGuidePage() {
                 </div>
               </div>
 
-              {/* DEEP DIVE ARCHITECTURE SECTION */}
+              {/* DEEP ARCHITECTURAL DIVE */}
               {activeArticle.deepDiveSections.map((sec, i) => (
-                <div
-                  key={i}
-                  className="p-6 rounded-2xl bg-[#071324] border border-[var(--glass-border)] space-y-3"
-                >
-                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[var(--soft-gold)]" /> {sec.heading}
+                <div key={i} className="p-6 rounded-2xl bg-[#071325]/80 border border-blue-500/20 space-y-3">
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-blue-400" /> {sec.heading}
                   </h4>
                   <p className="text-xs text-slate-300 leading-relaxed">{sec.content}</p>
                   {sec.highlights && (
@@ -585,7 +681,8 @@ export default function HelpAndGuidePage() {
               {activeArticle.faqs && activeArticle.faqs.length > 0 && (
                 <div className="space-y-3 pt-6 border-t border-white/10">
                   <h4 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <HelpCircle className="w-4 h-4 text-blue-400" /> Frequently Asked Questions
+                    <HelpCircle className="w-4 h-4 text-blue-400" />{" "}
+                    {isTr ? "Sıkça Sorulan Sorular" : "Frequently Asked Questions"}
                   </h4>
                   <div className="space-y-2.5">
                     {activeArticle.faqs.map((faq, i) => (
@@ -606,10 +703,13 @@ export default function HelpAndGuidePage() {
               {/* FEEDBACK & HELPFULNESS */}
               <div className="pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-400">Was this guide helpful?</span>
+                  <span className="text-xs text-slate-400">
+                    {isTr ? "Bu rehber faydalı oldu mu?" : "Was this guide helpful?"}
+                  </span>
                   {feedbackGiven ? (
                     <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5" /> Thank you for your feedback!
+                      <Check className="w-3.5 h-3.5" />{" "}
+                      {isTr ? "Geri bildiriminiz için teşekkürler!" : "Thank you for your feedback!"}
                     </span>
                   ) : (
                     <div className="flex items-center gap-2">
@@ -617,25 +717,27 @@ export default function HelpAndGuidePage() {
                         onClick={() => setFeedbackGiven("helpful")}
                         className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-emerald-500/20 hover:text-emerald-400 text-xs text-slate-400 transition-colors flex items-center gap-1.5"
                       >
-                        <ThumbsUp className="w-3.5 h-3.5" /> Yes
+                        <ThumbsUp className="w-3.5 h-3.5" /> {isTr ? "Evet" : "Yes"}
                       </button>
                       <button
                         onClick={() => setFeedbackGiven("not-helpful")}
                         className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-xs text-slate-400 transition-colors flex items-center gap-1.5"
                       >
-                        <ThumbsDown className="w-3.5 h-3.5" /> No
+                        <ThumbsDown className="w-3.5 h-3.5" /> {isTr ? "Hayır" : "No"}
                       </button>
                     </div>
                   )}
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-500">Need direct engineering support?</span>
+                  <span className="text-xs text-slate-500">
+                    {isTr ? "Doğrudan teknik desteğe mi ihtiyacınız var?" : "Need direct engineering support?"}
+                  </span>
                   <a
                     href="mailto:support@hotelplus.com.tr"
                     className="text-xs text-[var(--soft-gold)] font-bold hover:underline"
                   >
-                    Contact Support
+                    {isTr ? "Destek Ekibiyle İletişime Geçin" : "Contact Support"}
                   </a>
                 </div>
               </div>
@@ -653,7 +755,7 @@ export default function HelpAndGuidePage() {
                   >
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 mb-1">
                       <ChevronLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" />
-                      Previous Guide
+                      {isTr ? "Önceki Rehber" : "Previous Guide"}
                     </span>
                     <h5 className="text-xs font-bold text-white truncate">
                       {prevArticle.title}
@@ -671,7 +773,7 @@ export default function HelpAndGuidePage() {
                     className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/5 text-right transition-all group"
                   >
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-end gap-1 mb-1">
-                      Next Guide
+                      {isTr ? "Sonraki Rehber" : "Next Guide"}
                       <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                     </span>
                     <h5 className="text-xs font-bold text-white truncate">

@@ -56,6 +56,14 @@ export interface GuideArticle {
   }[];
 }
 
+import {
+  GUIDE_ARTICLES_TR,
+  GUIDE_CATEGORIES_TR,
+  CATEGORY_MAP_TR_TO_EN,
+} from "./guideDataTr";
+
+export { GUIDE_ARTICLES_TR, GUIDE_CATEGORIES_TR, CATEGORY_MAP_TR_TO_EN };
+
 export const GUIDE_CATEGORIES = [
   "All Guides",
   "Getting Started",
@@ -66,6 +74,14 @@ export const GUIDE_CATEGORIES = [
   "Alerts & Parity",
   "Reports & Admin",
 ] as const;
+
+export function getGuideArticles(locale: string = "en"): GuideArticle[] {
+  return locale === "tr" ? GUIDE_ARTICLES_TR : GUIDE_ARTICLES;
+}
+
+export function getGuideCategories(locale: string = "en"): readonly string[] {
+  return locale === "tr" ? GUIDE_CATEGORIES_TR : GUIDE_CATEGORIES;
+}
 
 export const GUIDE_ARTICLES: GuideArticle[] = [
   {

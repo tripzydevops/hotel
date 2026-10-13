@@ -26,6 +26,7 @@ import {
   Play
 } from "lucide-react";
 import { GuideHotspot } from "./guideData";
+import { useI18n } from "@/lib/i18n";
 
 interface AnnotatedScreenMockupProps {
   screenType: "dashboard-grid" | "hotel-modal" | "rate-calendar" | "sentiment-radar" | "copilot-panel" | "parity-monitor";
@@ -40,6 +41,9 @@ export default function AnnotatedScreenMockup({
   hotspots,
   onWatchVideo,
 }: AnnotatedScreenMockupProps) {
+  const { locale } = useI18n();
+  const isTr = locale === "tr";
+
   const [activePin, setActivePin] = useState<GuideHotspot | null>(hotspots[0] || null);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>("Offers");
@@ -55,7 +59,7 @@ export default function AnnotatedScreenMockup({
             <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-500/80 inline-block shadow-sm" />
           </div>
           <span className="text-[10px] sm:text-xs font-mono text-[var(--text-muted)] uppercase tracking-wider pl-2 border-l border-[var(--glass-border)]/40 truncate">
-            Blueprint • {screenType.replace("-", " ").toUpperCase()}
+            {isTr ? "İnteraktif Taslak" : "Blueprint"} • {screenType.replace("-", " ").toUpperCase()}
           </span>
         </div>
 
@@ -64,16 +68,18 @@ export default function AnnotatedScreenMockup({
             <button
               onClick={onWatchVideo}
               className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white border border-blue-500/30 text-[10px] sm:text-xs font-bold transition-all shadow-sm"
-              title="Watch animated video demo for this screen"
+              title={isTr ? "Bu ekran için animasyonlu video demosunu izle" : "Watch animated video demo for this screen"}
             >
               <Play className="w-3 h-3 fill-current" />
-              <span>Watch Video Demo</span>
+              <span>{isTr ? "Video Demosunu İzle" : "Watch Video Demo"}</span>
             </button>
           )}
           <span className="text-[10px] sm:text-xs text-[var(--soft-gold)] font-medium flex items-center gap-1.5 px-2.5 sm:px-3 py-1 bg-[var(--soft-gold)]/10 rounded-full border border-[var(--soft-gold)]/20">
             <Sparkles className="w-3 h-3 animate-pulse shrink-0" />
-            <span className="hidden xs:inline">Click pins (①, ②, ③) to inspect</span>
-            <span className="xs:hidden">Click pins</span>
+            <span className="hidden xs:inline">
+              {isTr ? "İncelemek için pinlere (①, ②, ③) tıklayın" : "Click pins (①, ②, ③) to inspect"}
+            </span>
+            <span className="xs:hidden">{isTr ? "Pinlere tıkla" : "Click pins"}</span>
           </span>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
@@ -168,7 +174,7 @@ export default function AnnotatedScreenMockup({
                     <div className="mt-3 flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-500/20 px-3 py-1.5 rounded-xl">
                       <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
                       <span>
-                        <strong>Action Tip:</strong> {activePin.actionRequired}
+                        <strong>{isTr ? "Eylem İpucu:" : "Action Tip:"}</strong> {activePin.actionRequired}
                       </span>
                     </div>
                   )}
@@ -182,7 +188,7 @@ export default function AnnotatedScreenMockup({
       {/* Pin Selector Strip */}
       <div className="mt-4 pt-4 border-t border-[var(--glass-border)]/40 flex flex-wrap items-center justify-between gap-3">
         <span className="text-xs text-[var(--text-muted)] font-medium">
-          Hotspots on this screen:
+          {isTr ? "Bu ekrandaki detay noktaları:" : "Hotspots on this screen:"}
         </span>
         <div className="flex flex-wrap gap-2">
           {hotspots.map((hs) => (

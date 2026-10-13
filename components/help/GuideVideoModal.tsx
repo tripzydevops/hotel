@@ -32,6 +32,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { GuideArticle, VideoChapter } from "./guideData";
+import { useI18n } from "@/lib/i18n";
 
 interface GuideVideoModalProps {
   isOpen: boolean;
@@ -61,6 +62,9 @@ export default function GuideVideoModal({
   onClose,
   article,
 }: GuideVideoModalProps) {
+  const { locale } = useI18n();
+  const isTr = locale === "tr";
+
   const totalDurationSec = useMemo(() => {
     return timeStringToSeconds(article.video.duration) || 135;
   }, [article.video.duration]);
@@ -184,6 +188,7 @@ export default function GuideVideoModal({
       const utterance = new SpeechSynthesisUtterance(
         `${currentChapter.title}. ${currentChapter.description}`
       );
+      utterance.lang = isTr ? "tr-TR" : "en-US";
       utterance.rate = Math.min(1.2, Math.max(0.9, playbackSpeed));
       utterance.pitch = 1.0;
       window.speechSynthesis.speak(utterance);
@@ -296,7 +301,7 @@ export default function GuideVideoModal({
                   </span>
                 </h3>
                 <p className="text-[11px] text-slate-400">
-                  Feature Walkthrough Video • {article.title}
+                  {isTr ? "Özellik Video Anlatımı" : "Feature Walkthrough Video"} • {article.title}
                 </p>
               </div>
             </div>
@@ -311,10 +316,12 @@ export default function GuideVideoModal({
                       ? "bg-[var(--soft-gold)] text-black font-bold shadow-sm"
                       : "text-slate-400 hover:text-white"
                   }`}
-                  title="Interactive animated software walkthrough"
+                  title={isTr ? "İnteraktif animasyonlu yazılım anlatımı" : "Interactive animated software walkthrough"}
                 >
                   <MonitorPlay className="w-3.5 h-3.5" />
-                  <span className="hidden xs:inline">Interactive Demo</span>
+                  <span className="hidden xs:inline">
+                    {isTr ? "İnteraktif Demo" : "Interactive Demo"}
+                  </span>
                 </button>
                 <button
                   onClick={() => setPlayerMode("stream")}
@@ -323,10 +330,12 @@ export default function GuideVideoModal({
                       ? "bg-blue-600 text-white font-bold shadow-sm"
                       : "text-slate-400 hover:text-white"
                   }`}
-                  title="Video stream tutorial"
+                  title={isTr ? "Video akışı eğitimi" : "Video stream tutorial"}
                 >
                   <Film className="w-3.5 h-3.5" />
-                  <span className="hidden xs:inline">Video Stream</span>
+                  <span className="hidden xs:inline">
+                    {isTr ? "Video Akışı" : "Video Stream"}
+                  </span>
                 </button>
               </div>
 
@@ -374,18 +383,21 @@ export default function GuideVideoModal({
                     </div>
                     <div>
                       <h4 className="text-lg font-bold text-white mb-1">
-                        High-Definition Video Stream
+                        {isTr ? "Yüksek Çözünürlüklü Video Akışı" : "High-Definition Video Stream"}
                       </h4>
                       <p className="text-xs text-slate-400">
-                        Watch this feature demonstrated in real-time. Switch to our interactive
-                        animated screencast to see cursor actions and tab walkthroughs.
+                        {isTr
+                          ? "Bu özelliğin gerçek zamanlı tanıtımını izleyin. İmleç hareketlerini ve sekme geçişlerini görmek için interaktif demoya geçin."
+                          : "Watch this feature demonstrated in real-time. Switch to our interactive animated screencast to see cursor actions and tab walkthroughs."}
                       </p>
                     </div>
                     <button
                       onClick={() => setPlayerMode("screencast")}
                       className="px-4 py-2 rounded-xl bg-[var(--soft-gold)] text-black font-bold text-xs hover:opacity-90 transition-opacity"
                     >
-                      Switch to Interactive Screencast Walkthrough
+                      {isTr
+                        ? "İnteraktif Demo Anlatımına Geç"
+                        : "Switch to Interactive Screencast Walkthrough"}
                     </button>
                   </div>
                 )}
@@ -438,7 +450,7 @@ export default function GuideVideoModal({
                         />
                       ))}
                       <span className="text-[10px] text-slate-300 font-mono ml-1.5 hidden sm:inline">
-                        Voiceover
+                        {isTr ? "Seslendirme" : "Voiceover"}
                       </span>
                     </div>
 
@@ -517,7 +529,7 @@ export default function GuideVideoModal({
 
                       {/* Cursor user badge */}
                       <span className="absolute left-4 top-4 bg-[var(--soft-gold)] text-black text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow">
-                        Presenter
+                        {isTr ? "Sunucu" : "Presenter"}
                       </span>
                     </div>
                   </motion.div>
@@ -621,7 +633,9 @@ export default function GuideVideoModal({
                       >
                         <Radio className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">
-                          Audio Voice {isNarrationVoiceActive ? "ON" : "OFF"}
+                          {isTr
+                            ? `Seslendirme ${isNarrationVoiceActive ? "AÇIK" : "KAPALI"}`
+                            : `Audio Voice ${isNarrationVoiceActive ? "ON" : "OFF"}`}
                         </span>
                       </button>
 
@@ -678,10 +692,11 @@ export default function GuideVideoModal({
               <div className="md:col-span-7 space-y-2">
                 <div className="flex items-center justify-between mb-2">
                   <h5 className="text-xs font-bold text-[var(--soft-gold)] uppercase tracking-wider flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5" /> Video Chapters (Click to Jump)
+                    <Clock className="w-3.5 h-3.5" />{" "}
+                    {isTr ? "Video Bölümleri (Atlamak İçin Tıklayın)" : "Video Chapters (Click to Jump)"}
                   </h5>
                   <span className="text-[11px] text-slate-400">
-                    {chaptersWithTime.length} Chapters
+                    {chaptersWithTime.length} {isTr ? "Bölüm" : "Chapters"}
                   </span>
                 </div>
 
@@ -716,7 +731,7 @@ export default function GuideVideoModal({
               {/* Key Takeaways (5 cols) */}
               <div className="md:col-span-5 space-y-2">
                 <h5 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Key Takeaways
+                  <CheckCircle2 className="w-3.5 h-3.5" /> {isTr ? "Temel Çıkarımlar" : "Key Takeaways"}
                 </h5>
                 <div className="space-y-2 bg-white/[0.02] p-3.5 rounded-2xl border border-white/5">
                   {article.video.keyTakeaways.map((point, idx) => (
