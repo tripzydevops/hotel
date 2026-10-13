@@ -346,13 +346,27 @@ export default function GuideVideoModal({
               // STREAM / EMBED MODE
               <div className="relative w-full h-full bg-black flex items-center justify-center">
                 {article.video.embedUrl ? (
-                  <iframe
-                    src={`${article.video.embedUrl}?autoplay=1&rel=0`}
-                    title={article.video.title}
-                    className="w-full h-full border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
+                  article.video.embedUrl.endsWith(".mp4") ||
+                  article.video.embedUrl.endsWith(".webm") ? (
+                    <video
+                      src={article.video.embedUrl}
+                      controls
+                      autoPlay
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <iframe
+                      src={
+                        article.video.embedUrl.includes("?")
+                          ? `${article.video.embedUrl}&autoplay=1`
+                          : `${article.video.embedUrl}?autoplay=1&rel=0`
+                      }
+                      title={article.video.title}
+                      className="w-full h-full border-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  )
                 ) : (
                   <div className="text-center p-8 max-w-md space-y-4">
                     <div className="w-16 h-16 rounded-3xl bg-blue-600/20 text-blue-400 flex items-center justify-center mx-auto border border-blue-500/30">
