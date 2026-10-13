@@ -395,29 +395,98 @@ export default function HelpAndGuidePage() {
                 </p>
               </div>
 
-              {/* Quick Action Ribbon */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/30 to-[#0b1f3b] border border-blue-500/20 flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-600/30 text-blue-400 flex items-center justify-center">
-                    <Video className="w-4 h-4" />
+              {/* RICH VIDEO MASTERCLASS SHOWCASE CARD */}
+              <div className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0c203f]/90 via-[#071325] to-[#040913] border border-blue-500/30 overflow-hidden shadow-2xl p-4 sm:p-6 group">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+                  {/* Thumbnail with Play Trigger */}
+                  <div
+                    onClick={() => setIsVideoModalOpen(true)}
+                    className="md:col-span-5 relative aspect-video rounded-2xl overflow-hidden cursor-pointer border border-white/10 group/thumb shadow-lg"
+                  >
+                    {activeArticle.video.previewPoster ? (
+                      <img
+                        src={activeArticle.video.previewPoster}
+                        alt={activeArticle.video.title}
+                        className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-500 brightness-75"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-[#08152a] flex items-center justify-center">
+                        <Video className="w-10 h-10 text-blue-400 opacity-50" />
+                      </div>
+                    )}
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex items-center justify-center">
+                      <div className="w-14 h-14 rounded-full bg-[var(--soft-gold)] text-black flex items-center justify-center shadow-[0_0_25px_rgba(212,175,55,0.6)] group-hover/thumb:scale-110 transition-transform">
+                        <Play className="w-6 h-6 fill-current ml-1" />
+                      </div>
+                    </div>
+
+                    <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-[11px] text-white font-mono bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg">
+                      <span className="flex items-center gap-1.5 font-bold">
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                        Video Walkthrough
+                      </span>
+                      <span className="text-[var(--soft-gold)]">{activeArticle.video.duration}</span>
+                    </div>
                   </div>
-                  <div>
-                    <h5 className="text-xs font-bold text-white">
-                      Video Masterclass Included
-                    </h5>
-                    <p className="text-[11px] text-slate-400">
-                      {activeArticle.video.title} ({activeArticle.video.duration})
-                    </p>
+
+                  {/* Video Details & Chapter Quick Jumps */}
+                  <div className="md:col-span-7 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
+                        Interactive Screencast + HD Video
+                      </span>
+                      <span className="text-xs font-mono text-slate-400">
+                        {activeArticle.video.chapters.length} Key Chapters
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="text-base sm:text-lg font-bold text-white group-hover:text-[var(--soft-gold)] transition-colors">
+                        {activeArticle.video.title}
+                      </h4>
+                      <p className="text-xs text-slate-300 line-clamp-2 mt-1 leading-relaxed">
+                        Watch an animated walkthrough showing cursor navigation, live price
+                        scans, tab inspections, and practical actions for this feature.
+                      </p>
+                    </div>
+
+                    {/* Chapter Tags */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {activeArticle.video.chapters.slice(0, 3).map((ch, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setIsVideoModalOpen(true)}
+                          className="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[10px] font-mono text-slate-300 border border-white/5 transition-colors flex items-center gap-1"
+                        >
+                          <span className="text-[var(--soft-gold)]">{ch.time}</span>
+                          <span className="truncate max-w-[120px]">{ch.title}</span>
+                        </button>
+                      ))}
+                      {activeArticle.video.chapters.length > 3 && (
+                        <button
+                          onClick={() => setIsVideoModalOpen(true)}
+                          className="px-2 py-0.5 rounded-md bg-white/5 text-[10px] font-mono text-[var(--soft-gold)]"
+                        >
+                          +{activeArticle.video.chapters.length - 3} more
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Launch Action */}
+                    <div className="pt-2">
+                      <button
+                        onClick={() => setIsVideoModalOpen(true)}
+                        className="px-5 py-2.5 rounded-xl bg-[var(--soft-gold)] text-black text-xs font-bold hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-[var(--soft-gold)]/20"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <span>Launch Video Screencast ({activeArticle.video.duration})</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                <button
-                  onClick={() => setIsVideoModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-[var(--soft-gold)] text-black text-xs font-bold hover:opacity-90 transition-opacity flex items-center gap-1.5 shadow-md"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>Play Video Tour</span>
-                </button>
               </div>
 
               {/* Key Objectives */}
@@ -451,6 +520,7 @@ export default function HelpAndGuidePage() {
                   screenType={activeArticle.screenMockup.screenType}
                   caption={activeArticle.screenMockup.caption}
                   hotspots={activeArticle.screenMockup.hotspots}
+                  onWatchVideo={() => setIsVideoModalOpen(true)}
                 />
               </div>
 

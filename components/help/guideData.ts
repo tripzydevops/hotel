@@ -82,6 +82,8 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     video: {
       title: "HotelPlus in 2 Minutes: Architecture & Quick Setup",
       duration: "02:15",
+      embedUrl: "https://www.youtube-nocookie.com/embed/ScMzIvxBSi4",
+      previewPoster: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
       chapters: [
         { time: "00:00", title: "Introduction & Architecture", description: "Why rate parity and real-time OTA monitoring matter." },
         { time: "00:45", title: "Adding Target Property", description: "Designating your hotel with Google Place ID and direct website." },
@@ -200,6 +202,8 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     video: {
       title: "Mastering the Live Dashboard & Rate Cards",
       duration: "03:10",
+      embedUrl: "https://www.youtube-nocookie.com/embed/L_LUpnjgPso",
+      previewPoster: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80",
       chapters: [
         { time: "00:00", title: "Dashboard Overview & KPI Bar", description: "Understanding Market Pulse, Target Price, and Undercut Counters." },
         { time: "01:05", title: "Hotel Tile Anatomy", description: "Reading price trends, OTA badges, and star ratings." },
@@ -298,6 +302,8 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     video: {
       title: "Mastering the 6-Tab Hotel Inspection Modal",
       duration: "04:00",
+      embedUrl: "https://www.youtube-nocookie.com/embed/1la40l03574",
+      previewPoster: "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1200&q=80",
       chapters: [
         { time: "00:00", title: "Modal Overview", description: "Opening the modal and navigating the 6 tabs." },
         { time: "00:50", title: "Tab 1: Overview & Location", description: "GPS coordinates, phone, check-in rules, star rating." },
@@ -395,6 +401,8 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     video: {
       title: "Mastering the 30-Day Rate Calendar",
       duration: "02:45",
+      embedUrl: "https://www.youtube-nocookie.com/embed/V-_O7nl0Ii0",
+      previewPoster: "https://images.unsplash.com/photo-1506059612708-99d6c258160e?auto=format&fit=crop&w=1200&q=80",
       chapters: [
         { time: "00:00", title: "Calendar Interface Tour", description: "Understanding the date grid and price heatmaps." },
         { time: "00:45", title: "Target vs Market Spread", description: "Visualizing forward pricing differences." },
@@ -480,6 +488,8 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     video: {
       title: "Discovering Hidden Rivals with Semantic AI",
       duration: "02:30",
+      embedUrl: "https://www.youtube-nocookie.com/embed/5qap5aO4i9A",
+      previewPoster: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80",
       chapters: [
         { time: "00:00", title: "Why GPS Distance Fails", description: "A boutique luxury hotel does not compete with a budget motel next door." },
         { time: "00:50", title: "How Vector Discovery Works", description: "Amenity matching, guest lifestyle, and pricing tier." },
@@ -564,6 +574,8 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     video: {
       title: "Enforcing Rate Parity & Winning OTA Disputes",
       duration: "03:15",
+      embedUrl: "https://www.youtube-nocookie.com/embed/9bZkp7q19f0",
+      previewPoster: "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=1200&q=80",
       chapters: [
         { time: "00:00", title: "The High Cost of Parity Breaches", description: "Why direct bookings evaporate when OTAs undercut." },
         { time: "00:45", title: "Configuring Parity Thresholds", description: "Setting percentage and dollar deviation limits." },
@@ -649,6 +661,8 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     video: {
       title: "Conversational Revenue Strategy with AI Copilot",
       duration: "02:50",
+      embedUrl: "https://www.youtube-nocookie.com/embed/kJQP7kiw5Fk",
+      previewPoster: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80",
       chapters: [
         { time: "00:00", title: "Launching Copilot", description: "Opening the floating AI panel from any page." },
         { time: "00:40", title: "Asking Tactical Questions", description: "Querying market shifts in plain English." },
@@ -735,6 +749,8 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     video: {
       title: "Generating Executive Parity & Pricing Reports",
       duration: "02:10",
+      embedUrl: "https://www.youtube-nocookie.com/embed/ScMzIvxBSi4",
+      previewPoster: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
       chapters: [
         { time: "00:00", title: "Reports Overview", description: "Available templates and export formats." },
         { time: "00:45", title: "Customizing Report Parameters", description: "Date filters, competitor selection, metrics." },

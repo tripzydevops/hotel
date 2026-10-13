@@ -22,7 +22,8 @@ import {
   MessageSquare,
   Flame,
   ArrowUpRight,
-  Layers
+  Layers,
+  Play
 } from "lucide-react";
 import { GuideHotspot } from "./guideData";
 
@@ -30,12 +31,14 @@ interface AnnotatedScreenMockupProps {
   screenType: "dashboard-grid" | "hotel-modal" | "rate-calendar" | "sentiment-radar" | "copilot-panel" | "parity-monitor";
   caption?: string;
   hotspots: GuideHotspot[];
+  onWatchVideo?: () => void;
 }
 
 export default function AnnotatedScreenMockup({
   screenType,
   caption,
   hotspots,
+  onWatchVideo,
 }: AnnotatedScreenMockupProps) {
   const [activePin, setActivePin] = useState<GuideHotspot | null>(hotspots[0] || null);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
@@ -57,6 +60,16 @@ export default function AnnotatedScreenMockup({
         </div>
 
         <div className="flex items-center gap-2">
+          {onWatchVideo && (
+            <button
+              onClick={onWatchVideo}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white border border-blue-500/30 text-[10px] sm:text-xs font-bold transition-all shadow-sm"
+              title="Watch animated video demo for this screen"
+            >
+              <Play className="w-3 h-3 fill-current" />
+              <span>Watch Video Demo</span>
+            </button>
+          )}
           <span className="text-[10px] sm:text-xs text-[var(--soft-gold)] font-medium flex items-center gap-1.5 px-2.5 sm:px-3 py-1 bg-[var(--soft-gold)]/10 rounded-full border border-[var(--soft-gold)]/20">
             <Sparkles className="w-3 h-3 animate-pulse shrink-0" />
             <span className="hidden xs:inline">Click pins (①, ②, ③) to inspect</span>
