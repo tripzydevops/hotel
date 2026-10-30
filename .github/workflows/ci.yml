@@ -34,10 +34,22 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-dummy-anon-key"
 
       - name: Install Playwright Browsers & Dependencies
-        run: npx --yes playwright install --with-deps chromium
+        run: |
+          if ! OUTPUT=$(./node_modules/.bin/playwright install chromium --with-deps 2>&1); then
+            echo "::error title=Playwright Install Failed::$(echo "$OUTPUT" | tr '\n' ' ' | head -c 500)"
+            echo "$OUTPUT"
+            exit 1
+          fi
+          echo "$OUTPUT"
 
       - name: Run Playwright E2E Tests
-        run: npm run test:e2e
+        run: |
+          if ! OUTPUT=$(npm run test:e2e 2>&1); then
+            echo "::error title=Playwright Tests Failed::$(echo "$OUTPUT" | tr '\n' ' ' | head -c 500)"
+            echo "$OUTPUT"
+            exit 1
+          fi
+          echo "$OUTPUT"
         env:
           CI: true
           SESSION_SECRET: "ci-dummy-session-secret-at-least-32-chars-long"
