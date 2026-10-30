@@ -349,6 +349,9 @@ async def add_hotel_to_account_logic(
             place_id = hotel_data.get("place_id")
             serp_api_id = hotel_data.get("serp_api_id")
             property_token = hotel_data.get("property_token")
+            latitude = hotel_data.get("latitude")
+            longitude = hotel_data.get("longitude")
+            stars = hotel_data.get("stars")
 
             # Directory Lookup (Phase 1.1)
             # Try matching by serp_api_id first if available from URL extraction
@@ -393,7 +396,10 @@ async def add_hotel_to_account_logic(
                     cid = cid or d.get("cid")
                     place_id = place_id or d.get("place_id")
                     serp_api_id = serp_api_id or d.get("serp_api_id")
-                    property_token = property_token or d.get("property_token")
+                    property_token = property_token or d.get("property_token") or serp_api_id
+                    latitude = latitude or d.get("latitude")
+                    longitude = longitude or d.get("longitude")
+                    stars = stars or d.get("stars")
             elif dir_res.data:
                 d = dir_res.data[0]
                 rating = rating or d.get("rating")
@@ -407,14 +413,36 @@ async def add_hotel_to_account_logic(
                 cid = cid or d.get("cid")
                 place_id = place_id or d.get("place_id")
                 serp_api_id = serp_api_id or d.get("serp_api_id")
-                property_token = property_token or d.get("property_token")
+                property_token = property_token or d.get("property_token") or serp_api_id
+                latitude = latitude or d.get("latitude")
+                longitude = longitude or d.get("longitude")
+                stars = stars or d.get("stars")
+
+            # Autonomous metadata & coordinate resolution if missing
+            if not latitude or not longitude or not property_token:
+                try:
+                    from backend.utils.geocoding import resolve_hotel_metadata
+
+                    meta = await resolve_hotel_metadata(name, location)
+                    latitude = latitude or meta.get("latitude")
+                    longitude = longitude or meta.get("longitude")
+                    place_id = place_id or meta.get("place_id")
+                    address = address or meta.get("address")
+                    property_token = property_token or meta.get("property_token")
+                    serp_api_id = serp_api_id or meta.get("serp_api_id")
+                except Exception as meta_e:
+                    logger.warning(f"Could not auto-resolve metadata for {name}: {meta_e}")
+
+            if not property_token and not serp_api_id:
+                clean_loc_str = (location or "").lower().strip()
+                property_token = f"custom_{hashlib.sha256(f'{name.lower().strip()}|{clean_loc_str}'.encode()).hexdigest()[:20]}"
 
             new_hotel_data = {
                 "name": name,
                 "location": location,
                 "search_name": normalize_search_string(f"{name} {location or ''}"),
                 "serp_api_id": serp_api_id,
-                "property_token": property_token,
+                "property_token": property_token or serp_api_id,
                 "rating": rating,
                 "review_count": review_count,
                 "image_url": image_url,
@@ -427,9 +455,9 @@ async def add_hotel_to_account_logic(
                 "place_id": place_id,
                 "sentiment_breakdown": hotel_data.get("sentiment_breakdown"),
                 "reviews": hotel_data.get("reviews"),
-                "latitude": hotel_data.get("latitude"),
-                "longitude": hotel_data.get("longitude"),
-                "stars": hotel_data.get("stars"),
+                "latitude": latitude,
+                "longitude": longitude,
+                "stars": stars,
             }
 
             insert_res = target_db.table("hotels").insert(new_hotel_data).execute()
@@ -439,6 +467,18 @@ async def add_hotel_to_account_logic(
                 )
             existing_hotel = insert_res.data[0]
             hotel_id = existing_hotel["id"]
+
+            # Autonomous Cold Start Solver: trigger background regional grid discovery
+            try:
+                import asyncio
+                from backend.services.geo_grid_service import discover_and_seed_regional_grid
+
+                asyncio.create_task(discover_and_seed_regional_grid(str(hotel_id), radius_km=15.0))
+                logger.info(
+                    f"[HotelService] Queued background geo-grid discovery for newly created hotel {hotel_id} ({name})"
+                )
+            except Exception as task_e:
+                logger.warning(f"[HotelService] Background discovery launch warning: {task_e}")
 
         # 2. Add/Verify Association in user_hotels
         # Handle Target Toggle (User Specific)
@@ -552,13 +592,16 @@ async def add_hotel_to_account_logic(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def get_hotel_logic(hotel_id: UUID, user_id: UUID, db: Client) -> Dict[str, Any]:
+async def get_hotel_logic(
+    hotel_id: UUID, user_id: UUID, db: Client, admin_db: Optional[Client] = None
+) -> Dict[str, Any]:
     """
     Retrieves a hotel with user-specific overrides from user_hotels.
     """
+    target_db = admin_db or db
     # Fetch merged data: Global hotel + User settings
     res = (
-        db.table("user_hotels")
+        target_db.table("user_hotels")
         .select("*, hotels(*)")
         .eq("user_id", str(user_id))
         .eq("hotel_id", str(hotel_id))
@@ -578,6 +621,7 @@ async def get_hotel_logic(hotel_id: UUID, user_id: UUID, db: Client) -> Dict[str
 
     # Inject user overrides
     hotel["is_target_hotel"] = mapping.get("is_target", False)
+    hotel["is_target"] = mapping.get("is_target", False)
     hotel["pricing_dna"] = mapping.get("pricing_dna")
     hotel["preferred_currency"] = mapping.get("preferred_currency", "USD")
     hotel["fixed_check_in"] = mapping.get("fixed_check_in")
@@ -588,15 +632,21 @@ async def get_hotel_logic(hotel_id: UUID, user_id: UUID, db: Client) -> Dict[str
 
 
 async def update_hotel_logic(
-    hotel_id: UUID, user_id: UUID, update_data: Dict[str, Any], db: Client
+    hotel_id: UUID,
+    user_id: UUID,
+    update_data: Dict[str, Any],
+    db: Client,
+    admin_db: Optional[Client] = None,
 ) -> Dict[str, Any]:
     """
     Updates user-specific hotel settings in user_hotels mappings.
     If 'is_target_hotel' is set, it clears other targets for this user.
     """
+    target_db = admin_db or db
+
     # 1. Verify mapping exists
     mapping_res = (
-        db.table("user_hotels")
+        target_db.table("user_hotels")
         .select("id")
         .eq("user_id", str(user_id))
         .eq("hotel_id", str(hotel_id))
@@ -610,7 +660,7 @@ async def update_hotel_logic(
 
     # 2. Handle Target Toggle (User Specific)
     if update_data.get("is_target_hotel") is True:
-        db.table("user_hotels").update({"is_target": False}).eq(
+        target_db.table("user_hotels").update({"is_target": False}).eq(
             "user_id", str(user_id)
         ).execute()
         update_data["is_target"] = True
@@ -631,7 +681,7 @@ async def update_hotel_logic(
     db_update = {k: v for k, v in update_data.items() if k in supported_fields}
 
     if db_update:
-        db.table("user_hotels").update(db_update).eq("id", assoc_id).execute()
+        target_db.table("user_hotels").update(db_update).eq("id", assoc_id).execute()
 
     # 4. Return the fully re-hydrated hotel object
-    return await get_hotel_logic(hotel_id, user_id, db)
+    return await get_hotel_logic(hotel_id, user_id, db, admin_db=target_db)

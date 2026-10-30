@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from fastapi import Depends
 from yarl import URL  # Required for PostgREST base_url joinpath compatibility
 
+from postgrest._sync.request_builder import SyncRequestBuilder
 from supabase import Client, ClientOptions, create_client
 
 # Re-export for type hinting across the app
@@ -64,9 +65,22 @@ def _create_fresh_client(
             insforge.postgrest.auth(jwt)
 
         # Configure base URL for database operations (InsForge compatibility override)
-        # PostgREST client requires a yarl.URL object for joinpath support.
+        # On InsForge: tables are at /api/database/records and RPCs at /api/database/rpc
         clean_base = url.rstrip("/")
-        insforge.postgrest.base_url = URL(f"{clean_base}/api/database/records")
+        insforge.postgrest.base_url = URL(f"{clean_base}/api/database")
+
+        def _insforge_from(table: str) -> SyncRequestBuilder:
+            return SyncRequestBuilder(
+                insforge.postgrest.session,
+                insforge.postgrest.base_url.joinpath("records", table),
+                insforge.postgrest.headers,
+                insforge.postgrest.basic_auth,
+            )
+
+        insforge.postgrest.from_ = _insforge_from
+        insforge.postgrest.table = _insforge_from
+        insforge.from_ = _insforge_from
+        insforge.table = _insforge_from
 
         return insforge
     except Exception as e:

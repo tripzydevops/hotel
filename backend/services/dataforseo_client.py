@@ -23,6 +23,9 @@ class DataForSEOClient:
     """
 
     def __init__(self):
+        from backend.utils.db import load_env_standard
+        load_env_standard()
+
         self.login = os.getenv("DATAFORSEO_LOGIN")
         self.password = os.getenv("DATAFORSEO_PASSWORD")
         self.base_url = "https://api.dataforseo.com/v3"

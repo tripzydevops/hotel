@@ -16,8 +16,10 @@ import {
   Layers,
   Globe,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Radar,
 } from "lucide-react";
+import Link from "next/link";
 import FallbackImage from "@/components/ui/FallbackImage";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatCurrency, parsePrice, normalizeVendor } from "@/lib/utils";
@@ -197,6 +199,30 @@ export default function HotelTile(props: HotelTileProps) {
           </div>
         </div>
 
+        {/* Cold Start / No Token Alert on Target Hotel */}
+        {variant === "target" && displayPriceValue === 0 && (
+          <div className="mb-4 mt-1 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-2 shadow-inner">
+            <div className="flex items-center gap-2 min-w-0">
+              <Radar className="w-4 h-4 text-emerald-400 animate-pulse shrink-0" />
+              <div className="flex flex-col min-w-0">
+                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider truncate">
+                  Cold Start Region
+                </span>
+                <span className="text-[8px] text-[var(--text-muted)] font-medium truncate">
+                  Deploy GPS radar sweep for competitors
+                </span>
+              </div>
+            </div>
+            <Link
+              href={`/analysis/discovery?hotel_id=${id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="px-2.5 py-1 rounded bg-emerald-500 text-[var(--deep-ocean)] text-[9px] font-black uppercase tracking-wider hover:bg-emerald-400 transition-colors shrink-0"
+            >
+              Grid Scan
+            </Link>
+          </div>
+        )}
+
         {/* Market Presence Section (Multiple OTAs) */}
         {allOffers.length > 0 && (
           <div className="mb-4 pt-4 border-t border-[var(--glass-border)]">
@@ -309,6 +335,17 @@ export default function HotelTile(props: HotelTileProps) {
           </button>
           
           <div className="flex items-center gap-1.5">
+            {variant === "target" && (
+              <Link
+                href={`/analysis/discovery?hotel_id=${id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="p-2.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all"
+                title="Launch Geo-Grid Discovery & Competitor Radar"
+              >
+                <Radar className="w-3.5 h-3.5" />
+              </Link>
+            )}
+
             {variant === "competitor" && onSetTarget && (
               <button
                 onClick={(e) => {

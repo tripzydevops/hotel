@@ -6,7 +6,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.models.schemas import HotelCreate, HotelUpdate, LocationRegistry
-from backend.services.auth_service import get_current_active_user, get_supabase_rls
+from backend.services.auth_service import (
+    get_current_active_user,
+    get_supabase_rls,
+    get_supabase_admin,
+)
 from backend.services.hotel_service import (
     add_hotel_to_account_logic,
     search_hotel_directory_logic,
@@ -151,13 +155,18 @@ async def update_hotel(
     hotel_id: UUID,
     hotel: HotelUpdate,
     db: Client = Depends(get_supabase_rls),
+    admin_db: Client = Depends(get_supabase_admin),
     current_user=Depends(get_current_active_user),
 ):
     # AGENT_FIX: Use unified service logic for multi-tenant updates
     # This ensures settings like 'is_target_hotel' or 'pricing_dna' are
     # saved to the user_hotels table, not the global shared hotels record.
     return await update_hotel_logic(
-        hotel_id, current_user.id, hotel.model_dump(exclude_unset=True), db
+        hotel_id,
+        current_user.id,
+        hotel.model_dump(exclude_unset=True),
+        db,
+        admin_db=admin_db,
     )
 
 
@@ -165,13 +174,15 @@ async def update_hotel(
 async def delete_hotel(
     hotel_id: UUID,
     db: Client = Depends(get_supabase_rls),
+    admin_db: Client = Depends(get_supabase_admin),
     current_user=Depends(get_current_active_user),
 ):
     # AGENT_FIX: Soft-delete for unique user association
     # We remove the mapping from user_hotels but keep the master hotel record intact.
     # The 'deleted_at' on the master record is only used by admins or if it was the last user.
+    target_db = admin_db or db
     res = (
-        db.table("user_hotels")
+        target_db.table("user_hotels")
         .delete()
         .eq("user_id", str(current_user.id))
         .eq("hotel_id", str(hotel_id))

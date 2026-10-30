@@ -130,6 +130,46 @@ async def discover_ghost_competitors_semantic(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/v1/discovery/{hotel_id}/grid-scan", response_model=Dict[str, Any])
+async def trigger_geo_grid_discovery(
+    hotel_id: str,
+    radius_km: float = 10.0,
+    points_count: int = 5,
+    current_user=Depends(get_current_active_user),
+    db: Client = Depends(get_supabase_rls),
+):
+    """
+    Autonomous Geo-Grid Competitor Discovery (DataForSEO + pgvector + Gemini).
+    Deploys a GPS grid search around the hotel, ingests new properties into
+    hotel_directory, generates Gemini embeddings, and returns newly discovered rivals.
+    """
+    try:
+        if not db:
+            raise HTTPException(status_code=503, detail="Database service unavailable")
+
+        from backend.services.analysis_service import check_hotel_ownership
+        from backend.services.geo_grid_service import discover_and_seed_regional_grid
+
+        is_owner = await check_hotel_ownership(db, str(current_user.id), hotel_id)
+        if not is_owner:
+            raise HTTPException(
+                status_code=403, detail="Unauthorized: You do not own this hotel"
+            )
+
+        result = await discover_and_seed_regional_grid(
+            hotel_id=hotel_id,
+            radius_km=radius_km,
+            points_count=points_count,
+            db=db,
+        )
+        return JSONResponse(content=jsonable_encoder(result))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[GridScanAPI] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 # AGENT_LOGIC: Dual Route Registration

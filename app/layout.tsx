@@ -5,7 +5,7 @@
  * metadata, and context providers (I18n, Theme, Query, Toast, Modal).
  * Sets the foundational structure for all route groups.
  */
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Montserrat, Inter } from "next/font/google";
 import "./globals.css";
 import { I18nProvider } from "@/lib/i18n";
@@ -27,6 +27,17 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
 });
+
+/* ===== MOBILE VIEWPORT CONFIGURATION (Next.js 15) ===== */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#050B14" },
+    { media: "(prefers-color-scheme: light)", color: "#0A1629" },
+  ],
+};
 
 /* ===== HOTEL RATE MONITOR - DESIGN SYSTEM ===== */
 export const metadata: Metadata = {
@@ -90,8 +101,8 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en">
-      <body className={`${montserrat.variable} ${inter.variable} antialiased`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${montserrat.variable} ${inter.variable} antialiased`} suppressHydrationWarning>
         {/* Inject JSON-LD to make the site fully understandable to AI Search indexers */}
         <script
           type="application/ld+json"

@@ -173,6 +173,23 @@ graph LR
 | Hosting | Vercel (frontend) | — | Production deployments |
 | Backend Hosting | InsForge (BaaS) | — | DB, Auth, Storage, Functions |
 
+### 2.1 Data Platform: Single Source of Truth
+
+> [!IMPORTANT]
+> **Data Platform Canonical Standard**:
+> 1. **Production Engine**: The authoritative production database and authentication backend is **InsForge**, an open-source BaaS running PostgreSQL with PostgREST, `pgvector`, and GoTrue authentication.
+> 2. **Environment Variable Parity**: For full compatibility with Vercel and PostgREST tooling, credentials are interchangeable:
+>    - URL: `NEXT_PUBLIC_INSFORGE_URL` or `NEXT_PUBLIC_SUPABASE_URL`
+>    - Anonymous Key: `NEXT_PUBLIC_INSFORGE_ANON_KEY` or `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+>    - Service Role Key: `INSFORGE_SERVICE_ROLE_KEY` or `SUPABASE_SERVICE_ROLE_KEY`
+> 3. **Client Isolation Standard**:
+>    - **Browser / Client Components** (`"use client"`): Standardized on `@insforge/sdk` via `lib/insforge.ts` (manages client auth state and uses same-origin proxying).
+>    - **Edge / Server Components / Middleware**: Standardized on `@supabase/ssr` via `lib/supabase-server.ts` (reads HttpOnly session cookies to enforce zero client-bypass security and eliminate IDOR vulnerabilities).
+>    - **Python Backend Services**: Standardized on `backend/utils/db.py` using singleton connection pooling (`get_insforge_db()`) to connect directly to the PostgREST API with admin/service-role isolation.
+> 4. **Tenant Isolation & RLS Boundary**:
+>    - Multi-tenant data segregation is strictly enforced via PostgreSQL Row-Level Security (`auth.uid() = user_id`).
+>    - Service-role bypass is strictly restricted to scheduled background workers (`scheduler.py`, `monitor_service.py`) and is NEVER exposed to the frontend browser bundle.
+
 ---
 
 ## 3. Directory Structure

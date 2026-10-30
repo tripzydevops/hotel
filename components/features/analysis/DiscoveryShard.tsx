@@ -8,6 +8,9 @@ import {
   ShieldCheck,
   ExternalLink,
   RefreshCw,
+  Globe,
+  Compass,
+  CheckCircle2,
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,12 +27,17 @@ interface DiscoveryRival {
   distance?: number;
   image_url?: string;
   amenities?: string[];
+  serp_api_id?: string;
+  property_token?: string;
 }
 
 export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
   const { t } = useI18n();
   const [rivals, setRivals] = useState<DiscoveryRival[]>([]);
   const [loading, setLoading] = useState(false);
+  const [gridScanning, setGridScanning] = useState(false);
+  const [radiusKm, setRadiusKm] = useState<number>(10);
+  const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const discover = useCallback(async () => {
@@ -52,6 +60,36 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
       setLoading(false);
     }
   }, [hotelId]);
+
+  const launchGridRadar = async (overrideRadius?: number) => {
+    if (!hotelId || gridScanning) return;
+    const targetRadius = overrideRadius ?? radiusKm;
+    setGridScanning(true);
+    setError(null);
+    setScanMessage(`Deploying 5-point GPS Grid (${targetRadius}km)... Scraping Google Hotels & vectorizing...`);
+    try {
+      const res = await api.triggerGeoGridDiscovery(hotelId, targetRadius, 5);
+      if (res?.rivals && res.rivals.length > 0) {
+        const normalised = res.rivals.map((r: any) => ({
+          ...r,
+          similarity: r.similarity_score ?? r.similarity ?? 0,
+        }));
+        setRivals(normalised);
+        setScanMessage(
+          `Successfully mapped ${res.newly_seeded_count ?? res.rivals.length} regional hotels into database!`
+        );
+      } else {
+        setScanMessage(res?.message || "No additional properties found in this radius.");
+        // Still attempt regular discover refresh
+        await discover();
+      }
+    } catch (err: any) {
+      console.error("Grid radar failed:", err);
+      setError(err?.message || "Radar grid scan failed. Please check provider connection.");
+    } finally {
+      setGridScanning(false);
+    }
+  };
 
   useEffect(() => {
     if (hotelId) {
@@ -76,7 +114,7 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
         rival.location,
         false, // isTarget
         "TRY", // Default currency
-        undefined, // serpApiId
+        rival.serp_api_id || rival.property_token, // Google ID / SerpApi ID for 4-hour scans
       );
 
       // 3. Update local state to show "Tracked"
@@ -94,22 +132,22 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
       <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--soft-gold)]/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none" />
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-8 relative z-10">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 sm:mb-8 relative z-10">
+        <div className="flex items-center gap-3 sm:gap-4">
           <div
-            className={`p-3 rounded-2xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] ${loading ? "ultra-pulse" : ""}`}
+            className={`p-2.5 sm:p-3 rounded-2xl bg-[var(--soft-gold)]/10 text-[var(--soft-gold)] shrink-0 ${loading ? "ultra-pulse" : ""}`}
           >
             {loading ? (
-              <Radar className="w-6 h-6" />
+              <Radar className="w-5 h-5 sm:w-6 sm:h-6" />
             ) : (
-              <Zap className="w-6 h-6" />
+              <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
             )}
           </div>
           <div>
-            <h2 className="text-xl font-black text-[var(--overlay-text)] tracking-tight">
+            <h2 className="text-lg sm:text-xl font-black text-[var(--overlay-text)] tracking-tight">
               Discovery Engine
             </h2>
-            <p className="text-[10px] font-bold text-[var(--soft-gold)] uppercase tracking-[0.2em]">
+            <p className="text-[9px] sm:text-[10px] font-bold text-[var(--soft-gold)] uppercase tracking-[0.2em]">
               {loading
                 ? "Scanning Vector Space..."
                 : "Autonomous Competitor Detection"}
@@ -117,15 +155,33 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
           </div>
         </div>
 
-        <button
-          onClick={discover}
-          disabled={loading}
-          className="p-2 rounded-lg bg-white/5 text-[var(--text-muted)] hover:text-[var(--overlay-text)] hover:bg-white/10 transition-all group/refresh"
-        >
-          <RefreshCw
-            className={`w-4 h-4 ${loading ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"}`}
-          />
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            onClick={() => launchGridRadar()}
+            disabled={loading || gridScanning}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/40 text-xs font-bold transition-all disabled:opacity-50"
+            title="Deploy DataForSEO GPS Grid Search across surrounding territory"
+          >
+            {gridScanning ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Compass className="w-3.5 h-3.5" />
+            )}
+            <span className="hidden sm:inline">{gridScanning ? "Radar Active..." : "Geo-Grid Sweep"}</span>
+            <span className="sm:hidden">{gridScanning ? "Scanning..." : "Sweep"}</span>
+          </button>
+
+          <button
+            onClick={discover}
+            disabled={loading || gridScanning}
+            className="p-2 rounded-lg bg-white/5 text-[var(--text-muted)] hover:text-[var(--overlay-text)] hover:bg-white/10 transition-all group/refresh"
+            title="Refresh local vector matches"
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${loading ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"}`}
+            />
+          </button>
+        </div>
       </div>
 
       {/* Main Content Area */}
@@ -262,15 +318,86 @@ export default function DiscoveryShard({ hotelId }: { hotelId: string }) {
                 </motion.div>
               ))}
             </motion.div>
+          ) : gridScanning ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center h-[340px] gap-6 text-center"
+            >
+              <div className="relative">
+                <div className="w-28 h-28 border-2 border-emerald-500/30 rounded-full animate-ping" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/30">
+                    <Compass className="w-8 h-8 text-emerald-400 animate-spin" />
+                  </div>
+                </div>
+              </div>
+              <div className="max-w-md">
+                <p className="text-sm font-black text-[var(--overlay-text)] uppercase tracking-widest mb-1.5">
+                  Deploying GPS Grid Matrix
+                </p>
+                <p className="text-xs text-emerald-400 font-medium mb-1">
+                  {scanMessage || "Querying DataForSEO Google Hotels & computing Gemini embeddings..."}
+                </p>
+                <p className="text-[10px] text-[var(--text-muted)]">
+                  Sweeping 5 coordinate points in a {radiusKm}km perimeter...
+                </p>
+              </div>
+            </motion.div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-[300px] text-center opacity-40">
-              <Radar className="w-12 h-12 mb-4" />
-              <p className="text-sm font-bold">
-                No competitors detected in immediate vector orbit.
+            <div className="p-8 rounded-2xl bg-white/[0.02] border border-[var(--overlay-border)] flex flex-col items-center justify-center text-center my-4">
+              <div className="relative mb-5">
+                <div className="w-16 h-16 rounded-2xl bg-[var(--soft-gold)]/10 border border-[var(--soft-gold)]/20 flex items-center justify-center text-[var(--soft-gold)]">
+                  <Radar className="w-8 h-8 animate-pulse" />
+                </div>
+              </div>
+
+              <h3 className="text-base font-bold text-[var(--overlay-text)] mb-2">
+                Unindexed Regional Market (Cold Start)
+              </h3>
+              <p className="text-xs text-[var(--text-muted)] max-w-md mb-6 leading-relaxed">
+                Zero competitors currently exist in our database within 50km of this property.
+                Deploy our Autonomous Geo-Grid Radar to query Google Hotels across a multi-point GPS matrix,
+                auto-seed local properties, and vectorize them with Gemini.
               </p>
-              <p className="text-[10px] uppercase tracking-widest mt-1">
-                Expanding scan radius...
-              </p>
+
+              {/* Radius Selector */}
+              <div className="flex items-center gap-2 mb-6 p-1 rounded-xl bg-white/5 border border-[var(--overlay-border)]">
+                <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] px-3">
+                  Perimeter:
+                </span>
+                {[5, 10, 25].map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setRadiusKm(r)}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                      radiusKm === r
+                        ? "bg-emerald-500 text-[var(--deep-ocean)] shadow-sm"
+                        : "text-[var(--text-muted)] hover:text-[var(--overlay-text)] hover:bg-white/5"
+                    }`}
+                  >
+                    {r} km
+                  </button>
+                ))}
+              </div>
+
+              {/* Scan Trigger Button */}
+              <button
+                onClick={() => launchGridRadar()}
+                disabled={gridScanning}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[var(--deep-ocean)] font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50"
+              >
+                <Compass className="w-4 h-4" />
+                <span>Launch Autonomous Geo-Grid Radar</span>
+              </button>
+
+              {scanMessage && (
+                <div className="mt-4 flex items-center gap-2 text-[11px] text-emerald-400 font-medium bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>{scanMessage}</span>
+                </div>
+              )}
             </div>
           )}
         </AnimatePresence>

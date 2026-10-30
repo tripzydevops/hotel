@@ -324,6 +324,32 @@ class ApiClient {
   }
 
   /**
+   * Autonomous Geo-Grid Competitor Discovery (DataForSEO + pgvector + Gemini).
+   * Sweeps Google Hotels across a GPS matrix grid to seed unindexed markets.
+   */
+  async triggerGeoGridDiscovery(
+    hotelId: string,
+    radiusKm: number = 10,
+    pointsCount: number = 5
+  ): Promise<{
+    status: string;
+    newly_seeded_count: number;
+    total_discovered: number;
+    rivals: any[];
+    message?: string;
+  }> {
+    return this.fetch<{
+      status: string;
+      newly_seeded_count: number;
+      total_discovered: number;
+      rivals: any[];
+      message?: string;
+    }>(`/api/v1/discovery/${hotelId}/grid-scan?radius_km=${radiusKm}&points_count=${pointsCount}`, {
+      method: 'POST',
+    });
+  }
+
+  /**
    * Batch signal ingestion — B2B product intelligence telemetry.
    * Called by useSignalBuffer to flush buffered competitor interaction signals.
    * Used by the CompsetIntelligenceAgent to build competitor attention profiles.

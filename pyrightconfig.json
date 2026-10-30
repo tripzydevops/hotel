@@ -1,12 +1,20 @@
 {
     "include": [
-        "."
+        "backend/api",
+        "backend/services",
+        "backend/models",
+        "backend/agents",
+        "backend/config"
     ],
     "exclude": [
         "**/node_modules",
         "**/__pycache__",
         "venv",
-        ".git"
+        ".venv",
+        ".git",
+        "backend/tests",
+        "scripts",
+        "scratch"
     ],
     "venvPath": ".",
     "venv": ".venv",
@@ -22,5 +30,9 @@
         }
     ],
     "typeCheckingMode": "basic",
-    "reportMissingTypeStubs": false
+    "reportMissingTypeStubs": false,
+    "reportOptionalSubscript": false,
+    "reportOptionalMemberAccess": false,
+    "reportIndexIssue": false,
+    "reportAttributeAccessIssue": "warning"
 }

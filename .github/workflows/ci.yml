@@ -1,23 +1,39 @@
-name: CI — Backend Tests
+name: CI — Tests & Quality Gates
 
 on:
   push:
     branches: [main]
-    paths:
-      - "backend/**"
-      - "requirements*.txt"
-      - "pyproject.toml"
-      - ".github/workflows/ci.yml"
   pull_request:
     branches: [main]
-    paths:
-      - "backend/**"
-      - "requirements*.txt"
-      - "pyproject.toml"
-      - ".github/workflows/ci.yml"
 
 jobs:
-  test:
+  frontend-test:
+    name: Run Frontend Tests & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run frontend unit tests
+        run: npm test
+
+      - name: Build Next.js application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: "https://ci-dummy.insforge.app"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-dummy-anon-key"
+
+  backend-test:
     name: Run pytest suite
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -62,6 +78,9 @@ jobs:
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: "ci-dummy"
         run: |
           python -m pytest
+
+      - name: Run Pyright Type Checks on Core Services
+        run: npx --yes pyright backend/services/dashboard_service.py
 
       - name: 🚫 Ban deprecated google.generativeai SDK
         # Fails the build if anyone re-introduces the deprecated package.

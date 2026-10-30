@@ -595,11 +595,21 @@ async def run_system_heartbeat(insforge: InsForgeClient):
                     h["property_token"] = None
                     h["serp_api_id"] = None
 
-                # [PROTOCOL 2026] ENFORCE TOKEN REQUIREMENT
-                # If it's not a stale fallback, it MUST have a property_token or serp_api_id
+                # [PROTOCOL 2026] ENFORCE TOKEN REQUIREMENT & AUTONOMOUS HEALING
+                # If a hotel lacks both property_token and serp_api_id, heal it immediately
+                # so monitored hotels are NEVER silently abandoned or skipped.
                 if not is_stale_token and not (h.get("property_token") or h.get("serp_api_id")):
-                    unmapped_hotels.append(h.get("name", "Unknown"))
-                    continue
+                    import hashlib
+                    clean_name = (h.get("name") or "").strip()
+                    clean_loc = (h.get("location") or "").strip()
+                    fallback_token = f"custom_{hashlib.sha256(f'{clean_name.lower()}|{clean_loc.lower()}'.encode()).hexdigest()[:20]}"
+                    h["property_token"] = fallback_token
+                    h["_is_stale_fallback"] = True
+                    try:
+                        insforge.table("hotels").update({"property_token": fallback_token}).eq("id", hid).execute()
+                        s_logger.info(f"Heartbeat: Auto-healed missing property token for '{clean_name}' (ID: {hid}) -> {fallback_token}")
+                    except Exception as heal_err:
+                        s_logger.warning(f"Heartbeat: Could not persist healed token for {hid}: {heal_err}")
 
                 pref_currency = item.get("preferred_currency")
                 if pref_currency:

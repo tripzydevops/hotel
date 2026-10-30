@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Plus, CheckCircle2, Clock } from "lucide-react";
+import { Plus, CheckCircle2, Clock, Radar } from "lucide-react";
+import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 
 interface DashboardHeaderProps {
@@ -45,22 +46,34 @@ export function DashboardHeader({ lastUpdate, onAddHotel, loading }: DashboardHe
         </div>
       </motion.div>
 
-      {/* Add Hotel Button */}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={onAddHotel}
-        className="
-          group relative overflow-hidden rounded-xl bg-gradient-to-br from-[var(--soft-gold)] to-[#D4AF37] p-[1px] shadow-xl transition-all w-full sm:w-auto
-        "
-      >
-        <div className="relative flex items-center justify-center gap-2 bg-[var(--soft-gold)] px-4 sm:px-5 py-2.5 rounded-[11px] transition-colors">
-          <Plus className="w-4 h-4 text-[var(--deep-ocean)] stroke-[3px]" />
-          <span className="font-bold text-[var(--deep-ocean)] text-xs sm:text-sm uppercase tracking-widest">
-            {t("common.addHotel")}
-          </span>
-        </div>
-      </motion.button>
+      {/* Action Buttons: Geo-Grid Discovery + Add Hotel */}
+      <div className="flex items-center gap-2.5 w-full sm:w-auto">
+        <Link
+          href="/analysis/discovery"
+          className="flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/50 text-xs sm:text-sm font-bold transition-all shadow-sm flex-1 sm:flex-initial"
+          title="Open Autonomous Geo-Grid Competitor Discovery"
+        >
+          <Radar className="w-4 h-4 animate-pulse" />
+          <span className="tracking-wide">Geo-Grid Discovery</span>
+        </Link>
+
+        {/* Add Hotel Button */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={onAddHotel}
+          className="
+            group relative overflow-hidden rounded-xl bg-gradient-to-br from-[var(--soft-gold)] to-[#D4AF37] p-[1px] shadow-xl transition-all flex-1 sm:flex-initial
+          "
+        >
+          <div className="relative flex items-center justify-center gap-2 bg-[var(--soft-gold)] px-4 sm:px-5 py-2.5 rounded-[11px] transition-colors">
+            <Plus className="w-4 h-4 text-[var(--deep-ocean)] stroke-[3px]" />
+            <span className="font-bold text-[var(--deep-ocean)] text-xs sm:text-sm uppercase tracking-widest">
+              {t("common.addHotel")}
+            </span>
+          </div>
+        </motion.button>
+      </div>
     </div>
   );
 }

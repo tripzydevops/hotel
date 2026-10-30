@@ -555,7 +555,7 @@ def _process_hotel_prices(h: dict, hid: str, prices: list, display_currency: str
                     "price": p_val,
                     "currency": display_currency,
                     "url": of.get("url") or of.get("link"),
-                    "is_direct": check_is_direct(of, h.get("name")),
+                    "is_direct": check_is_direct(of, str(h.get("name") or "")),
                     "room_type": of.get("room_type") or of.get("room_name") or of.get("room")
                 })
 
@@ -625,7 +625,7 @@ def _process_hotel_prices(h: dict, hid: str, prices: list, display_currency: str
                     "price": p_val,
                     "currency": display_currency,
                     "url": of.get("url") or of.get("link"),
-                    "is_direct": check_is_direct(of, h.get("name")),
+                    "is_direct": check_is_direct(of, str(h.get("name") or "")),
                     "room_type": of.get("room_type") or of.get("room_name") or of.get("room")
                 })
 
@@ -874,7 +874,7 @@ async def get_dashboard_logic(
                     value_pillar.update(synthesize_value_score(ari))
 
             if sentiment:
-                valid_pillars = [p.get("rating") for p in sentiment if isinstance(p, dict) and p.get("rating") is not None]
+                valid_pillars: list[float] = [float(p["rating"]) for p in sentiment if isinstance(p, dict) and p.get("rating") is not None]
                 if valid_pillars:
                     hotel_data["overall_sentiment_score"] = round(sum(valid_pillars) / len(valid_pillars), 1)
                 else:
