@@ -1,6 +1,16 @@
 import { useMemo } from "react";
 import { DashboardData, UserProfile, UserSettings } from "@/types";
 import { parsePrice } from "@/lib/utils";
+import {
+  calculateEffectiveTargetPrice,
+  calculateIsLocked,
+  calculateIsEnterprise,
+  calculateMarketPulseAvg,
+  calculateAvgCompetitorPrice,
+  calculateUndercuttingCount,
+  calculatePricesDroppedCount,
+  resolveActiveCurrency,
+} from "@/utils/dashboardCalculations";
 
 export interface DashboardMetrics {
   effectiveTargetPrice: number;
@@ -21,15 +31,12 @@ export function useDashboardMetrics(
   userSettings: UserSettings | null
 ): DashboardMetrics {
   const effectiveTargetPrice = useMemo(
-    () => parsePrice(data?.target_hotel?.price_info?.current_price || 0),
+    () => calculateEffectiveTargetPrice(data?.target_hotel?.price_info?.current_price),
     [data?.target_hotel?.price_info?.current_price]
   );
 
   const isLocked = useMemo(
-    () =>
-      profile?.subscription_status === "past_due" ||
-      profile?.subscription_status === "canceled" ||
-      profile?.subscription_status === "unpaid",
+    () => calculateIsLocked(profile?.subscription_status),
     [profile?.subscription_status]
   );
 
@@ -39,61 +46,48 @@ export function useDashboardMetrics(
   );
 
   const isEnterprise = useMemo(
-    () =>
-      profile?.role === "admin" ||
-      profile?.plan_type?.toLowerCase() === "enterprise" ||
-      profile?.plan_type?.toLowerCase() === "pro" ||
-      profile?.plan_type?.toLowerCase() === "trial",
+    () => calculateIsEnterprise(profile?.role, profile?.plan_type),
     [profile?.plan_type, profile?.role]
   );
 
   const marketPulseAvg = useMemo(() => {
     if (!data?.competitors?.length) return 0;
-    return (
-      data.competitors.reduce(
-        (acc, c) => acc + (c.price_info?.change_percent || 0),
-        0
-      ) / data.competitors.length
+    return calculateMarketPulseAvg(
+      data.competitors.map((c) => c.price_info?.change_percent)
     );
   }, [data?.competitors]);
 
   const avgCompetitorPrice = useMemo(() => {
-    const validCompetitors = (data?.competitors || []).filter(
-      (c) => parsePrice(c.price_info?.current_price || 0) > 0
-    );
-    if (!validCompetitors.length) return 0;
-
-    return Math.round(
-      validCompetitors.reduce(
-        (sum, c) => sum + parsePrice(c.price_info?.current_price || 0),
-        0
-      ) / validCompetitors.length
+    if (!data?.competitors?.length) return 0;
+    return calculateAvgCompetitorPrice(
+      data.competitors.map((c) => c.price_info?.current_price)
     );
   }, [data?.competitors]);
 
   const undercuttingCount = useMemo(
     () =>
-      (data?.competitors || []).filter((c) => {
-        const price = parsePrice(c.price_info?.current_price || 0);
-        return price > 0 && price < effectiveTargetPrice;
-      }).length,
+      calculateUndercuttingCount(
+        (data?.competitors || []).map((c) => c.price_info?.current_price),
+        effectiveTargetPrice
+      ),
     [data?.competitors, effectiveTargetPrice]
   );
 
   const pricesDroppedCount = useMemo(
     () =>
-      (data?.competitors || []).filter((c) => c.price_info?.trend === "down")
-        .length,
+      calculatePricesDroppedCount(
+        (data?.competitors || []).map((c) => c.price_info?.trend)
+      ),
     [data?.competitors]
   );
 
   const activeCurrency = useMemo(
     () =>
-      userSettings?.currency ||
-      data?.target_hotel?.price_info?.currency ||
-      data?.competitors?.find((c) => c.price_info?.currency)?.price_info
-        ?.currency ||
-      "TRY",
+      resolveActiveCurrency(
+        userSettings?.currency,
+        data?.target_hotel?.price_info?.currency,
+        data?.competitors?.find((c) => c.price_info?.currency)?.price_info?.currency
+      ),
     [
       data?.target_hotel?.price_info?.currency,
       data?.competitors,

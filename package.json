@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "npm run test:unit",
-    "test:unit": "node --experimental-strip-types tests/middleware.test.ts && node --experimental-strip-types tests/pricing_and_normalization.test.ts",
+    "test:unit": "node --experimental-strip-types tests/middleware.test.ts && node --experimental-strip-types tests/pricing_and_normalization.test.ts && node --experimental-strip-types tests/dashboard_metrics.test.ts && node --experimental-strip-types tests/security.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install --with-deps chromium",
     "ai": "gemini",

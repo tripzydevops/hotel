@@ -56,6 +56,16 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: "https://ci-dummy.insforge.app"
           NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-dummy-anon-key"
 
+      - name: Upload Playwright Failure Artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure-artifacts
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+
   backend-test:
     name: Run pytest suite
     runs-on: ubuntu-24.04
@@ -103,7 +113,7 @@ jobs:
           python -m pytest
 
       - name: Run Pyright Type Checks on Core Services
-        run: npx --yes pyright backend/services/dashboard_service.py
+        run: npx --yes pyright backend/config/ai_config.py backend/services/admin/scan_admin.py backend/services/dashboard_service.py
 
       - name: 🚫 Ban deprecated google.generativeai SDK
         # Fails the build if anyone re-introduces the deprecated package.

@@ -16,9 +16,16 @@
 - ✅ **Enterprise Showcase & Zero-Auth Demo Harness**:
     - Created `/demo` (`app/(landing)/demo/page.tsx`) rendering a 14-day deterministic rate grid showcasing live rate parity analysis, intraday alerts, and competitor spreads without requiring auth cookies.
     - Updated `middleware.test.ts` to include `/demo` in public route protections.
-- ✅ **CI/CD Quality Gate & Universal WebServer Stability**:
-    - Configured `playwright.config.ts` with universal `webServer` (`npm run start` and `reuseExistingServer: !process.env.CI`) enabling consistent headless test execution in local environments and GitHub Actions CI.
-    - Pinned GitHub Actions runner to `ubuntu-24.04` to resolve Playwright browser installation issues on newer Ubuntu 26 preview images.
+- ✅ **Pure Dashboard Calculations & Expanded Unit Testing**:
+    - Created `utils/dashboardCalculations.ts` isolating core dashboard calculation logic (`effectiveTargetPrice`, `isLocked`, `isEnterprise`, `marketPulseAvg`, `avgCompetitorPrice`, `undercuttingCount`, `pricesDroppedCount`, `resolveActiveCurrency`, `parsePrice`) into zero-dependency pure functions.
+    - Refactored `hooks/useDashboardMetrics.ts` to delegate to `dashboardCalculations.ts`.
+    - Added `tests/dashboard_metrics.test.ts` with 33 comprehensive assertions. Total frontend unit assertions expanded to 97.
+- ✅ **Automated Client-Side Secret Leak Prevention Policy**:
+    - Created `tests/security.test.ts` scanning 172 client-side source files across `components/`, `hooks/`, and `app/` (excluding server-only `app/api/`) verifying zero occurrences of `SUPABASE_SERVICE_ROLE_KEY` or `INSFORGE_SERVICE_KEY`.
+    - Automated validation for public `NEXT_PUBLIC_` environment prefix boundaries and API key token formats.
+- ✅ **CI Hardening & Playwright Failure Trace Artifacts**:
+    - Added `actions/upload-artifact@v4` with `if: failure()` to upload `test-results/` and `playwright-report/` upon any Playwright regression.
+    - Expanded Pyright static type checks in CI to include `backend/config/ai_config.py`, `backend/services/admin/scan_admin.py`, and `backend/services/dashboard_service.py` (0 errors, 0 warnings).
 
 ## 🕒 Recent Updates (August 23, 2026)
 - ✅ **Centralized AI Model Registry & Dynamic Fallback Cascade**:

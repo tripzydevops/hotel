@@ -5,7 +5,7 @@ Single source of truth for active Gemini model names and fallback cascades.
 
 import re
 import json
-from typing import Any, List
+from typing import Any, List, Optional
 
 # Primary active Gemini model (validated against Google GenAI API 2026)
 DEFAULT_GEMINI_MODEL = "gemini-3.1-pro-preview"
@@ -21,7 +21,7 @@ ACTIVE_MODEL_CASCADE: List[str] = [
 DEFAULT_EMBEDDING_MODEL = "models/gemini-embedding-2"
 
 
-def get_model_cascade(custom_model: str = None, db: Any = None) -> List[str]:
+def get_model_cascade(custom_model: Optional[str] = None, db: Any = None) -> List[str]:
     """
     Returns a deduplicated list of active models starting with custom_model (if provided).
     If db client is provided, attempts to fetch active_model_cascade from admin_settings table.
