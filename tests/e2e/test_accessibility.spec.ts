@@ -13,8 +13,8 @@ test.describe('WCAG 2.1 AA / ADA Accessibility Audit', () => {
     const classes = await skipLink.getAttribute('class');
     expect(classes).toContain('sr-only');
 
-    // 2. Visit Dashboard & Verify main-content target exists
-    await page.goto('http://localhost:3000/dashboard');
+    // 2. Visit Pricing & Verify main-content target exists
+    await page.goto('http://localhost:3000/pricing');
     const mainContent = page.locator('#main-content');
     await expect(mainContent).toBeAttached();
 

@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
 
 # next.js
 /.next/
@@ -57,7 +59,13 @@ env/
 backend/libs
 *.log
 bash_history
-vm_env*
+# Root hygiene — prevent accidental ad-hoc root scripts & audit dumps
+/*.py
+/AUDIT_*.md
+/scan_results*.md
+/FEATURE_OVERVIEW*.md
+/pyright_errors*.txt
+
 debug_*.py
 reproduce_*.py
 test_*.py

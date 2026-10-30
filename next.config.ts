@@ -59,6 +59,7 @@ const nextConfig: NextConfig = {
   },
   // Proxy auth and rest endpoints to InsForge using environment variables
   async rewrites() {
+    const backendUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_INSFORGE_URL || "";
     return [
       {
         source: "/api/auth/session",
@@ -70,15 +71,15 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/api/auth/:path*",
-        destination: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/api/auth/:path*`,
+        destination: `${backendUrl}/api/auth/:path*`,
       },
       {
         source: "/auth/v1/:path*",
-        destination: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/:path*`,
+        destination: `${backendUrl}/auth/v1/:path*`,
       },
       {
         source: "/rest/v1/:path*",
-        destination: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/:path*`,
+        destination: `${backendUrl}/rest/v1/:path*`,
       },
     ];
   },
