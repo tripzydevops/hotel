@@ -33,13 +33,16 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: "https://ci-dummy.insforge.app"
           NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-dummy-anon-key"
 
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright Browsers & Dependencies
+        run: |
+          sudo apt-get update
+          npx playwright install --with-deps chromium
 
       - name: Run Playwright E2E Tests
         run: npx playwright test
         env:
           CI: true
+          SESSION_SECRET: "ci-dummy-session-secret-at-least-32-chars-long"
           NEXT_PUBLIC_SUPABASE_URL: "https://ci-dummy.insforge.app"
           NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-dummy-anon-key"
 
