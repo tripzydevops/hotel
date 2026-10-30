@@ -3,6 +3,23 @@
 > [!IMPORTANT]
 > **PRIMARY SOURCE OF TRUTH**: This document is the authoritative record of the HotelPlus platform. Every agent, service, and database table MUST be documented here. Reference this file FIRST when starting any task.
 
+## 🕒 Recent Updates (October 30, 2026)
+- ✅ **Real-Time Signal Ingestion (Layer 1 Telemetry) for Cold Start Resolution**:
+    - Connected non-blocking interaction telemetry into `components/features/analysis/RateIntelligenceGrid.tsx` via `useSignalBuffer`.
+    - Captures high-intent explicit and implicit user actions: competitor header navigation clicks (`competitor_click`) and pricing cell inspection dwell time (`dwell_time`).
+    - Feeds into backend `signal_processor.py` and `persona_agent.py` to continuously refine persona vectors and hotel semantic recommendations for users with zero or limited prior booking history.
+    - Implemented unit and Pydantic validation tests in `backend/tests/test_signals_pipeline.py` verifying `SignalPayload`, `BatchSignalRequest`, and background signal processor grouping logic.
+- ✅ **Playwright Cross-Platform Visual & Layout Integrity Suite**:
+    - Authored `tests/e2e/test_visual_grid.spec.ts` evaluating DOM geometry and bounding boxes (container width/height, sticky date column `position: sticky; left: 0`, multi-competitor layout, and cell interaction).
+    - Validated public pricing tier card elements on `/pricing` via deterministic `.command-card` selectors.
+    - Avoided brittle pixel snapshot diffs between Windows (DirectWrite) and Linux (FreeType) by enforcing structural geometry assertions.
+- ✅ **Enterprise Showcase & Zero-Auth Demo Harness**:
+    - Created `/demo` (`app/(landing)/demo/page.tsx`) rendering a 14-day deterministic rate grid showcasing live rate parity analysis, intraday alerts, and competitor spreads without requiring auth cookies.
+    - Updated `middleware.test.ts` to include `/demo` in public route protections.
+- ✅ **CI/CD Quality Gate & Universal WebServer Stability**:
+    - Configured `playwright.config.ts` with universal `webServer` (`npm run start` and `reuseExistingServer: !process.env.CI`) enabling consistent headless test execution in local environments and GitHub Actions CI.
+    - Pinned GitHub Actions runner to `ubuntu-24.04` to resolve Playwright browser installation issues on newer Ubuntu 26 preview images.
+
 ## 🕒 Recent Updates (August 23, 2026)
 - ✅ **Centralized AI Model Registry & Dynamic Fallback Cascade**:
     - Created `backend/config/ai_config.py` defining `DEFAULT_GEMINI_MODEL = "gemini-3.1-pro-preview"` and dynamic model fallback cascade `get_model_cascade()`.

@@ -12,6 +12,7 @@ import {
   Clock,
 } from "lucide-react";
 import Link from "next/link";
+import { useSignalBuffer } from "@/hooks/useSignalBuffer";
 
 interface Competitor {
   id: string;
@@ -139,6 +140,7 @@ export default function RateIntelligenceGrid({
   hotelName = "My Hotel",
 }: RateIntelligenceGridProps) {
   const { t, locale } = useI18n();
+  const { track } = useSignalBuffer();
   const symbol = CURRENCY_SYMBOLS[currency] || currency;
 
   // Provide a safe default if competitors is somehow undefined or empty
@@ -157,7 +159,7 @@ export default function RateIntelligenceGrid({
   );
 
   return (
-    <div className="glass-card p-3 sm:p-6 overflow-hidden">
+    <div data-testid="rate-intelligence-grid" className="glass-card p-3 sm:p-6 overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
         <div>
           <h2 className="text-lg font-black text-[var(--text-primary)] mb-1">
@@ -203,6 +205,13 @@ export default function RateIntelligenceGrid({
                 >
                   <Link 
                     href="/analysis/hotel-intelligence"
+                    onClick={() => {
+                      track("competitor_click", {
+                        hotel_id: comp.id,
+                        hotel_name: comp.name,
+                        source: "rate_grid_header",
+                      });
+                    }}
                     className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer group/header"
                   >
                     <span className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-wider truncate max-w-[120px] group-hover/header:text-[var(--soft-gold)] transition-colors">
@@ -350,7 +359,18 @@ export default function RateIntelligenceGrid({
                     return (
                       <td
                         key={comp.id}
-                        className="p-4 text-center border-b border-[var(--glass-border)] relative group/cell"
+                        onClick={() => {
+                          if (price > 0) {
+                            track("dwell_time", {
+                              target: "competitor_price_cell",
+                              hotel_id: comp.id,
+                              hotel_name: comp.name,
+                              date: row.date,
+                              price,
+                            });
+                          }
+                        }}
+                        className="p-4 text-center border-b border-[var(--glass-border)] relative group/cell cursor-pointer"
                       >
                         {price > 0 ? (
                           <div className={`flex flex-col items-center ${isEstimated ? "opacity-60 grayscale-[0.5]" : ""}`}>

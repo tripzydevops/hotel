@@ -75,6 +75,7 @@ expect('/pricing',                       isProtectedPath('/pricing'),           
 expect('/privacy',                       isProtectedPath('/privacy'),                       false);
 expect('/contact',                       isProtectedPath('/contact'),                       false);
 expect('/accessibility',                 isProtectedPath('/accessibility'),                 false);
+expect('/demo',                          isProtectedPath('/demo'),                          false);
 
 // ── Boundary cases: paths that START WITH a protected word but aren't ─────────
 
