@@ -34,12 +34,10 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-dummy-anon-key"
 
       - name: Install Playwright Browsers & Dependencies
-        run: |
-          sudo apt-get update
-          npx playwright install --with-deps chromium
+        run: npx --yes playwright install --with-deps chromium
 
       - name: Run Playwright E2E Tests
-        run: npx playwright test
+        run: npm run test:e2e
         env:
           CI: true
           SESSION_SECRET: "ci-dummy-session-secret-at-least-32-chars-long"

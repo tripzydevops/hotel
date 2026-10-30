@@ -10,6 +10,7 @@
     "test": "npm run test:unit",
     "test:unit": "node --experimental-strip-types tests/middleware.test.ts && node --experimental-strip-types tests/pricing_and_normalization.test.ts",
     "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install --with-deps chromium",
     "ai": "gemini",
     "gemini": "gemini"
   },
