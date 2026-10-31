@@ -3,6 +3,15 @@
 > [!IMPORTANT]
 > **PRIMARY SOURCE OF TRUTH**: This document is the authoritative record of the HotelPlus platform. Every agent, service, and database table MUST be documented here. Reference this file FIRST when starting any task.
 
+## 🕒 Recent Updates (October 31, 2026)
+- ✅ **Multi-Tenant RLS & IDOR Isolation Test Suite**:
+    - Authored `backend/tests/test_rls_isolation.py` (10 automated security tests) asserting that Tenant A cannot access, mutate, or view Tenant B's hotel data, price logs, or scan sessions.
+    - Verified resource ownership checks (`verify_ownership`), hotel-to-user mappings (`verify_hotel_ownership`), and scan session ownership (`verify_scan_session_ownership`).
+    - Validated that cross-tenant access returns HTTP 403 Forbidden, and non-existent sessions return HTTP 404 without leaking resource existence. Total backend pytest suite expanded to 69 tests.
+- ✅ **Automated Weekly Dependency Scanning (Dependabot)**:
+    - Created `.github/dependabot.yml` automating non-blocking weekly security audits across `npm` (Frontend), `pip` (Python Backend), and `github-actions` workflows.
+    - Grouped patch and minor updates to minimize notification noise while guaranteeing timely CVE patch ingestion without breaking PR CI runs.
+
 ## 🕒 Recent Updates (October 30, 2026)
 - ✅ **Real-Time Signal Ingestion (Layer 1 Telemetry) for Cold Start Resolution**:
     - Connected non-blocking interaction telemetry into `components/features/analysis/RateIntelligenceGrid.tsx` via `useSignalBuffer`.
