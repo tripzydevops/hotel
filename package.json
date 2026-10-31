@@ -42,7 +42,7 @@
     "tailwind-merge": "^2.5.4"
   },
   "devDependencies": {
-    "@eslint/js": "^9.14.0",
+    "@eslint/js": "^10.0.1",
     "@google/gemini-cli": "^0.38.2",
     "@playwright/test": "^1.60.0",
     "@supabase/mcp-server-supabase": "^0.6.3",
